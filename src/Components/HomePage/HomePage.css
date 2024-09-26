@@ -1,0 +1,38 @@
+.topbar {
+  background-color: #212744;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 30px;
+  font-size: 0.9rem;
+}
+
+.contactinfo {
+  display: flex;
+  align-items: center;
+}
+.contactinfo svg {
+   /* Space between icon and text */
+  margin-right: 8px;
+  margin-left: 8px;
+}
+
+.subscribeinfo {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.socialicons {
+  display: flex;
+  align-items: center;
+}
+.socialicons a {
+  color: white;
+  margin-left: 10px;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+.socialicons a:hover {
+  color: #ccc;
+}

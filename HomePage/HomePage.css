@@ -1,0 +1,368 @@
+/* Prevent the layout from shrinking smaller than a set width */
+body {
+  min-width: 1000px;
+  margin: 0;
+  padding: 0;
+}
+.homepage {
+  min-width: 1000px;
+  background-color: white;
+  padding-bottom: 100px;
+}
+
+/* Top Bar */
+.topbar {
+  background-color: #212744;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 30px;
+  font-size: 0.9rem;
+}
+
+.contactinfo {
+  display: flex;
+  align-items: center;
+}
+.contactinfo svg {
+   /* Space between icon and text */
+  margin-right: 8px;
+  margin-left: 8px;
+}
+
+.subscribeinfo {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.socialicons {
+  display: flex;
+  align-items: center;
+}
+.socialicons a {
+  color: white;
+  margin-left: 10px;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+.socialicons a:hover {
+  color: #ccc;
+}
+/* Top Bar Done */
+
+/* Navigation Bar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 20px 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.logoTitle h1 {
+  font-size: 1.8rem;
+  color: #212744;
+  font-weight: bold;
+  margin: 0;
+}
+
+.navlinks {
+  display: flex;
+  align-items: center;
+}
+.navlinks a {
+  margin: 0 15px;
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  font-size: 1rem;
+}
+.navlinks a:hover {
+  color: #007bff;
+}
+
+.searchbar {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 5px;
+}
+.searchbar input {
+  border: none;
+  outline: none;
+  margin-left: 10px;
+}
+
+.menuContainer {
+  position: relative;
+}
+.menuicon {
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #007bff;
+}
+.dropdownMenu {
+  position: absolute;
+  top: 50px;
+  right: 0px;
+  width: 180px;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  z-index: 100;
+  padding: 10px 0;
+}
+.dropdownMenu ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.dropdownMenu li {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.dropdownMenu li:hover {
+  background-color: #f5f5f5;
+}
+.dropdownMenu li svg {
+  font-size: 1.2rem;
+  color: #007bff;
+}
+.dropdownMenu a {
+  text-decoration: none;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dropdownMenu a:hover {
+  color: #007bff;
+}
+/* Navigation Bar Done */
+
+/* Create New Entry Section */
+.createNewEntry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #e0f7fa, #80deea);
+  padding: 60px 50px;
+  border-radius: 20px;
+  margin-left: 50px;
+  margin-right: 50px;
+}
+
+.createNewEntryContent {
+  max-width: 50%;
+}
+.createNewEntryContent h1 {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #212744;
+  margin-top: 0px;
+  margin-bottom: 5px;
+}
+.createNewEntryContent .p1 {
+  font-size: 1rem;
+  color: #2ba0db;
+  margin-top: 0;
+}
+.createNewEntryContent .p2 {
+  font-size: 1.2rem;
+  color: #0023ae;
+  margin-top: 40px;
+}
+.createNewEntryContent button {
+  padding: 15px 30px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.5rem;
+}
+.createNewEntryContent button:hover {
+  background-color: #0056b3;
+}
+
+.createNewEntryImage {
+  max-width: 400px;
+}
+.createNewEntryImage img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+/* Create New Entry Section Done */
+
+/* Most Popular Entries Section */
+.mostPopularEntries {
+  text-align: center;
+  margin: 50px 0;
+}
+
+.mostPopularEntriesHeader h1 {
+  font-size: 1.2rem;
+  color: #757575;
+  margin-bottom: 0px;
+}
+.mostPopularEntriesHeader h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #212744;
+  margin-top: 5px;
+}
+.mostPopularEntriesHeader p {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 5px;
+}
+
+.mostPopularEntriesGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 30px;
+  padding: 30px 50px;
+}
+.mostPopularEntryCard {
+  grid-column: 1 / 2;
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: box-shadow 0.3s;
+}
+.mostPopularEntryCard img {
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+}
+.mostPopularEntryCard h1 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 15px 0 5px;
+  color: #212744;
+}
+.mostPopularEntryCard p {
+  font-size: 1rem;
+  color: #757575;
+}
+.mostPopularEntryCard a {
+  font-size: 1rem;
+  color: #007bff;
+  text-decoration: none;
+}
+.mostPopularEntryCard a:hover {
+  text-decoration: underline;
+}
+
+.mostPopularLoadMore {
+  margin-top: 30px;
+}
+.mostPopularLoadMore button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: #007bff;
+  background-color: transparent;
+  border: 1px solid #007bff;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+.mostPopularLoadMore button:hover {
+  background-color: #007bff;
+  color: white;
+}
+/* Most Popular Entries Section Done */
+
+/* Recommendation Entries Section */
+.recommendationEntries {
+  text-align: center;
+  margin: 50px 0;
+}
+
+.recommendationEntriesHeader h1 {
+  font-size: 1.2rem;
+  color: #757575;
+  margin-bottom: 0px;
+}
+.recommendationEntriesHeader h2 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #212744;
+  margin-top: 5px;
+}
+.recommendationEntriesHeader p {
+  font-size: 0.9rem;
+  color: #999;
+  margin-top: 5px;
+}
+
+.recommendationEntriesGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 30px;
+  padding: 30px 50px;
+}
+.recommendationEntryCard {
+  grid-column: 1 / 2;
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: box-shadow 0.3s;
+}
+.recommendationEntryCard img {
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+}
+.recommendationEntryCard h1 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 15px 0 5px;
+  color: #212744;
+}
+.recommendationEntryCard p {
+  font-size: 1rem;
+  color: #757575;
+}
+.recommendationEntryCard a {
+  font-size: 1rem;
+  color: #007bff;
+  text-decoration: none;
+}
+.recommendationEntryCard a:hover {
+  text-decoration: underline;
+}
+
+.recommendationLoadMore {
+  margin-top: 30px;
+}
+.recommendationLoadMore button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: #007bff;
+  background-color: transparent;
+  border: 1px solid #007bff;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+.recommendationLoadMore button:hover {
+  background-color: #007bff;
+  color: white;
+}
+/* Most Popular Entries Section Done */

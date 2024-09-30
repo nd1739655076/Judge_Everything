@@ -7,6 +7,7 @@ import password_icon from '../LoginSignupAssets/password_icon.png';
 import { auth, db } from '../../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { Link } from 'react-router-dom';
 
 const LoginSignup = () => {
     const [action, setAction] = useState("Login");
@@ -205,9 +206,11 @@ const LoginSignup = () => {
                         <label>
                             <input type="checkbox" className="checkbox" />
                             Remember Me
-                        </label>
-                        <span className="forgot-password" onClick={() => console.log("Forgot Password clicked")}>Forgot Password</span>
-                    </div>
+                            </label>
+                            <span className="forgot-password">
+                                <Link to="/forgot-password">Forgot Password</Link>
+                            </span>
+                        </div>
                 )}
                 {action === "Login" && loginError && (
                     <p className="login-error">{loginError}</p>

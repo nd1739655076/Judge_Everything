@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import './HomePage.css';
 
+import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog } from 'react-icons/fa';
 import logoImage from "../HomePageAssets/404.jpg";
@@ -58,7 +59,7 @@ const Homepage = () => {
               <ul>
                 <li>
                   <div className="userauth">
-                    <a href="#"><FaUser /> Login/Register</a>
+                    <Link to="/loginSignup"><FaUser /> Login/Register</Link>
                   </div>
                 </li>
                 <li>
@@ -78,7 +79,7 @@ const Homepage = () => {
                 </li>
                 <li>
                   <div className="settings">
-                    <a href="#"><FaCog /> Settings</a>
+                    <Link to="/settings"><FaUser /> Settings</Link>
                   </div>
                 </li>
               </ul>

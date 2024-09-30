@@ -7,6 +7,7 @@ import password_icon from '../LoginSignupAssets/password_icon.png';
 import { auth, db } from '../../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { Link } from 'react-router-dom';
 
 const LoginSignup = () => {
     const [action, setAction] = useState("Login");
@@ -22,7 +23,6 @@ const LoginSignup = () => {
     const [loginError, setLoginError] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
-    // 重置输入框及错误提示信息
     const handleModeSwitch = (mode) => {
         setAction(mode);
         setUsername("");
@@ -38,13 +38,11 @@ const LoginSignup = () => {
         setErrorMessage("");
     };
 
-    // 注册功能
     const handleSignup = async (username, email, password, reenterPassword) => {
         setUsernameError(false);
         setEmailError(false);
-        setErrorMessage(""); // 清除之前的错误信息
+        setErrorMessage("");
 
-        // 检查密码长度
         if (password.length < 6) {
             setPasswordLengthError(true);
             return;
@@ -52,7 +50,6 @@ const LoginSignup = () => {
             setPasswordLengthError(false);
         }
 
-        // 检查两次输入的密码是否一致
         if (password !== reenterPassword) {
             setPasswordError(true);
             setReenterPassword("");
@@ -60,7 +57,6 @@ const LoginSignup = () => {
         }
 
         try {
-            // 检查用户名是否存在
             const usersRef = collection(db, 'Users');
             const q = query(usersRef, where('username', '==', username));
             const querySnapshot = await getDocs(q);
@@ -71,7 +67,6 @@ const LoginSignup = () => {
                 return;
             }
 
-            // 如果用户名不存在，继续注册流程
             const generatedEmail = email || `${username}@example.com`;
             const userCredential = await createUserWithEmailAndPassword(auth, generatedEmail, password);
             const user = userCredential.user;
@@ -98,7 +93,6 @@ const LoginSignup = () => {
         }
     };
 
-    // 登录功能
     const handleLogin = async (username, password) => {
         setLoginError("");
         try {
@@ -205,9 +199,11 @@ const LoginSignup = () => {
                         <label>
                             <input type="checkbox" className="checkbox" />
                             Remember Me
-                        </label>
-                        <span className="forgot-password" onClick={() => console.log("Forgot Password clicked")}>Forgot Password</span>
-                    </div>
+                            </label>
+                            <span className="forgot-password">
+                                <Link to="/forgotPassword">Forgot Password</Link>
+                            </span>
+                        </div>
                 )}
                 {action === "Login" && loginError && (
                     <p className="login-error">{loginError}</p>

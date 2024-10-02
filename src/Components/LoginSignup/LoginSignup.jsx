@@ -193,23 +193,24 @@ const LoginSignup = () => {
                 )}
             </div>
 
-            <div className="form-actions">
-                {action === "Login" && (
-                    <div className="checkbox-container">
-                        <label>
-                            <input type="checkbox" className="checkbox" />
-                            Remember Me
-                            </label>
-                            <span className="forgot-password">
-                                <Link to="/forgotPassword">Forgot Password</Link>
-                            </span>
-                        </div>
-                )}
+            {action === "Login" && (
+                <div className="form-actions">
+                    <label>
+                        <input type="checkbox" className="checkbox" />
+                        Remember Me
+                    </label>
+
+                    <span className="forgot-password">
+                        <Link to="/forgotPassword">Forgot Password</Link>
+                    </span>
+                </div>
+            )}
+
+            <div className="error">
                 {action === "Login" && loginError && (
                     <p className="login-error">{loginError}</p>
                 )}
             </div>
-
             <div className="submit-container">
                 {action === "Sign Up" ? (
                     <div className="submit" onClick={() => handleSignup(username, email, password, reenterPassword)}>Sign Up</div>

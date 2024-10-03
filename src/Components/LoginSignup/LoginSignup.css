@@ -176,8 +176,7 @@
   margin-top: 10px;
 }
 
-.login-error {
-  color: red;
+.message {
   font-size: 14px;
   text-align: left;
   padding-top: 1%;
@@ -185,4 +184,12 @@
   width: 480px;
   margin-bottom: 0;
   font-weight: 500;
+}
+
+.error {
+  color: red;
+}
+
+.success {
+  color: green;
 }

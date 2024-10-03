@@ -21,6 +21,7 @@ const LoginSignup = () => {
     const [usernameError, setUsernameError] = useState(false);
     const [emailError, setEmailError] = useState(false);
     const [loginError, setLoginError] = useState("");
+    const [loginSuccessful, setLoginSuccessful] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
     const handleModeSwitch = (mode) => {
@@ -82,6 +83,7 @@ const LoginSignup = () => {
 
             setIsSignupSuccessful(true);
             setPasswordError(false);
+            console.log("Sign up successful");
         } catch (error) {
             console.error("Error signing up:", error.code, error.message);
             if (error.code === 'auth/email-already-in-use') {
@@ -95,6 +97,7 @@ const LoginSignup = () => {
 
     const handleLogin = async (username, password) => {
         setLoginError("");
+        setLoginSuccessful(false);
         try {
             const usersRef = collection(db, 'Users');
             const q = query(usersRef, where('username', '==', username));
@@ -109,6 +112,7 @@ const LoginSignup = () => {
             const userData = userDoc.data();
 
             await signInWithEmailAndPassword(auth, userData.email, password);
+            setLoginSuccessful(true);
             console.log("Login successful");
         } catch (error) {
             setLoginError("Incorrect username or password. Click forgot password if you need to reset.");
@@ -206,10 +210,23 @@ const LoginSignup = () => {
                 </div>
             )}
 
-            <div className="error">
-                {action === "Login" && loginError && (
-                    <p className="login-error">{loginError}</p>
-                )}
+            <div className="message">
+                <div className="error">
+                    {action === "Login" && loginError && (
+                        <p className="login-error">{loginError}</p>
+                    )}
+                    {action === "Sign Up" && !isSignupSuccessful && (
+                        <p className="signup-error">{errorMessage}</p>
+                    )}
+                </div>
+                <div className="success">
+                    {action === "Login" && !loginError && loginSuccessful && (
+                        <p className="login-success">Login Successful!</p>
+                    )}
+                    {action === "Sign Up" && isSignupSuccessful && (
+                        <p className="signup-success">Sign Up Successful!</p>
+                    )}
+                </div>
             </div>
             <div className="submit-container">
                 {action === "Sign Up" ? (

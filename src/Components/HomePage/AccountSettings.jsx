@@ -52,7 +52,12 @@ const AccountSettings = () => {
               <button type="button" onClick={handleCancel}>Cancel</button>
             </>
           ) : (
-            <button type="button" onClick={() => handleEditClick('account')} disabled={editField !== null}>
+            <button
+              type="button"
+              onClick={() => handleEditClick('account')}
+              disabled={editField !== null}
+              className={editField !== null ? 'disabled-button' : ''}
+            >
               Change
             </button>
           )}
@@ -77,7 +82,12 @@ const AccountSettings = () => {
               <button type="button" onClick={handleCancel}>Cancel</button>
             </>
           ) : (
-            <button type="button" onClick={() => handleEditClick('password')} disabled={editField !== null}>
+            <button
+              type="button"
+              onClick={() => handleEditClick('password')}
+              disabled={editField !== null}
+              className={editField !== null ? 'disabled-button' : ''}
+            >
               Change
             </button>
           )}
@@ -102,7 +112,12 @@ const AccountSettings = () => {
               <button type="button" onClick={handleCancel}>Cancel</button>
             </>
           ) : (
-            <button type="button" onClick={() => handleEditClick('email')} disabled={editField !== null}>
+            <button
+              type="button"
+              onClick={() => handleEditClick('email')}
+              disabled={editField !== null}
+              className={editField !== null ? 'disabled-button' : ''}
+            >
               Change
             </button>
           )}
@@ -127,7 +142,12 @@ const AccountSettings = () => {
               <button type="button" onClick={handleCancel}>Cancel</button>
             </>
           ) : (
-            <button type="button" onClick={() => handleEditClick('nickName')} disabled={editField !== null}>
+            <button
+              type="button"
+              onClick={() => handleEditClick('nickName')}
+              disabled={editField !== null}
+              className={editField !== null ? 'disabled-button' : ''}
+            >
               Change
             </button>
           )}

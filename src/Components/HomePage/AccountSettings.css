@@ -80,6 +80,10 @@ body {
 .placeholder-editable::placeholder {
   color: gray;
 }
+.disabled-button {
+  background-color: gray !important;
+  cursor: not-allowed;
+}
 .accountSettingsFormGroup button {
   padding: 8px 15px;
   margin-right: 20px;

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog } from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaHistory} from 'react-icons/fa';
 
 const ContactPage = () => {
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import './ContactPage.css';
+//import './ContactPage.css';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
@@ -40,7 +40,6 @@ const ContactPage = () => {
                 <div className="navlinks">
                     <Link to="/">Home</Link>
                     <Link to="">About</Link>
-                    <Link to="">Your Account</Link>
                     <Link to="/contact">Support</Link>
                 </div>
                 <div className="searchbar">
@@ -69,7 +68,7 @@ const ContactPage = () => {
                         </li>
                         <li>
                             <div className="settings">
-                            <Link to="/settings"><FaUser /> Settings</Link>
+                            <Link to="/accountSetting"><FaUser /> Your Account</Link>
                             </div>
                         </li>
                         </ul>

@@ -6,7 +6,7 @@ import HomePage from './Components/HomePage/HomePage';
 import ContactPage from './Components/ContactPage/ContactPage';
 import LoginSignup from './Components/LoginSignup/LoginSignup';
 import ForgotPassword from './Components/LoginSignup/ForgotPassword';
-import Settings from './Components/HomePage/AccountSetting';
+import AccountSettings from './Components/HomePage/AccountSettings';
 //import CreatProductEntry from './Components/HomePage/CreatProductEntry';
 //<Route path="/creatProductEntry" element={<CreatProductEntry />} />
 
@@ -18,7 +18,7 @@ function App() {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/loginSignup" element={<LoginSignup />} />
         <Route path="/forgotPassword" element={<ForgotPassword />} />
-        <Route path="/accountSetting" element={<Settings />} />
+        <Route path="/accountSettings" element={<AccountSettings />} />
         
       </Routes>
     </Router>

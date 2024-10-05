@@ -1,0 +1,96 @@
+body {
+  min-width: 1000px;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  background: linear-gradient(#aacbd3, #29a3f5);
+  justify-content: center;
+  align-items: center;
+}
+.accountSettings {
+  width: 70%;
+  margin: 50px auto;
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* logoPicture */
+.logoPicture {
+  display: block;
+  margin: 0 auto 20px auto;
+  width: 350px;
+}
+
+/* AccountSettingsHeader */
+.accountSettingsHeader {
+  text-align: center;
+  margin-bottom: 50px;
+}
+.accountSettingsHeader h1 {
+  font-size: 40px;
+  color: #007BFF;
+  margin-bottom: 0;
+}
+.accountSettingsHeader p {
+  font-size: 16px;
+  color: #666;
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+/* AccountSettingsFormGroup */
+.accountSettingsFormGroup {
+  display: flex;
+  align-items: center;
+  margin-bottom: 40px;
+}
+.accountSettingsFormGroup label {
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: 600;
+  margin-left: 25px;
+  color: #54a4e5;
+  width: 150px;
+}
+.accountSettingsFormGroup label svg {
+  margin-right: 5px;
+  color: #007BFF;
+}
+.accountSettingsFormGroup input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+  background-color: #f8f8f8;
+  color: #212121;
+  transition: border-color 0.2s;
+  margin-right: 50px;
+}
+.accountSettingsFormGroup input:focus {
+  border-color: black;
+}
+.placeholder-locked::placeholder {
+  color: #54a4e5;
+}
+.placeholder-editable::placeholder {
+  color: gray;
+}
+.accountSettingsFormGroup button {
+  padding: 8px 15px;
+  margin-right: 20px;
+  background-color: #007BFF;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+.accountSettingsFormGroup button:hover {
+  background-color: #0056b3;
+}

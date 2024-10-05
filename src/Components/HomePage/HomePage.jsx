@@ -43,10 +43,9 @@ const Homepage = () => {
           <h1>Judge Everything</h1>
         </div>
         <div className="navlinks">
-          <a href="#">Home</a>
+          <a href="/">Home</a>
           <a href="#">About</a>
-          <a href="#">Your Account</a>
-          <a href="#">Support</a>
+          <a href="/contact">Support</a>
         </div>
         <div className="searchbar">
           <FaSearch/>
@@ -79,7 +78,7 @@ const Homepage = () => {
                 </li>
                 <li>
                   <div className="settings">
-                    <Link to="/settings"><FaUser /> Settings</Link>
+                    <Link to="/accountSetting"><FaUser /> Your Account</Link>
                   </div>
                 </li>
               </ul>

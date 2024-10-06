@@ -1,50 +1,19 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-admin.initializeApp();
+/**
+ * Import function triggers from their respective submodules:
+ *
+ * const {onCall} = require("firebase-functions/v2/https");
+ * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
+ *
+ * See a full list of supported triggers at https://firebase.google.com/docs/functions
+ */
 
-const db = admin.firestore();
+const {onRequest} = require("firebase-functions/v2/https");
+const logger = require("firebase-functions/logger");
 
-class Id {
-  constructor(idNum = '', name = '') {
-    this.idNum = idNum;
-    this.name = name;
-  }
+// Create and deploy your first functions
+// https://firebase.google.com/docs/functions/get-started
 
-  async generateId(type) {
-    let prefix;
-    switch (type.toLowerCase()) {
-      case 'user':
-        prefix = 'USE';
-        break;
-      case 'productEntry':
-        prefix = 'PRO';
-        break;
-      case 'parameter':
-        prefix = 'PAR';
-        break;
-      case 'comment':
-        prefix = 'COM';
-        break;
-    }
-
-    const CounterRef = db.collection('Counters').doc('totalIdCounter');
-    const totalIdCounterDoc = await CounterRef.get();
-    let updateCount = 0;
-    if (totalIdCounterDoc.exists) {
-      updateCount = totalIdCounterDoc.data().count + 1;
-    } else {
-      updateCount = 1;
-    }
-    await counterRef.set({ count: updateCount });
-    this.idNum = `${prefix}${updateCount}`;
-  }
-}
-
-exports.handleIdRequest = functions.https.onCall(async (data, context) => {
-  const idInstance = new Id();
-  switch (data.action) {
-    case 'generate':
-      const newId = idInstance.generateId();
-      break;
-  }
-});
+// exports.helloWorld = onRequest((request, response) => {
+//   logger.info("Hello logs!", {structuredData: true});
+//   response.send("Hello from Firebase!");
+// });

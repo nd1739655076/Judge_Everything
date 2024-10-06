@@ -14,7 +14,7 @@ class Id {
       case "user":
         prefix = "USE";
         break;
-      case "productEntry":
+      case "productentry":
         prefix = "PRO";
         break;
       case "parameter":

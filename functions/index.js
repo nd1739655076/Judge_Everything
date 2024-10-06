@@ -21,7 +21,7 @@ exports.generateIdRequest = functions.https.onCall(async (data, context) => {
   try {
     // Validate that the required data is present
     const { type, name } = data;
-
+    console.log('Received type:', type);
     if (!type || !name) {
       throw new functions.https.HttpsError('invalid-argument', 'The function must be called with both "type" and "name" arguments.');
     }

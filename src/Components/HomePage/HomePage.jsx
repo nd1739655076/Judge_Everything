@@ -1,20 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { auth, db } from "../../firebase";
+import { doc, getDoc } from 'firebase/firestore';
 import './HomePage.css';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog } from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
 import logoImage from "../HomePageAssets/404.jpg";
-//import iconEmail from "../HomePageAssets/404.jpg";
-//import iconInstagram from "../HomePageAssets/404.jpg";
-//import iconYoutube from "../HomePageAssets/404.jpg";
-//import iconTwitter from "../HomePageAssets/404.jpg";
 
 const Homepage = () => {
 
   const [isDropdownVisible, setDropdownVisible] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [username, setUsername] = useState("");
+  const [greeting, setGreeting] = useState("");
+
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
+  };
+  useEffect(() => {
+    const currentUser = auth.onAuthStateChanged(async (user) => {
+      if (currentUser) {
+        setIsLoggedIn(true);
+        const currentUserRef = doc(db, 'User', user.uid.idNum);
+        const currentUserDoc = await getDoc(currentUserRef);
+        if (currentUserDoc.exists()) {
+          setUsername(currentUserDoc.data().nickname || currentUserDoc.data().username);
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+    });
+    return () => currentUser();
+  }, []);
+  useEffect(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    let currentGreeting = "Good ";
+    if (hour >= 5 && hour < 12) {
+      currentGreeting += "morning";
+    } else if (hour >= 12 && hour < 17) {
+      currentGreeting += "afternoon";
+    } else if (hour >= 17 && hour < 21) {
+      currentGreeting += "evening";
+    } else {
+      currentGreeting += "night";
+    }
+    setGreeting(currentGreeting);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      window.location.reload();
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   return (
@@ -48,39 +89,54 @@ const Homepage = () => {
           <a href="/contact">Support</a>
         </div>
         <div className="searchbar">
-          <FaSearch/>
+          <FaSearch />
           <input type="text" placeholder="Search" />
         </div>
+        {isLoggedIn && (
+          <div className="currentUserStatus">
+            <div className="greeting">
+              {greeting} !
+            </div>
+            <div className="currentUserStatusInfo">
+              <FaUser /> {username} 
+              <FaSignOutAlt
+                onClick={handleLogout}
+                title="Logout"
+                className="logout-icon"
+              />
+            </div>
+          </div>
+        )}
         <div className="menuContainer">
           <FaBars className="menuicon" onClick={toggleDropdown} />
           {isDropdownVisible && (
             <div className="dropdownMenu">
               <ul>
-                <li>
-                  <div className="userauth">
-                    <Link to="/loginSignup"><FaUser /> Login/Register</Link>
-                  </div>
-                </li>
-                <li>
-                  <div className="notifcations">
-                    <a href="#"><FaBell /> Notifaction</a>
-                  </div>
-                </li>
-                <li>
-                  <div className="notifcations">
-                    <a href="#"><FaBell /> Notifaction</a>
-                  </div>
-                </li>
-                <li>
-                  <div className="historys">
-                    <a href="#"><FaHistory /> History</a>
-                  </div>
-                </li>
-                <li>
-                  <div className="settings">
-                    <Link to="/accountSettings"><FaUser /> Your Account</Link>
-                  </div>
-                </li>
+                {!isLoggedIn ? (
+                  <li>
+                    <div className="userauth">
+                      <Link to="/loginSignup"><FaUser /> Login/Register</Link>
+                    </div>
+                  </li>
+                ) : (
+                  <>
+                    <li>
+                      <div className="notifcations">
+                        <a href="#"><FaBell /> Notifaction</a>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="historys">
+                        <a href="#"><FaHistory /> History</a>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="settings">
+                        <Link to="/accountSettings"><FaCog /> Your Account</Link>
+                      </div>
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           )}

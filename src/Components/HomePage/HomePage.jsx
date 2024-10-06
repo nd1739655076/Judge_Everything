@@ -1,42 +1,40 @@
 import React, { useState, useEffect } from "react";
+import './HomePage.css';
+import { Link } from 'react-router-dom';
+import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter, FaSearch, FaUser, FaBars, FaBell, FaHistory, FaSignOutAlt } from 'react-icons/fa';
+import logoImage from "../HomePageAssets/404.jpg";
 import { auth, db } from "../../firebase";
 import { doc, getDoc } from 'firebase/firestore';
-import './HomePage.css';
-
-import { Link } from 'react-router-dom';
-import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
-import logoImage from "../HomePageAssets/404.jpg";
 
 const Homepage = () => {
-
   const [isDropdownVisible, setDropdownVisible] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState("");
-  const [greeting, setGreeting] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track whether the user is logged in
+  const [username, setUsername] = useState(""); // Store the username
+  const [greeting, setGreeting] = useState(""); // Store the greeting message
 
-  const toggleDropdown = () => {
-    setDropdownVisible(!isDropdownVisible);
-  };
+  // Check the user's login status
   useEffect(() => {
-    const currentUser = auth.onAuthStateChanged(async (user) => {
-      if (currentUser) {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
         setIsLoggedIn(true);
-        const currentUserRef = doc(db, 'User', user.uid.idNum);
-        const currentUserDoc = await getDoc(currentUserRef);
-        if (currentUserDoc.exists()) {
-          setUsername(currentUserDoc.data().nickname || currentUserDoc.data().username);
+        const userDocRef = doc(db, "Users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          setUsername(userDoc.data().username || user.displayName || "User"); // Fetch username from Firestore
         }
       } else {
         setIsLoggedIn(false);
       }
     });
-    return () => currentUser();
+    return () => unsubscribe();
   }, []);
+
+  // Get the current time and generate a greeting
   useEffect(() => {
     const now = new Date();
     const hour = now.getHours();
     let currentGreeting = "Good ";
+
     if (hour >= 5 && hour < 12) {
       currentGreeting += "morning";
     } else if (hour >= 12 && hour < 17) {
@@ -46,22 +44,26 @@ const Homepage = () => {
     } else {
       currentGreeting += "night";
     }
+
     setGreeting(currentGreeting);
   }, []);
 
+  // User logout function
   const handleLogout = async () => {
     try {
-      await auth.signOut();
-      window.location.reload();
+      await auth.signOut(); // Call Firebase's signOut method
+      window.location.reload(); // Reload the page to clear state
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
 
-  return (
+  const toggleDropdown = () => {
+    setDropdownVisible(!isDropdownVisible);
+  };
 
+  return (
     <div className="homepage">
-    
       {/* Top Bar */}
       <div className="topbar">
         <div className="contactinfo">
@@ -92,21 +94,15 @@ const Homepage = () => {
           <FaSearch />
           <input type="text" placeholder="Search" />
         </div>
+
+        {/* If the user is logged in, show the greeting and logout button */}
         {isLoggedIn && (
-          <div className="currentUserStatus">
-            <div className="greeting">
-              {greeting} !
-            </div>
-            <div className="currentUserStatusInfo">
-              <FaUser /> {username} 
-              <FaSignOutAlt
-                onClick={handleLogout}
-                title="Logout"
-                className="logout-icon"
-              />
-            </div>
+          <div className="greeting">
+            {greeting}, {username}!
+            <FaSignOutAlt onClick={handleLogout} title="Logout" className="logout-icon" style={{ cursor: "pointer", marginLeft: "10px" }} />
           </div>
         )}
+
         <div className="menuContainer">
           <FaBars className="menuicon" onClick={toggleDropdown} />
           {isDropdownVisible && (
@@ -122,7 +118,7 @@ const Homepage = () => {
                   <>
                     <li>
                       <div className="notifcations">
-                        <a href="#"><FaBell /> Notifaction</a>
+                        <a href="#"><FaBell /> Notification</a>
                       </div>
                     </li>
                     <li>
@@ -132,7 +128,7 @@ const Homepage = () => {
                     </li>
                     <li>
                       <div className="settings">
-                        <Link to="/accountSettings"><FaCog /> Your Account</Link>
+                        <Link to="/accountSettings"><FaUser /> Your Account</Link>
                       </div>
                     </li>
                   </>
@@ -158,12 +154,12 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Create Most Popular Entries Section */}
+      {/* Most Popular Entries Section */}
       <section className="mostPopularEntries">
         <div className="mostPopularEntriesHeader">
           <h1>Ranking</h1>
           <h2>Most Popular Entries This Week</h2>
-          <p>will update every Thursday 11:59 p.m. EST</p>
+          <p>Will update every Thursday 11:59 p.m. EST</p>
         </div>
         <div className="mostPopularEntriesGrid">
           <div className="mostPopularEntryCard">
@@ -178,7 +174,7 @@ const Homepage = () => {
         </div>
       </section>
 
-      {/* Create Recommendation Entries Section */}
+      {/* Recommendation Entries Section */}
       <section className="recommendationEntries">
         <div className="recommendationEntriesHeader">
           <h1>Recommendations</h1>
@@ -197,11 +193,8 @@ const Homepage = () => {
           <button>LOAD MORE ENTRIES</button>
         </div>
       </section>
-
     </div>
-
   );
-
 };
 
 export default Homepage;

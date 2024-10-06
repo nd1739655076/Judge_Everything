@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog } from 'react-icons/fa';
 
+
 const ContactPage = () => {
 
     const [isDropdownVisible, setDropdownVisible] = useState(false);
@@ -40,7 +41,6 @@ const ContactPage = () => {
                 <div className="navlinks">
                     <Link to="/">Home</Link>
                     <Link to="">About</Link>
-                    <Link to="">Your Account</Link>
                     <Link to="/contact">Support</Link>
                 </div>
                 <div className="searchbar">
@@ -78,86 +78,86 @@ const ContactPage = () => {
                 </div>
             </div>
 
-            {/* main content */}
-            <div class="container">
-                <div class="content contact-wrap">
-                {/* row align-items-stretch no-gutters contact-wrap */}
-                    <div class="column">
-                    {/* col-md-8 */}
-                        <div class="column-content">
-                        {/* form h-100 */}
-                            <h3>Send us a message</h3>
-                            <form class="contactForm" id="contactForm" name="contactForm">
-                            {/* mb-5 method="post"*/}
-                                <div class="row">
-                                    <div class="form-field">
-                                    {/* col-md-6 form-group mb-5 */}
-                                    <label for="" class="form-label">Name *</label>
-                                    {/* col-form-label" */}
-                                    <input type="text" class="form-input" name="name" id="name" placeholder="Your name"/>
-                                    {/* form-control */}
-                                    </div>
-                                    <div class="form-field">
-                                    {/* col-md-6 form-group mb-5 */}
-                                    <label for="" class="form-label">Email *</label>
-                                    <input type="text" class="form-input" name="email" id="email"  placeholder="Your email"/>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="form-field">
-                                    <label for="" class="form-label">Phone</label>
-                                    <input type="text" class="form-input" name="phone" id="phone"  placeholder="Phone #"/>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    <div class="form-field-2">
-                                    {/* col-md-12 form-group mb-5 */}
-                                    <label for="message" class="col-form-label">Message *</label>
-                                    <textarea class="form-input" name="message" id="message" cols="30" rows="4"  placeholder="Write your message"></textarea>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="btn">
-                                    {/* col-md-12 form-group */}
-                                    <input type="submit" value="Send Message" class="btn btn-primary rounded-0 py-2 px-4"/>
-                                    <span class="submitting"></span>
-                                    </div>
-                                </div>
-                            </form>
-
-                            <div id="form-message-warning mt-4"></div> 
-                            <div id="form-message-success">
-                                Your message was sent, thank you!
+            <div className="contact_us_6">
+                <div className="responsive-container-block container">
+                    <form className="form-box">
+                        <div className="container-block form-wrapper">
+                        <div className="mob-text">
+                            <p className="text-blk contactus-head">
+                            Get in Touch
+                            </p>
+                            {/* <p className="text-blk contactus-subhead">
+                            102 N Grant Street
+                            </p> */}
+                        </div>
+                        <div className="responsive-container-block">
+                            <div className="responsive-cell-block wk-tab-12 wk-mobile-12 wk-desk-12 wk-ipadp-12">
+                            <p className="text-blk input-title">
+                                NAME
+                            </p>
+                            <input className="input" name="Name" placeholder="Please enter your name" />
+                            </div>
+                            <div className="responsive-cell-block wk-tab-12 wk-mobile-12 wk-desk-12 wk-ipadp-12">
+                            <p className="text-blk input-title">
+                                EMAIL
+                            </p>
+                            <input className="input" name="Email" placeholder="Please enter email" />
+                            </div>
+                            <div className="responsive-cell-block wk-tab-12 wk-mobile-12 wk-desk-12 wk-ipadp-12">
+                            <p className="text-blk input-title">
+                                SUBJECT
+                            </p>
+                            <input className="input" name="Subject" placeholder="Please enter subject" />
+                            </div>
+                            <div className="responsive-cell-block wk-tab-12 wk-mobile-12 wk-desk-12 wk-ipadp-12">
+                            <p className="text-blk input-title">
+                                WHAT CAN WE HELP YOU WITH?
+                            </p>
+                            <textarea className="textinput" placeholder="Please enter your message"></textarea>
                             </div>
                         </div>
-                    </div>
-                    <div class="column">
-                        <div class="contact-info h-100">
-                            <h3>Contact Information</h3>
-                            <p class="mb-5">Lorem ipsum dolor sit amet, consectetur adipisicing elit. Molestias, magnam!</p>
-                            <ul class="list-unstyled">
-                            <li class="d-flex">
-                                <span class="wrap-icon icon-room mr-3"></span>
-                                <span class="text">9757 Aspen Lane South Richmond Hill, NY 11419</span>
-                            </li>
-                            <li class="d-flex">
-                                <span class="wrap-icon icon-phone mr-3"></span>
-                                <span class="text">+1 (291) 939 9321</span>
-                            </li>
-                            <li class="d-flex">
-                                <span class="wrap-icon icon-envelope mr-3"></span>
-                                <span class="text">info@mywebsite.com</span>
-                            </li>
-                            </ul>
+                        <button className="submit-btn">
+                            Submit
+                        </button>
+                        </div>
+                    </form>
+                    <div className="column2">
+                    {/* class="responsive-cell-block wk-desk-7 wk-ipadp-12 wk-tab-12 wk-mobile-12" */}
+                        <div className="map-part">
+                            <p className="text-blk map-contactus-head">
+                                Reach us at
+                            </p>
+                            <div className="phone text-box">
+                                <img className="contact-svg" src="https://workik-widget-assets.s3.amazonaws.com/widget-assets/images/ET21.jpg" />
+                                <p className="contact-text">Phone: +1 (225) 555-0118</p>
+                            </div>
+                            <div className="mail text-box">
+                                <img className="contact-svg" src="https://workik-widget-assets.s3.amazonaws.com/widget-assets/images/ET22.jpg" />
+                                <p className="contact-text">Email: song748@purdue.edu</p>
+                            </div>
+                            <div className="address text-box">
+                                <img className="contact-svg" src="https://workik-widget-assets.s3.amazonaws.com/widget-assets/images/ET23.jpg" />
+                                <p className="contact-text"> Address: 102 N Grant Street</p>
+                            </div>
+                            <div className="social-media-links mob">
+                                <a className="social-icon-link" href="#">
+                                <img className="link-img image-block" src="https://workik-widget-assets.s3.amazonaws.com/Footer1-83/v1/images/Icon-twitter.png" />
+                                </a>
+                                <a className="social-icon-link" href="#">
+                                <img className="link-img image-block" src="https://workik-widget-assets.s3.amazonaws.com/Footer1-83/v1/images/Icon-facebook.png" />
+                                </a>
+                                <a className="social-icon-link" href="#">
+                                <img className="link-img image-block" src="https://workik-widget-assets.s3.amazonaws.com/Footer1-83/v1/images/Icon-google.png" />
+                                </a>
+                                <a className="social-icon-link" href="#">
+                                <img className="link-img image-block" src="https://workik-widget-assets.s3.amazonaws.com/Footer1-83/v1/images/Icon-instagram.png" />
+                                </a>
+                            </div>
+                        
                         </div>
                     </div>
                 </div>
             </div>
-    
-            
-  
         </div>
   
     );

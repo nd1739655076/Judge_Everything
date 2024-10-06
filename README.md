@@ -1,2 +1,8 @@
-npm install react-icons
-npm install react-router-dom
+# React installs list:
+## 1. npm install react-icons
+## 2. npm install react-router-dom
+# Firebase installs list:
+## 1. npm install -g firebase-tools
+## 2. firebase login (Get-ExecutionPolicy; Set-ExecutionPolicy RemoteSigned -Scope CurrentUser)
+## 3. firebase init
+## 4. firebase deploy --only functions (Upload functions)

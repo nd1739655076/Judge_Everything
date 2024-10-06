@@ -89,7 +89,7 @@
   justify-content: space-between;
 }
 
-.checkbox-container label {
+.form-actions label {
   color: #2ab4cc;
   cursor: pointer;
 }
@@ -138,7 +138,7 @@
 
 .error-message {
   color: red;
-  font-size: 10px;
+  font-size: 15px;
   margin-left: 10px; /* Ensures that the error message appears to the side */
   display: inline; /* Inline so it appears on the same line */
 }
@@ -176,17 +176,20 @@
   margin-top: 10px;
 }
 
-.forgot-password {
-  color: #2ab4cc;
-  text-decoration: underline;
-  cursor: pointer;
-  margin-left: 15px;
+.message {
+  font-size: 14px;
+  text-align: left;
+  padding-top: 1%;
+  margin: auto;
+  width: 480px;
+  margin-bottom: 0;
+  font-weight: 500;
 }
 
-.login-error {
+.error {
   color: red;
-  font-size: 14px;
-  margin-top: 10px;
-  text-align: left;
-  width: 100%;
+}
+
+.success {
+  color: green;
 }

@@ -37,10 +37,10 @@ const CreateProductEntry = () => {
     try {
       // Initialize Firebase Cloud Functions
       const functions = getFunctions();
-      const generateId = httpsCallable(functions, 'generateIdRequest');
+      const generateId = httpsCallable(functions, 'handleIdRequest');
 
       // Call the Cloud Function to generate a product ID
-      const result = await generateId({ type: 'productEntry', name: productName });
+      const result = await generateId({ action: 'generate', type: 'productEntry', name: productName });
       const generatedId = result.data.idNum; // Extract the generated ID from the response
 
       console.log('Generated Product ID:', generatedId);

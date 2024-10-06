@@ -1,51 +1,52 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
 const {onRequest} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require('cors')({ origin: true });
-admin.initializeApp(); // Initialize the Firebase Admin SDK
+admin.initializeApp();
 
-const Id = require('./Id'); // Import the Id class
+const db = admin.firestore();
 
-// HTTP Callable Cloud Function to generate an ID
-exports.generateIdRequest = functions.https.onCall(async (data, context) => {
+const Id = require('./Id');
+const User = require('./User');
+const ProductEntry = require('./ProductEntry');
+
+exports.handleIdRequest = functions.https.onCall(async (data, context) => {
   try {
-    // Validate that the required data is present
-    const { type, name } = data;
-    console.log('Received type:', type);
-    if (!type || !name) {
-      throw new functions.https.HttpsError('invalid-argument', 'The function must be called with both "type" and "name" arguments.');
+    const {action, type, name} = data;
+    if (action === 'generate') {
+      const newId = new Id();
+      const result = await newId.generateId(type, name);
+      return result;
     }
-
-    // Create a new instance of the Id class
-    const idGenerator = new Id();
-    
-    // Generate the ID using the provided type and name
-    const result = await idGenerator.generateId(type, name);
-
-    // Return the result to the client
-    return result;
   } catch (error) {
     console.error('Error generating ID:', error);
-    
-    // Throw a detailed error that will be passed to the client
-    throw new functions.https.HttpsError('internal', 'Failed to generate ID: ' + error.message);
+    throw new functions.https.HttpsError('internal', 'Failed to generate ID.');
   }
 });
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+exports.handleUserRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const {action, uidNum, username, password, email} = data;
+    if (action === 'generate') {
+      const newUser = new User(uidNum, username, password, email);
+      await newUser.generateUser();
+    } 
+  } catch (error) {
+    console.error('Error handling user request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle user request');
+  }
+});
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const {action, prodidNum, productName, uidNum} = data;
+    if (action === 'generate') {
+      const productEntry = new ProductEntry(prodidNum, productName, uidNum);
+      await productEntry.generateProductEntry();
+    } 
+  } catch (error) {
+    console.error('Error handling product entry request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
+  }
+});

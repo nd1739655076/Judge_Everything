@@ -3,8 +3,8 @@ const admin = require('firebase-admin');
 const db = admin.firestore();
 
 class User {
-  constructor(uid, username, password, email) {
-    this.id = uid;
+  constructor(uidNum, username, password, email) {
+    this.id = uidNum;
     this.username = username;
     this.password = password;
     this.email = email;

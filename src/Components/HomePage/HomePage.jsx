@@ -78,7 +78,7 @@ const Homepage = () => {
                 </li>
                 <li>
                   <div className="settings">
-                    <Link to="/accountSetting"><FaUser /> Your Account</Link>
+                    <Link to="/accountSettings"><FaUser /> Your Account</Link>
                   </div>
                 </li>
               </ul>

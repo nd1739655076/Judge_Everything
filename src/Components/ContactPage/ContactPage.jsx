@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import './ContactPage.css';
+//import './ContactPage.css';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog } from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaHistory} from 'react-icons/fa';
 
 
 const ContactPage = () => {
@@ -69,7 +69,7 @@ const ContactPage = () => {
                         </li>
                         <li>
                             <div className="settings">
-                            <Link to="/settings"><FaUser /> Settings</Link>
+                            <Link to="/accountSetting"><FaUser /> Your Account</Link>
                             </div>
                         </li>
                         </ul>

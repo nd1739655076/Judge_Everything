@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
-import { collection, doc, setDoc } from 'firebase/firestore'; // Firestore modular API
-import { db } from '../../firebase'; // Import Firestore instance from firebase.js
-import Id from '../../Id'; // Import the Id class for generating IDs
-import './CreateProductEntry.css'; // Import your custom CSS file
+import { db } from '../../firebase'; // Firebase Firestore instance
+import { collection, doc, setDoc } from "firebase/firestore"; // Firestore methods
+import { getFunctions, httpsCallable } from "firebase/functions"; // Firebase Cloud Functions
+import './CreatProductEntry.css'; // Import your custom CSS for styling
 
 const CreateProductEntry = () => {
   const [productName, setProductName] = useState('');
   const [creatorId, setCreatorId] = useState('');
   const [tags, setTags] = useState(['']);
   const [parameters, setParameters] = useState(new Array(10).fill(''));
+  const [loading, setLoading] = useState(false); // For showing loading state during submission
+  const [error, setError] = useState(''); // For showing error messages
+  const [success, setSuccess] = useState(''); // For showing success messages
 
   // Handle changes to the tags array
   const handleTagChange = (index, value) => {
     const updatedTags = [...tags];
     updatedTags[index] = value;
     setTags(updatedTags);
-    console.log(`Tag updated at index ${index}:`, updatedTags);
   };
 
   // Handle changes to the parameters array
@@ -23,82 +25,74 @@ const CreateProductEntry = () => {
     const updatedParameters = [...parameters];
     updatedParameters[index] = value;
     setParameters(updatedParameters);
-    console.log(`Parameter updated at index ${index}:`, updatedParameters);
   };
 
+  // Handle form submission to create a new product entry
   const handleProductEntry = async (e) => {
     e.preventDefault();
-    console.log('Form submitted. Creating new product entry...');
+    setLoading(true);
+    setError(''); // Clear previous errors
+    setSuccess(''); // Clear success messages
 
     try {
-      // Generate a new product ID
-      const productId = new Id('P');
-      await productId.generateId(); // Generate ID with the prefix 'P'
-      console.log('Generated Product ID:', productId.getFullId());
+      // Initialize Firebase Cloud Functions
+      const functions = getFunctions();
+      const generateId = httpsCallable(functions, 'generateIdRequest');
 
-      // For parameters, generate new IDs with 'PR' prefix
-      const parameterIds = [];
-      for (let i = 0; i < parameters.length; i++) {
-        if (parameters[i]) {
-          const parameterId = new Id('PR');
-          await parameterId.generateId();
-          parameterIds.push(parameterId);
-          console.log(`Generated Parameter ID for Parameter ${i}:`, parameterId.getFullId());
-        }
-      }
+      // Call the Cloud Function to generate a product ID
+      const result = await generateId({ type: 'productEntry', name: productName });
+      const generatedId = result.data.idNum; // Extract the generated ID from the response
 
-      // Define the rating structure for the product
-      const rate = {
-        average: 0,
-        scoreList: {},
-        totalScore: 0,
-        totalRater: 0,
-      };
-      console.log('Rating structure initialized:', rate);
+      console.log('Generated Product ID:', generatedId);
 
-      // Build the parameter list with IDs and other details
-      const parameterList = parameterIds.map((idObj, index) => ({
-        ID: idObj.getFullId(),
-        parametorName: parameters[index],
-        creator: creatorId,
-        averageScore: rate,
-        reportList: {},
-      }));
-      console.log('Parameter list constructed:', parameterList);
-
-      // Build the new product entry
+      // Prepare the new product entry data
       const newProductEntry = {
-        ID: productId.getFullId(), // Use the generated full ID
+        ID: generatedId,
         productName,
         creator: creatorId,
         tags: tags.filter(Boolean), // Filter out any empty tags
-        averageScore: rate,
-        parameterList,
+        parameters: parameters.filter(Boolean), // Filter out empty parameters
+        averageScore: {
+          average: 0,
+          totalScore: 0,
+          totalRater: 0,
+        },
         commentList: [],
         reportList: {},
       };
-      console.log('New product entry constructed:', newProductEntry);
 
-      // Save the new product entry in the database using modular syntax
-      const productRef = doc(collection(db, 'ProductEntries'), productId.getFullId());
+      // Save the new product entry in Firestore under the generated ID
+      const productRef = doc(collection(db, 'ProductEntries'), generatedId);
       await setDoc(productRef, newProductEntry);
-      console.log('New product entry saved to the database.');
 
-      // Optionally reset form fields after submission
+      console.log('New product entry saved to Firestore:', newProductEntry);
+
+      // Show success message
+      setSuccess('Product entry created successfully!');
+
+      // Reset form fields after successful submission
       setProductName('');
       setCreatorId('');
       setTags(['']);
       setParameters(new Array(10).fill(''));
-      console.log('Form fields reset.');
-
-    } catch (error) {
-      console.error('Error creating new product entry:', error);
+    } catch (err) {
+      console.error('Error creating product entry:', err);
+      setError('Failed to create product entry. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="product-entry-container">
       <h1>Create a New Product Entry</h1>
+
+      {/* Display Error Message */}
+      {error && <p className="error-message">{error}</p>}
+
+      {/* Display Success Message */}
+      {success && <p className="success-message">{success}</p>}
+
       <form onSubmit={handleProductEntry} className="product-entry-form">
         <label>
           Product Name:
@@ -151,7 +145,9 @@ const CreateProductEntry = () => {
         </label>
         <br />
 
-        <button type="submit">Create Product Entry</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'Creating Product Entry...' : 'Create Product Entry'}
+        </button>
       </form>
     </div>
   );

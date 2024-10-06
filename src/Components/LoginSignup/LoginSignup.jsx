@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import './LoginSignup.css';
 import logo from '../LoginSignupAssets/logo.jpg';
 import user_icon from '../LoginSignupAssets/user_icon.png';
@@ -7,7 +7,7 @@ import password_icon from '../LoginSignupAssets/password_icon.png';
 import { auth, db } from '../../firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const LoginSignup = () => {
     const [action, setAction] = useState("Login");
@@ -23,6 +23,18 @@ const LoginSignup = () => {
     const [loginError, setLoginError] = useState("");
     const [loginSuccessful, setLoginSuccessful] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+
+    const navigate = useNavigate(); // Hook for navigation
+
+    // 检查用户是否已经登录
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+                navigate("/");  // if user login, jump to the homepage
+            }
+        });
+        return () => unsubscribe();
+    }, [navigate]);
 
     const handleModeSwitch = (mode) => {
         setAction(mode);
@@ -84,6 +96,8 @@ const LoginSignup = () => {
             setIsSignupSuccessful(true);
             setPasswordError(false);
             console.log("Sign up successful");
+            navigate("/loginSignup");
+
         } catch (error) {
             console.error("Error signing up:", error.code, error.message);
             if (error.code === 'auth/email-already-in-use') {
@@ -114,6 +128,7 @@ const LoginSignup = () => {
             await signInWithEmailAndPassword(auth, userData.email, password);
             setLoginSuccessful(true);
             console.log("Login successful");
+            navigate("/");//jump to homepage
         } catch (error) {
             setLoginError("Incorrect username or password. Click forgot password if you need to reset.");
         }

@@ -1,50 +1,18 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 admin.initializeApp();
 
 const db = admin.firestore();
 
-class Id {
-  constructor(idNum = '', name = '') {
-    this.idNum = idNum;
-    this.name = name;
-  }
+const Id = require('./Id');
 
-  async generateId(type) {
-    let prefix;
-    switch (type.toLowerCase()) {
-      case 'user':
-        prefix = 'USE';
-        break;
-      case 'productEntry':
-        prefix = 'PRO';
-        break;
-      case 'parameter':
-        prefix = 'PAR';
-        break;
-      case 'comment':
-        prefix = 'COM';
-        break;
-    }
-
-    const CounterRef = db.collection('Counters').doc('totalIdCounter');
-    const totalIdCounterDoc = await CounterRef.get();
-    let updateCount = 0;
-    if (totalIdCounterDoc.exists) {
-      updateCount = totalIdCounterDoc.data().count + 1;
-    } else {
-      updateCount = 1;
-    }
-    await counterRef.set({ count: updateCount });
-    this.idNum = `${prefix}${updateCount}`;
-  }
-}
-
-exports.handleIdRequest = functions.https.onCall(async (data, context) => {
-  const idInstance = new Id();
-  switch (data.action) {
-    case 'generate':
-      const newId = idInstance.generateId();
-      break;
+exports.generateIdRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const newId = new Id();
+    const result = await newId.generateId(data.type, data.name);
+    return result;
+  } catch (error) {
+    console.error('Error generating ID:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to generate ID.');
   }
 });

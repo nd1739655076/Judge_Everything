@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-//import './ContactPage.css';
+import './ContactPage.css';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';

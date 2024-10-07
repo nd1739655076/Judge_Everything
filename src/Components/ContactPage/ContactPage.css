@@ -324,7 +324,7 @@ body {
   border-bottom-color: #797979b7;
   border-left-color: #797979b7;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  border-top-left-radius: 6px;
+    border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   border-bottom-right-radius: 6px;
   border-bottom-left-radius: 6px;
@@ -391,7 +391,7 @@ body {
 }
 
 .contact_us_6 ::placeholder {
-  color: #ccc;
+  color: #797979b7;
 }
 
 .contact_us_6 .mob-text {

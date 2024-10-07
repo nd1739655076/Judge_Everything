@@ -1,0 +1,66 @@
+[debug] [2024-10-07T02:26:01.625Z] ----------------------------------------------------------------------
+[debug] [2024-10-07T02:26:01.629Z] Command:       D:\NodeJS\node.exe C:\Users\30228\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2024-10-07T02:26:01.630Z] CLI Version:   13.20.2
+[debug] [2024-10-07T02:26:01.630Z] Platform:      win32
+[debug] [2024-10-07T02:26:01.630Z] Node Version:  v20.17.0
+[debug] [2024-10-07T02:26:01.630Z] Time:          Sun Oct 06 2024 22:26:01 GMT-0400 (Eastern Daylight Time)
+[debug] [2024-10-07T02:26:01.630Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-10-07T02:26:01.703Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-10-07T02:26:01.704Z] > authorizing via signed-in user (etszyao@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  D:\ReactPJ\Judge_Everything
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[debug] [2024-10-07T02:26:17.320Z] Using project from CLI flag: judge-everything
+[debug] [2024-10-07T02:26:17.321Z] Checked if tokens are valid: true, expires at: 1728271472840
+[debug] [2024-10-07T02:26:17.322Z] Checked if tokens are valid: true, expires at: 1728271472840
+[debug] [2024-10-07T02:26:17.323Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/judge-everything [none]
+[debug] [2024-10-07T02:26:17.538Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/judge-everything 200
+[debug] [2024-10-07T02:26:17.539Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/judge-everything {"projectId":"judge-everything","projectNumber":"420905221956","displayName":"Judge Everything","name":"projects/judge-everything","resources":{"hostingSite":"judge-everything"},"state":"ACTIVE","etag":"1_b22c6c8f-d456-4322-8213-d76a0245a697"}
+[info] i  Using project judge-everything (Judge Everything) 
+[info] 
+=== Functions Setup
+[debug] [2024-10-07T02:26:17.546Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-10-07T02:26:17.547Z] > authorizing via signed-in user (etszyao@gmail.com)
+[debug] [2024-10-07T02:26:17.547Z] [iam] checking project judge-everything for permissions ["firebase.projects.get"]
+[debug] [2024-10-07T02:26:17.548Z] Checked if tokens are valid: true, expires at: 1728271472840
+[debug] [2024-10-07T02:26:17.548Z] Checked if tokens are valid: true, expires at: 1728271472840
+[debug] [2024-10-07T02:26:17.548Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/judge-everything:testIamPermissions [none]
+[debug] [2024-10-07T02:26:17.548Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/judge-everything:testIamPermissions x-goog-quota-user=projects/judge-everything
+[debug] [2024-10-07T02:26:17.548Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/judge-everything:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2024-10-07T02:26:17.661Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/judge-everything:testIamPermissions 200
+[debug] [2024-10-07T02:26:17.661Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/judge-everything:testIamPermissions {"permissions":["firebase.projects.get"]}
+[debug] [2024-10-07T02:26:17.662Z] Checked if tokens are valid: true, expires at: 1728271472840
+[debug] [2024-10-07T02:26:17.662Z] Checked if tokens are valid: true, expires at: 1728271472840
+[debug] [2024-10-07T02:26:17.662Z] Checked if tokens are valid: true, expires at: 1728271472840
+[debug] [2024-10-07T02:26:17.663Z] Checked if tokens are valid: true, expires at: 1728271472840
+[debug] [2024-10-07T02:26:17.663Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/judge-everything/services/cloudfunctions.googleapis.com [none]
+[debug] [2024-10-07T02:26:17.663Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/judge-everything/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/judge-everything
+[debug] [2024-10-07T02:26:17.666Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/judge-everything/services/runtimeconfig.googleapis.com [none]
+[debug] [2024-10-07T02:26:17.666Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/judge-everything/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/judge-everything
+[debug] [2024-10-07T02:26:17.887Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/judge-everything/services/runtimeconfig.googleapis.com 200
+[debug] [2024-10-07T02:26:17.887Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/judge-everything/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2024-10-07T02:26:18.063Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/judge-everything/services/cloudfunctions.googleapis.com 200
+[debug] [2024-10-07T02:26:18.063Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/judge-everything/services/cloudfunctions.googleapis.com [omitted]
+[info] 
+Detected existing codebase(s): default
+

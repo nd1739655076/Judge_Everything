@@ -50,3 +50,21 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
   }
 });
+
+exports.checkLoginStatus = functions.https.onCall(async (data, context) => {
+  if (context.auth) {
+    const uid = context.auth.uid;
+    const userDoc = await admin.firestore().collection('Users').doc(uid).get();
+    if (userDoc.exists) {
+      return { loggedIn: true, username: userDoc.data().username };
+    } else {
+      return { loggedIn: false };
+    }
+  } else {
+    return { loggedIn: false };
+  }
+});
+
+exports.handleLogout = functions.https.onCall(async (data, context) => {
+  return { success: true };
+});

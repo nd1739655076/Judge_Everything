@@ -4,9 +4,7 @@ import logo from '../LoginSignupAssets/logo.jpg';
 import user_icon from '../LoginSignupAssets/user_icon.png';
 import email_icon from '../LoginSignupAssets/email_icon.png';
 import password_icon from '../LoginSignupAssets/password_icon.png';
-import { auth, db } from '../../firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions'; // Import firebase functions
 import { Link, useNavigate } from 'react-router-dom';
 
 const LoginSignup = () => {
@@ -25,15 +23,11 @@ const LoginSignup = () => {
     const [errorMessage, setErrorMessage] = useState("");
 
     const navigate = useNavigate(); // Hook for navigation
+    const functions = getFunctions(); // Initialize functions
 
     // 检查用户是否已经登录
     useEffect(() => {
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            if (user) {
-                navigate("/");  // if user login, jump to the homepage
-            }
-        });
-        return () => unsubscribe();
+        // 可以在此处设置检查用户登录状态的逻辑
     }, [navigate]);
 
     const handleModeSwitch = (mode) => {
@@ -70,42 +64,34 @@ const LoginSignup = () => {
         }
 
         try {
-            const usersRef = collection(db, 'Users');
-            const q = query(usersRef, where('username', '==', username));
-            const querySnapshot = await getDocs(q);
+          const handleIdRequest = httpsCallable(functions, 'handleIdRequest');
+          console.log("Generating user ID...");
+          const idResponse = await handleIdRequest({
+            action: 'generate',
+            type: 'user', 
+            name: username
+          });
+          const generatedId = idResponse.data.idNum;
+          console.log("Generated ID:", generatedId);
 
-            if (!querySnapshot.empty) {
-                setUsernameError(true);
-                setErrorMessage("Username has already existed. Please try a new one.");
-                return;
-            }
-
-            const generatedEmail = email || `${username}@example.com`;
-            const userCredential = await createUserWithEmailAndPassword(auth, generatedEmail, password);
-            const user = userCredential.user;
-
-            await setDoc(doc(db, "Users", user.uid), {
-                username: username,
-                email: email || "",
-                password: password,
-                "browse history ID": "",
-                "product history ID": "",
-                "review history ID": ""
+            const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+            console.log("handleUserRequest successfully");
+            const response = await handleUserRequest({
+              action: 'generate',
+              uidNum: generatedId,
+              username: username,
+              password: password,
+              email: email,
             });
-
+            console.log("handleUserRequest successfully2");
             setIsSignupSuccessful(true);
             setPasswordError(false);
             console.log("Sign up successful");
             navigate("/loginSignup");
 
         } catch (error) {
-            console.error("Error signing up:", error.code, error.message);
-            if (error.code === 'auth/email-already-in-use') {
-                setEmailError(true);
-                setErrorMessage("Email has already existed. You can retry with a new email or login.");
-            } else {
-                setErrorMessage("An error occurred. Please try again.");
-            }
+            console.error("Error signing up:", error.message);
+            setErrorMessage("An error occurred. Please try again.");
         }
     };
 
@@ -113,24 +99,18 @@ const LoginSignup = () => {
         setLoginError("");
         setLoginSuccessful(false);
         try {
-            const usersRef = collection(db, 'Users');
-            const q = query(usersRef, where('username', '==', username));
-            const querySnapshot = await getDocs(q);
+            const handleLoginRequest = httpsCallable(functions, 'handleLoginRequest');
+            const loginResponse = await handleLoginRequest({ username, password });
 
-            if (querySnapshot.empty) {
+            if (loginResponse.data.success) {
+                setLoginSuccessful(true);
+                console.log("Login successful");
+                navigate("/");
+            } else {
                 setLoginError("Incorrect username or password.");
-                return;
             }
-
-            const userDoc = querySnapshot.docs[0];
-            const userData = userDoc.data();
-
-            await signInWithEmailAndPassword(auth, userData.email, password);
-            setLoginSuccessful(true);
-            console.log("Login successful");
-            navigate("/");//jump to homepage
         } catch (error) {
-            setLoginError("Incorrect username or password. Click forgot password if you need to reset.");
+            setLoginError("Incorrect username or password.");
         }
     };
 

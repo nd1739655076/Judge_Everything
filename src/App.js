@@ -9,7 +9,6 @@ import ForgotPassword from './Components/LoginSignup/ForgotPassword';
 import AccountSettings from './Components/HomePage/AccountSettings';
 import CreatProductEntry from './Components/HomePage/CreatProductEntry';
 
-
 function App() {
   return (
     <Router>

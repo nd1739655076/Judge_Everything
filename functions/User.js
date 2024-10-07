@@ -9,7 +9,7 @@ class User {
     this.password = password;
     this.email = email;
     this.nickname = '';
-    this.preferences = new Array(5);
+    this.preferences = [null, null, null, null, null];
     this.productProfileCreateHistory = [];
     this.followingList = [];
     this.followers = [];
@@ -20,21 +20,21 @@ class User {
   }
 
   async generateUser() {
-    const userDocRef = db.collection('User').doc(this.id.idNum);
+    const userDocRef = db.collection('User').doc(this.id);
     await userDocRef.set({
       id: this.id,
       username: this.username,
       password: this.password,
       email: this.email,
-      nickname: this.nickname,
-      preferences: this.preferences,
-      productProfileCreateHistory: this.productProfileCreateHistory,
-      followingList: this.followingList,
-      followers: this.followers,
-      conversationList: this.conversationList,
-      searchHistory: this.searchHistory,
-      browseHistory: this.browseHistory,
-      rateCommentHistory: this.rateCommentHistory,
+      nickname: null,
+      preferences: null,
+      productProfileCreateHistory: null,
+      followingList: null,
+      followers: null,
+      conversationList: null,
+      searchHistory: null,
+      browseHistory: null,
+      rateCommentHistory: null,
     });
   }
 }

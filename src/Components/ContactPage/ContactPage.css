@@ -189,7 +189,7 @@ body {
   padding-top: 0px;
   padding-right: 0px;
   padding-bottom: 0px;
-  padding-left: 0px;
+  padding-left: 12%;
 }
 
 .contact_us_6 .responsive-container-block.big-container {
@@ -275,7 +275,7 @@ body {
 }
 
 .contact_us_6 .input {
-  width: 100%;
+  width: 125%;
   height: 50px;
   padding-top: 1px;
   padding-right: 15px;
@@ -304,7 +304,7 @@ body {
 }
 
 .contact_us_6 .textinput {
-  width: 98%;
+  width: 115%;
   min-height: 150px;
   padding-top: 20px;
   padding-right: 15px;
@@ -527,9 +527,9 @@ body {
 
   .contact_us_6 .form-box {
     margin-top: 200px;
-    margin-right: 60px;
+    margin-right: 0px;
     margin-bottom: 0px;
-    margin-left: 0px;
+    margin-left: 15%;
   }
 
   .contact_us_6 .link-img {
@@ -574,7 +574,7 @@ body {
     margin-top: 200px;
     margin-right: 0px;
     margin-bottom: 40px;
-    margin-left: 0px;
+    margin-left: 15%;
   }
 }
 
@@ -631,12 +631,6 @@ body {
     flex-direction: column;
   }
 
-  .contact_us_6 .form-box {
-    margin-top: 200px;
-    margin-right: 0px;
-    margin-bottom: 0px;
-    margin-left: 0px;
-  }
 
   .contact_us_6 .container-block.form-wrapper {
     margin-top: 0px;
@@ -649,14 +643,7 @@ body {
     margin-top: 220px;
     margin-right: 0px;
     margin-bottom: 0px;
-    margin-left: 0px;
-  }
-
-  .contact_us_6 .form-box {
-    margin-top: 220px;
-    margin-right: 0px;
-    margin-bottom: 50px;
-    margin-left: 0px;
+    margin-left: 15%;
   }
 
   .contact_us_6 .text-blk.contactus-head {

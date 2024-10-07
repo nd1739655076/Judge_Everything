@@ -1,50 +1,64 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
 admin.initializeApp();
 
 const db = admin.firestore();
 
-class Id {
-  constructor(idNum = '', name = '') {
-    this.idNum = idNum;
-    this.name = name;
-  }
-
-  async generateId(type) {
-    let prefix;
-    switch (type.toLowerCase()) {
-      case 'user':
-        prefix = 'USE';
-        break;
-      case 'productEntry':
-        prefix = 'PRO';
-        break;
-      case 'parameter':
-        prefix = 'PAR';
-        break;
-      case 'comment':
-        prefix = 'COM';
-        break;
-    }
-
-    const CounterRef = db.collection('Counters').doc('totalIdCounter');
-    const totalIdCounterDoc = await CounterRef.get();
-    let updateCount = 0;
-    if (totalIdCounterDoc.exists) {
-      updateCount = totalIdCounterDoc.data().count + 1;
-    } else {
-      updateCount = 1;
-    }
-    await counterRef.set({ count: updateCount });
-    this.idNum = `${prefix}${updateCount}`;
-  }
-}
+const Id = require('./Id');
+const User = require('./User');
 
 exports.handleIdRequest = functions.https.onCall(async (data, context) => {
-  const idInstance = new Id();
-  switch (data.action) {
-    case 'generate':
-      const newId = idInstance.generateId();
-      break;
+  try {
+    if (action === 'generate') {
+      const newId = new Id();
+      const result = await newId.generateId(data.type, data.name);
+      return result;
+    }
+  } catch (error) {
+    console.error('Error generating ID:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to generate ID.');
   }
+});
+
+exports.handleUserRequest = functions.https.onCall(async (data, context) => {
+  try {
+    if (action === 'generate') {
+      const newUser = new User(data.uid, data.username, data.password, data.email);
+      await newUser.generateUser();
+    } 
+  } catch (error) {
+    console.error('Error handling user request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle user request');
+  }
+});
+
+exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const {action, prodidNum, productName, uidNum} = data;
+    if (action === 'generate') {
+      const productEntry = new ProductEntry(prodidNum, productName, uidNum);
+      await productEntry.generateProductEntry();
+    } 
+  } catch (error) {
+    console.error('Error handling product entry request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
+  }
+});
+
+exports.checkLoginStatus = functions.https.onCall(async (data, context) => {
+  if (context.auth) {
+    const uid = context.auth.uid;
+    const userDoc = await admin.firestore().collection('Users').doc(uid).get();
+    if (userDoc.exists) {
+      return { loggedIn: true, username: userDoc.data().username };
+    } else {
+      return { loggedIn: false };
+    }
+  } else {
+    return { loggedIn: false };
+  }
+});
+
+exports.handleLogout = functions.https.onCall(async (data, context) => {
+  return { success: true };
 });

@@ -18,45 +18,44 @@ const Homepage = () => {
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
-  useEffect(() => {
-    const currentUser = auth.onAuthStateChanged(async (user) => {
-      if (currentUser) {
-        setIsLoggedIn(true);
-        const currentUserRef = doc(db, 'User', user.uid.idNum);
-        const currentUserDoc = await getDoc(currentUserRef);
-        if (currentUserDoc.exists()) {
-          setUsername(currentUserDoc.data().nickname || currentUserDoc.data().username);
-        }
-      } else {
-        setIsLoggedIn(false);
-      }
-    });
-    return () => currentUser();
-  }, []);
-  useEffect(() => {
-    const now = new Date();
-    const hour = now.getHours();
-    let currentGreeting = "Good ";
-    if (hour >= 5 && hour < 12) {
-      currentGreeting += "morning";
-    } else if (hour >= 12 && hour < 17) {
-      currentGreeting += "afternoon";
-    } else if (hour >= 17 && hour < 21) {
-      currentGreeting += "evening";
-    } else {
-      currentGreeting += "night";
-    }
-    setGreeting(currentGreeting);
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      window.location.reload();
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
+  // useEffect(() => {
+  //   const currentUser = auth.onAuthStateChanged(async (user) => {
+  //     if (currentUser) {
+  //       setIsLoggedIn(true);
+  //       const currentUserRef = doc(db, 'User', user.idNum);
+  //       const currentUserDoc = await getDoc(currentUserRef);
+  //       if (currentUserDoc.exists()) {
+  //         setUsername(currentUserDoc.data().nickname || currentUserDoc.data().username);
+  //       }
+  //     } else {
+  //       setIsLoggedIn(false);
+  //     }
+  //   });
+  //   return () => currentUser();
+  // }, []);
+  // useEffect(() => {
+  //   const now = new Date();
+  //   const hour = now.getHours();
+  //   let currentGreeting = "Good ";
+  //   if (hour >= 5 && hour < 12) {
+  //     currentGreeting += "morning";
+  //   } else if (hour >= 12 && hour < 17) {
+  //     currentGreeting += "afternoon";
+  //   } else if (hour >= 17 && hour < 21) {
+  //     currentGreeting += "evening";
+  //   } else {
+  //     currentGreeting += "night";
+  //   }
+  //   setGreeting(currentGreeting);
+  // }, []);
+  // const handleLogout = async () => {
+  //   try {
+  //     await auth.signOut();
+  //     window.location.reload();
+  //   } catch (error) {
+  //     console.error("Error logging out:", error);
+  //   }
+  // };
 
   return (
 
@@ -100,7 +99,7 @@ const Homepage = () => {
             <div className="currentUserStatusInfo">
               <FaUser /> {username} 
               <FaSignOutAlt
-                onClick={handleLogout}
+                //onClick={handleLogout}
                 title="Logout"
                 className="logout-icon"
               />
@@ -112,13 +111,13 @@ const Homepage = () => {
           {isDropdownVisible && (
             <div className="dropdownMenu">
               <ul>
-                {!isLoggedIn ? (
+                {/* {!isLoggedIn ? ( */}
                   <li>
                     <div className="userauth">
                       <Link to="/loginSignup"><FaUser /> Login/Register</Link>
                     </div>
                   </li>
-                ) : (
+                {/* ) : ( */}
                   <>
                     <li>
                       <div className="notifcations">
@@ -136,7 +135,7 @@ const Homepage = () => {
                       </div>
                     </li>
                   </>
-                )}
+                {/* )} */}
               </ul>
             </div>
           )}

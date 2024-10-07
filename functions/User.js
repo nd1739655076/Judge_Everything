@@ -20,7 +20,7 @@ class User {
   }
 
   async generateUser() {
-    const userDocRef = db.collection('User').doc(this.id.idNum);
+    const userDocRef = db.collection('User').doc(this.idNum);
     await userDocRef.set({
       id: this.id,
       username: this.username,

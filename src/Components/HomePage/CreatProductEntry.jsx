@@ -37,35 +37,22 @@ const CreateProductEntry = () => {
     try {
       // Initialize Firebase Cloud Functions
       const functions = getFunctions();
-      const generateId = httpsCallable(functions, 'generateIdRequest');
+      const generateId = httpsCallable(functions, 'handleIdRequest');
+      const result = await generateId({ action: 'generate', type: 'productEntry', name: productName });
+      const generatedId = result.data.idNum;
+      const generateProductEntry = httpsCallable(functions, 'handleProductEntryRequest');
 
-      // Call the Cloud Function to generate a product ID
-      const result = await generateId({ type: 'productEntry', name: productName });
-      const generatedId = result.data.idNum; // Extract the generated ID from the response
+      // Call the Cloud Function to create a product entry
+      const resultEntry = await generateProductEntry({
+        action: 'generate',
+        prodidNum: generatedId, // Temporary random ID generation (you may have a better system)
+        productName: productName,
+        uidNum: creatorId,
+        //tagList: tags.filter(Boolean), // Filter out any empty tags
+        //parametorList: parameters.filter(Boolean) // Filter out empty parameters
+      });
 
-      console.log('Generated Product ID:', generatedId);
-
-      // Prepare the new product entry data
-      const newProductEntry = {
-        ID: generatedId,
-        productName,
-        creator: creatorId,
-        tags: tags.filter(Boolean), // Filter out any empty tags
-        parameters: parameters.filter(Boolean), // Filter out empty parameters
-        averageScore: {
-          average: 0,
-          totalScore: 0,
-          totalRater: 0,
-        },
-        commentList: [],
-        reportList: {},
-      };
-
-      // Save the new product entry in Firestore under the generated ID
-      const productRef = doc(collection(db, 'ProductEntries'), generatedId);
-      await setDoc(productRef, newProductEntry);
-
-      console.log('New product entry saved to Firestore:', newProductEntry);
+      console.log('Product entry created:', resultEntry);
 
       // Show success message
       setSuccess('Product entry created successfully!');
@@ -73,7 +60,7 @@ const CreateProductEntry = () => {
       // Reset form fields after successful submission
       setProductName('');
       setCreatorId('');
-      setTags(['']);
+      setTags(new Array(5).fill(''));
       setParameters(new Array(10).fill(''));
     } catch (err) {
       console.error('Error creating product entry:', err);

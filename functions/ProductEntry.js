@@ -8,7 +8,11 @@ class ProductEntry {
     this.productName = productName;
     this.creator = uidNum;
     this.tagList = new array(5);
-    this.averageScore = null;
+    this.averageScore = {
+      average: 0,
+      totalScore: 0,
+      totalRater: 0,
+    };
     this.parametorList = new array(10);
     this.commentList = [];
     this.reportList = new Map();

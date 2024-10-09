@@ -28,8 +28,8 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       console.log("Checking if username exists:", username);
       
       // check whether the same username in Firebase database
-      const usersRef = db.collection('User');
-      const querySnapshot = await usersRef.where('username', '==', username).get();
+      const usersRef = db.collection('User').where('username', '==', username);
+      const querySnapshot = await usersRef.get();
       
       if (!querySnapshot.empty) {
         console.log("Username already exists.");

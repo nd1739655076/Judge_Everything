@@ -11,29 +11,32 @@ const Id = require('./Id');
 const User = require('./User');
 const ProductEntry = require('./ProductEntry');
 
+// Id Handle
 exports.handleIdRequest = functions.https.onCall(async (data, context) => {
   try {
     const {action, type, name} = data;
+    // type, name
     if (action === 'generate') {
       const newId = new Id();
-      const result = await newId.generateId(type, name);
-      return result;
+      const idResponse = await newId.generateId(type, name);
+      return idResponse;
     }
+
   } catch (error) {
-    console.error('Error generating ID:', error);
-    throw new functions.https.HttpsError('internal', 'Failed to generate ID.');
+    console.error('Error handling Id request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle Id request.');
   }
 });
 
+// User Handle
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action, username, password, email, statusToken} = data;
     if (action === 'generate') {
       // username, password, email
-      console.log('Generating user for username:', username);
       const userDocRef = db.collection('User').where('username', '==', username);
-      const userSnapshot = await userDocRef.get();
-      if (!userSnapshot.empty) {
+      const userDoc = await userDocRef.get();
+      if (!userDoc.empty) {
         return { success: false, message: "Username exist" };
       }
       const newId = new Id();
@@ -46,33 +49,29 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 
     else if (action == 'login') {
       // username, password
-      console.log('Login request for username:', username);
-      const loginResult = await User.login(username, password);
-      if (loginResult.status === 'success') {
-        return { success: true, statusToken: loginResult.statusToken };
+      const loginResponse = await User.login(username, password);
+      if (loginResponse.status === 'success') {
+        return { success: true, statusToken: loginResponse.statusToken };
       } else {
-        return { success: false, message: loginResult.message };
+        return { success: false, message: loginResponse.message };
       }
     }
 
     else if (action === 'checkLoginStatus') {
-      console.log('Checking login status with statusToken:', statusToken);
-      const loginStatusResult = await User.checkLoginStatus(statusToken);
-      return loginStatusResult;
+      // statusToken
+      const loginStatusResponse = await User.checkLoginStatus(statusToken);
+      return loginStatusResponse;
     }
 
     else if (action === 'logout') {
+      // statusToken
       console.log('Logout request with statusToken:', statusToken);
-      const logoutResult = await User.logout(statusToken);
-      if (logoutResult.status === 'success') {
-        return logoutResult;
-      } else {
-        throw new functions.https.HttpsError('unauthenticated', logoutResult.message);
-      }
+      const logoutResponse = await User.logout(statusToken);
+      return logoutResponse;
     }
 
   } catch (error) {
-    console.error('Error handling user request:', error);
+    console.error('Error handling User request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle user request.');
   }
 });

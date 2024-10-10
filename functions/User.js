@@ -73,11 +73,11 @@ class User {
   // action == 'login'
   static async login(username, password) {
     const userDocRef = db.collection('User').where('username', '==', username);
-    const userSnapshot = await userDocRef.get();
-    if (userSnapshot.empty) {
-      return { status: 'error', message: 'User not found' };
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not exist' };
     }
-    const userDoc = userSnapshot.docs[0];
+    const userDoc = userDocRefSnapshot.docs[0];
     const userDocData = userDoc.data();
     //const isPasswordValid = await User.comparePasswords(password, userDocData.password);
     if (password !== userDocData.password) {
@@ -92,27 +92,25 @@ class User {
   static verifyToken(token) {
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
-      console.log('Token is valid. Decoded payload:', decoded);
       return { status: 'success', user: decoded };
     } catch (error) {
-      console.error('Invalid token:', error.message);
       return { status: 'error', message: 'Invalid or expired token' };
     }
   }
 
   // action === 'checkLoginStatus'
   static async checkLoginStatus(token) {
-    const verificationResult = User.verifyToken(token);
-    if (verificationResult.status === 'error') {
-      return { loggedIn: false, message: verificationResult.message };
+    const verificationResponse = User.verifyToken(token);
+    if (verificationResponse.status === 'error') {
+      return { status: 'error', message: verificationResponse.message };
     }
-    const uid = verificationResult.user.uid;
+    const uid = verificationResponse.user.uid;
     const userDoc = await db.collection('User').doc(uid).get();
     if (userDoc.exists) {
-      const userData = userDoc.data();
-      return { loggedIn: true, username: userData.username, uid: userData.id };
+      const userDocData = userDoc.data();
+      return { status: 'success', username: userDocData.username, uid: userDocData.id };
     } else {
-      return { loggedIn: false, message: 'User not found' };
+      return { status: 'error', message: 'User not found' };
     }
   }
 

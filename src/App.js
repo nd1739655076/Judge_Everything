@@ -8,6 +8,7 @@ import LoginSignup from './Components/LoginSignup/LoginSignup';
 import ForgotPassword from './Components/LoginSignup/ForgotPassword';
 import AccountSettings from './Components/HomePage/AccountSettings';
 import CreatProductEntry from './Components/HomePage/CreatProductEntry';
+import ProductEntry from './Components/ProductEntry/ProductEntry';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/forgotPassword" element={<ForgotPassword />} />
         <Route path="/accountSettings" element={<AccountSettings />} />
         <Route path="/creatProductEntry" element={<CreatProductEntry />} />
+        <Route path="/ProductEntry" element={<ProductEntry />} />
       </Routes>
     </Router>
   );

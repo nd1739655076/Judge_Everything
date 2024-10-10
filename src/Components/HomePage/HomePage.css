@@ -96,6 +96,35 @@ body {
   margin-left: 10px;
 }
 
+.currentUserStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-left: 15px;
+}
+.currentUserStatus .greeting {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 2px;
+}
+.currentUserStatus .currentUserStatusInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  color: #333333;
+}
+.currentUserStatus .currentUserStatusInfo svg {
+  font-size: 1.2rem;
+  color: #007bff;
+}
+.currentUserStatus .currentUserStatusInfo .logout-icon:hover {
+  color: #0056b3;
+}
+
 .menuContainer {
   position: relative;
 }

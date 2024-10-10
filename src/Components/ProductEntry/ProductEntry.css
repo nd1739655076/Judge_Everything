@@ -1,0 +1,221 @@
+/* Main container */
+@import "~slick-carousel/slick/slick.css"; 
+@import "~slick-carousel/slick/slick-theme.css";
+.product-entry-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Product Info */
+.product-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+}
+
+.product-image img {
+    max-width: 400px;
+    border-radius: 10px;
+}
+
+.product-details {
+    max-width: 600px;
+    padding: 0 20px;
+}
+
+.product-details h1 {
+    font-size: 2.5rem;
+    color: #212744;
+}
+
+.average-rating {
+    font-size: 1.5rem;
+    margin-top: 10px;
+    color: #f39c12;
+}
+
+.stars {
+    margin-top: 5px;
+}
+
+.stars svg {
+    color: #f39c12;
+    font-size: 1.5rem;
+}
+
+.rating-categories ul {
+    list-style: none;
+    padding: 0;
+}
+
+.rating-categories li {
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+.rating-categories span {
+    font-weight: bold;
+}
+
+.actions {
+    margin-top: 20px;
+}
+
+.like-button, .dislike-button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.dislike-button {
+    background-color: #d9534f;
+}
+
+.like-button:hover, .dislike-button:hover {
+    opacity: 0.9;
+}
+
+.creator-info {
+    margin-top: 20px;
+}
+
+.creator-info p {
+    display: inline-block;
+    margin-right: 15px;
+    color: #999;
+}
+
+.share-button {
+    background-color: transparent;
+    border: 1px solid #007bff;
+    color: #007bff;
+    padding: 5px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.share-button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Reviews Section */
+.reviews-section {
+    margin-bottom: 40px;
+}
+
+.reviews-section h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.reviews-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 400px;
+}
+
+.review-card {
+    background-color: #f9f9f9;
+    padding: 20px;
+    width: 220px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin-right: 100px;
+}
+
+.review-stars {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.review-card p {
+    margin: 10px 0;
+}
+
+.review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.review-likes {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.thumbs-up-icon {
+    margin-right: 5px;
+    color: #007bff;
+}
+
+/* Write Review Section */
+.write-review-section {
+    margin-bottom: 40px;
+}
+
+.write-review-section h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.review-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.review-form input,
+.review-form textarea {
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+textarea {
+    height: 150px;
+}
+
+.rating-section {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.rating-section p {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+}
+
+button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+button[type="submit"]:hover {
+    background-color: #0056b3;
+}

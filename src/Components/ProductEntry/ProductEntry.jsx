@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './ProductEntry.css';
 import { Link } from 'react-router-dom';
+import Modal from 'react-modal';
 import {
     FaPhone,
     FaEnvelope,
@@ -25,62 +26,67 @@ import {
 } from 'react-icons/fa';
 import Slider from "react-slick";
 
-const ProductEntry = () => {
-    const [titleRating, setTitleRating] = useState(0);  // Add this
-    const [batteryRating, setBatteryRating] = useState(0);  // Add this
-    const [storageRating, setStorageRating] = useState(0);  // Add this
-    const [cameraRating, setCameraRating] = useState(0);  // Add this
-    const [isDropdownVisible, setDropdownVisible] = useState(false);
-    const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
-    // State for favorite button
-    const [isFavorite, setIsFavorite] = useState(false);
+// Set Modal root element
+Modal.setAppElement('#root');
 
+const ProductEntry = () => {
+    // State definitions
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [selectedReview, setSelectedReview] = useState(null);
+    const [isDropdownVisible, setDropdownVisible] = useState(false);
+    const [titleRating, setTitleRating] = useState(0);
+    const [batteryRating, setBatteryRating] = useState(0);
+    const [storageRating, setStorageRating] = useState(0);
+    const [cameraRating, setCameraRating] = useState(0);
+
+    const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
+
+    const reviews = [
+        { id: 1, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10030, daysAgo: "2 minutes ago", battery: 5, camera: 4, storage: 5 },
+        { id: 2, title: "OMG It's expensive...", content: "OMG That's sooooo expensive.", user: "PPCAT (poor)", likes: 500000, daysAgo: "1 day ago", battery: 3, camera: 3, storage: 5 },
+        { id: 3, title: "Haha, just got one!", content: "I love this phone. I've gotten my 6th one today.", user: "PPCAT (rich)", likes: 4000, daysAgo: "3 mins ago", battery: 4, camera: 4, storage: 5 },
+        { id: 4, title: "Don't WASTE Your Money!!!!!!!!", content: "Don't buy it, the worst phone I've ever used🤮", user: "Judger", likes: 4, daysAgo: "200 days ago", battery: 1, camera: 0, storage: 1 },
+        { id: 5, title: "I love it, but...", content: "It's good, not different from the iPhone 15 ", user: "TechGuru", likes: 5000, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
+        { id: 6, title: "Great value for money", content: "The product is incredible, and I am really satisfied with its performance.", user: "momo", likes: 50, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
+        { id: 7, title: "Great value for money", content: "The product is incredible, and I am really satisfied with its performance.", user: "TechGuru", likes: 5000, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
+        { id: 8, title: "Great value for money", content: "The product is incredible, and I am really satisfied with its performance.", user: "TechGuru", likes: 5000, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
+
+    ];
+
+    // Function to open the modal
+    const openModal = (review) => {
+        setSelectedReview(review);
+        setModalIsOpen(true);
+    };
+
+    // Function to close the modal
+    const closeModal = () => {
+        setModalIsOpen(false);
+    };
+
+    // Slider settings
+    const sliderSettings = {
+        dots: true,
+        infinite: false,
+        speed: 500,
+        slidesToShow: 4,
+        slidesToScroll: 1,
+    };
 
     // Toggle favorite button
     const handleFavoriteClick = () => {
         setIsFavorite(!isFavorite);
     };
-    // Function to handle star click
+
+    // Function to handle star rating click
     const handleRating = (rating, setRating) => {
         setRating(rating);
     };
 
-    const reviews = [
-        { id: 1, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10030, daysAgo: "2 minutes ago" },
-        { id: 2, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10090, daysAgo: "2 days ago" },
-        { id: 3, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10005, daysAgo: "2 days ago" },
-        { id: 4, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 1000, daysAgo: "2 days ago" },
-        { id: 5, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 1000, daysAgo: "2 days ago" }
-    ];
-
-    // Add the slider settings here
-    const sliderSettings = {
-        dots: true,
-        infinite: true,
-        speed: 500,
-        slidesToShow: 4, // Adjust based on your need
-        slidesToScroll: 1,
-        responsive: [
-            {
-                breakpoint: 1024,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1,
-                },
-            },
-            {
-                breakpoint: 600,
-                settings: {
-                    slidesToShow: 1,
-                    slidesToScroll: 1,
-                },
-            },
-        ],
-    };
-
     return (
         <div className="product-entry-page">
-            {/* Tab Bar from Homepage */}
+            {/* Top bar from Homepage */}
             <div className="topbar">
                 <div className="contactinfo">
                     <FaPhone /> (225) 555-0118 | <FaEnvelope /> song748@purdue.edu
@@ -142,7 +148,7 @@ const ProductEntry = () => {
                 </div>
             </div>
 
-            {/* Product Image and Info */}
+            {/* Product Review Section */}
             <div className="product-entry-container">
                 <div className="product-info">
                     <div className="product-image">
@@ -185,12 +191,14 @@ const ProductEntry = () => {
                     <h2>Reviews About This Product</h2>
                     <Slider {...sliderSettings}>
                         {reviews.map((review) => (
-                            <div key={review.id} className="review-card">
+                            <div key={review.id} className="review-card" onClick={() => openModal(review)}>
                                 <div className="review-stars">
-                                    <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
+                                    {[...Array(5)].map((_, index) => (
+                                        <FaStar key={index} className={index < review.battery ? 'filled-star' : ''} />
+                                    ))}
                                 </div>
                                 <p><strong>{review.title}</strong></p>
-                                <p>{review.content}</p>
+                                <p>{review.content.substring(0, 40)}...</p>
                                 <p>{review.user} - {review.daysAgo}</p>
                                 <div className="review-footer">
                                     <div className="review-likes">
@@ -202,18 +210,92 @@ const ProductEntry = () => {
                     </Slider>
                 </div>
 
+                {/* Review Details Modal */}
+                {selectedReview && (
+                    <Modal
+                        isOpen={modalIsOpen}
+                        onRequestClose={closeModal}
+                        className="review-modal"
+                        overlayClassName="review-modal-overlay"
+                    >
+                        <h2>{selectedReview.title}</h2>
+                        <p><strong>By:</strong> {selectedReview.user}</p>
+                        <p><strong>Posted:</strong> {selectedReview.daysAgo}</p>
+                        <div className="modal-stars">
+                            <span>Overall Rating: </span>
+                            {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.battery ? 'filled-star' : ''} />
+                            ))}
+                        </div>
+                        <div className="rating-categories">
+                            <p><FaBatteryFull /> Battery: {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.battery ? 'filled-star' : ''} />
+                            ))}</p>
+                            <p><FaCamera /> Camera: {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.camera ? 'filled-star' : ''} />
+                            ))}</p>
+                            <p><FaHdd /> Storage: {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.storage ? 'filled-star' : ''} />
+                            ))}</p>
+                        </div>
+                        <p className="review-content">{selectedReview.content}</p>
+                        <button className="close-modal-button" onClick={closeModal}>Close</button>
+                    </Modal>
+                )}
+
                 {/* Write Review Section */}
                 <div className="write-review-section">
-                    <h2>Judge It Yourself!</h2>
+                    <h2 className="review-heading">Judge It Yourself!</h2>
                     <form className="review-form">
-                        <input type="text" placeholder="Type Your Title Here" />
+                        <div className="review-title">
+                            <input type="text" placeholder="Type Your Title Here" />
+                            <div className="title-stars">
+                                {[...Array(5)].map((_, index) => (
+                                    <FaStar
+                                        key={index}
+                                        className={index < titleRating ? 'filled-star' : ''}
+                                        onClick={() => handleRating(index + 1, setTitleRating)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                         <textarea placeholder="Write Some Comment Here..."></textarea>
                         <div className="rating-section">
-                            <p><FaLightbulb /> Battery Capacity</p>
-                            <p><FaHdd /> Storage</p>
-                            <p><FaCamera /> Camera</p>
+                            <div className="rating-item">
+                                <FaLightbulb />
+                                <span>Battery Capacity</span>
+                                {[...Array(5)].map((_, index) => (
+                                    <FaStar
+                                        key={index}
+                                        className={index < batteryRating ? 'filled-star' : ''}
+                                        onClick={() => handleRating(index + 1, setBatteryRating)}
+                                    />
+                                ))}
+                            </div>
+                            <div className="rating-item">
+                                <FaHdd />
+                                <span>Storage</span>
+                                {[...Array(5)].map((_, index) => (
+                                    <FaStar
+                                        key={index}
+                                        className={index < storageRating ? 'filled-star' : ''}
+                                        onClick={() => handleRating(index + 1, setStorageRating)}
+                                    />
+                                ))}
+                            </div>
+                            <div className="rating-item">
+                                <FaCamera />
+                                <span>Camera</span>
+                                {[...Array(5)].map((_, index) => (
+                                    <FaStar
+                                        key={index}
+                                        className={index < cameraRating ? 'filled-star' : ''}
+                                        onClick={() => handleRating(index + 1, setCameraRating)}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                        <button type="submit">Submit</button>
+                        <button type="submit" className="submit-button">Submit</button>
                     </form>
                 </div>
             </div>

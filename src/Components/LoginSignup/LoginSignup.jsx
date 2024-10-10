@@ -17,6 +17,7 @@ const LoginSignup = () => {
   const [reenterPassword, setReenterPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const resetForm = () => {
@@ -47,6 +48,8 @@ const LoginSignup = () => {
       return;
     }
     try {
+      setLoading(true);
+      setErrorMessage("");
       const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
       const response = await handleUserRequest({
         action: 'generate',
@@ -54,13 +57,16 @@ const LoginSignup = () => {
         password: password,
         email: email,
       });
+      setLoading(false);
       if (response.data.success) {
         console.log("Sign up successful");
-        setSuccessMessage(response.data.statusToken);
+        setErrorMessage("");
+        setSuccessMessage(response.data.message);
       } else {
         setErrorMessage(response.data.message);
       }
     } catch (error) {
+      setLoading(false);
       console.error('Error signing up:', error.message);
       setErrorMessage("An error occurred during signup. Please try again.");
     }
@@ -68,15 +74,19 @@ const LoginSignup = () => {
 
   const handleLogin = async () => {
     try {
+      setLoading(true);
+      setErrorMessage("");
       const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
       const response = await handleUserRequest({
         action: 'login',
         username: username,
         password: password,
       });
+      setLoading(false);
       if (response.data.success) {
         console.log("Login successful");
         localStorage.setItem('authToken', response.data.statusToken);
+        setErrorMessage("");
         setSuccessMessage("Login successful! Redirecting...");
         setTimeout(() => {
           navigate("/");
@@ -85,6 +95,7 @@ const LoginSignup = () => {
         setErrorMessage(response.data.message);
       }
     } catch (error) {
+      setLoading(false);
       console.error('Error logging in:', error.message);
       setErrorMessage("Incorrect username or password.");
     }
@@ -161,6 +172,7 @@ const LoginSignup = () => {
             </div>
         )}
         <div className="message">
+            {loading && <div className="loading-message">Loading...</div>}
             {errorMessage && <p className="error-message">{errorMessage}</p>}
             {successMessage && <p className="success-message">{successMessage}</p>}
         </div>

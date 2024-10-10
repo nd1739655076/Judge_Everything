@@ -105,7 +105,6 @@ class User {
       return { status: 'error', message: verificationResponse.message };
     }
     const uid = verificationResponse.user.uid;
-    console.log("UID obtained from token:", uid);
     if (!uid) {
       return { status: 'error', message: 'Invalid UID' };
     }
@@ -128,6 +127,34 @@ class User {
     const userDocRef = db.collection('User').doc(uid);
     await userDocRef.update({ statusToken: null });
     return { status: 'success', message: 'User logged out successfully' };
+  }
+
+  // action === 'getUserData'
+  static async getUserData(uid) {
+    const userDocRef = db.collection('User').doc(uid);
+    const userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      return { status: 'error', message: 'User not found' };
+    }
+    const userDocData = userDoc.data();
+    return {
+      status: 'success',
+      data: {
+        id: userDocData.id,
+        username: userDocData.username,
+        password: userDocData.password,
+        email: userDocData.email,
+        nickname: userDocData.nickname,
+        preferences: userDocData.preferences,
+        productProfileCreateHistory: userDocData.productProfileCreateHistory,
+        followingList: userDocData.followingList,
+        followers: userDocData.followers,
+        conversationList: userDocData.conversationList,
+        searchHistory: userDocData.searchHistory,
+        browseHistory: userDocData.browseHistory,
+        rateCommentHistory: userDocData.rateCommentHistory,
+      },
+    };
   }
 
 }

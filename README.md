@@ -9,3 +9,7 @@
 ## 2. firebase login (Get-ExecutionPolicy; Set-ExecutionPolicy RemoteSigned -Scope CurrentUser)
 ## 3. firebase init
 ## 4. firebase deploy --only functions (Upload functions)
+
+# Product Entry Installation List:
+## 1. npm install react-slick slick-carousel   (used for the sliding review card)
+## 2. npm install react-modal (used for detail modal for the review card)

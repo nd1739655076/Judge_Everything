@@ -27,28 +27,50 @@ exports.handleIdRequest = functions.https.onCall(async (data, context) => {
 
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, uidNum, username, password, email } = data;
+    const { action, username, password, email, statusToken} = data;
     if (action === 'generate') {
-      console.log("Checking if username exists:", username);
-      
-      // check whether the same username in Firebase database
-      const usersRef = db.collection('User');
-      const querySnapshot = await usersRef.where('username', '==', username).get();
-      
-      if (!querySnapshot.empty) {
-        console.log("Username already exists.");
-        throw new functions.https.HttpsError('already-exists', 'The username is already taken. Please choose another one.');
+      // username, password, email
+      console.log('Generating user for username:', username);
+      const userDocRef = db.collection('User').where('username', '==', username);
+      const userSnapshot = await userDocRef.get();
+      if (!userSnapshot.empty) {
+        return { success: false, message: "Username exist" };
       }
-
+      const newId = new Id();
+      const idResponse = await newId.generateId('user', username);
+      const uidNum = idResponse.idNum;
       const newUser = new User(uidNum, username, password, email);
-      console.log("Creating new user with ID:", uidNum);
-      await newUser.generateUser();  // use generate user
-      console.log("User successfully created.");
-
-      return { success: true, message: "User successfully created" };
-    } else {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid action.');
+      await newUser.generateUser();
+      return { success: true, message: "Sign up successful! You can now log in." };
     }
+
+    else if (action == 'login') {
+      // username, password
+      console.log('Login request for username:', username);
+      const loginResult = await User.login(username, password);
+      if (loginResult.status === 'success') {
+        return { success: true, statusToken: loginResult.statusToken };
+      } else {
+        return { success: false, message: loginResult.message };
+      }
+    }
+
+    else if (action === 'checkLoginStatus') {
+      console.log('Checking login status with statusToken:', statusToken);
+      const loginStatusResult = await User.checkLoginStatus(statusToken);
+      return loginStatusResult;
+    }
+
+    else if (action === 'logout') {
+      console.log('Logout request with statusToken:', statusToken);
+      const logoutResult = await User.logout(statusToken);
+      if (logoutResult.status === 'success') {
+        return logoutResult;
+      } else {
+        throw new functions.https.HttpsError('unauthenticated', logoutResult.message);
+      }
+    }
+
   } catch (error) {
     console.error('Error handling user request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle user request.');
@@ -59,29 +81,11 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
   try {
     const {action, prodidNum, productName, uidNum} = data;
     if (action === 'generate') {
-      const productEntry = new ProductEntry(prodidNum, productName, uidNum);
-      await productEntry.generateProductEntry();
+      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum);
+      await newProductEntry.generateProductEntry();
     } 
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
   }
-});
-
-exports.checkLoginStatus = functions.https.onCall(async (data, context) => {
-  if (context.auth) {
-    const uid = context.auth.uid;
-    const userDoc = await admin.firestore().collection('Users').doc(uid).get();
-    if (userDoc.exists) {
-      return { loggedIn: true, username: userDoc.data().username };
-    } else {
-      return { loggedIn: false };
-    }
-  } else {
-    return { loggedIn: false };
-  }
-});
-
-exports.handleLogout = functions.https.onCall(async (data, context) => {
-  return { success: true };
 });

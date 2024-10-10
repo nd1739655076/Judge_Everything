@@ -83,7 +83,7 @@ class User {
     if (password !== userDocData.password) {
       return { status: 'error', message: 'Invalid password' };
     }
-    const statusToken = User.generateStatusToken(username, userDocData.uid);
+    const statusToken = User.generateStatusToken(username, userDocData.id);
     await userDoc.ref.update({ statusToken });
     return { status: 'success', statusToken: statusToken };
   }
@@ -105,6 +105,10 @@ class User {
       return { status: 'error', message: verificationResponse.message };
     }
     const uid = verificationResponse.user.uid;
+    console.log("UID obtained from token:", uid);
+    if (!uid) {
+      return { status: 'error', message: 'Invalid UID' };
+    }
     const userDoc = await db.collection('User').doc(uid).get();
     if (userDoc.exists) {
       const userDocData = userDoc.data();

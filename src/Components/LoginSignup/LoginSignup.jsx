@@ -56,7 +56,7 @@ const LoginSignup = () => {
       });
       if (response.data.success) {
         console.log("Sign up successful");
-        setSuccessMessage(response.data.message);
+        setSuccessMessage(response.data.statusToken);
       } else {
         setErrorMessage(response.data.message);
       }

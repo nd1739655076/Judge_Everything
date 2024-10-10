@@ -20,13 +20,30 @@ import {
     FaHdd,
     FaCamera,
     FaShareAlt,
-    FaThumbsUp
+    FaThumbsUp,
+    FaExclamationTriangle
 } from 'react-icons/fa';
 import Slider from "react-slick";
 
 const ProductEntry = () => {
+    const [titleRating, setTitleRating] = useState(0);  // Add this
+    const [batteryRating, setBatteryRating] = useState(0);  // Add this
+    const [storageRating, setStorageRating] = useState(0);  // Add this
+    const [cameraRating, setCameraRating] = useState(0);  // Add this
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
+    // State for favorite button
+    const [isFavorite, setIsFavorite] = useState(false);
+
+
+    // Toggle favorite button
+    const handleFavoriteClick = () => {
+        setIsFavorite(!isFavorite);
+    };
+    // Function to handle star click
+    const handleRating = (rating, setRating) => {
+        setRating(rating);
+    };
 
     const reviews = [
         { id: 1, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10030, daysAgo: "2 minutes ago" },
@@ -41,7 +58,7 @@ const ProductEntry = () => {
         dots: true,
         infinite: true,
         speed: 500,
-        slidesToShow: 2, // Adjust based on your need
+        slidesToShow: 4, // Adjust based on your need
         slidesToScroll: 1,
         responsive: [
             {
@@ -132,7 +149,15 @@ const ProductEntry = () => {
                         <img src="https://via.placeholder.com/400" alt="Product" />
                     </div>
                     <div className="product-details">
-                        <h1>iPhone 16</h1>
+                        <h1>iPhone 16
+                            <FaStar
+                                className={`favorite-icon ${isFavorite ? 'favorite-active' : ''}`}
+                                onClick={handleFavoriteClick}
+                            />
+                            <button className="report-button">
+                                <FaExclamationTriangle /> Report
+                            </button>
+                        </h1>
                         <p className="average-rating">Average: 5.0 / 5.0</p>
                         <div className="stars">
                             <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />

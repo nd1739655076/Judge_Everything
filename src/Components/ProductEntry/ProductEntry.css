@@ -2,10 +2,11 @@
 @import "~slick-carousel/slick/slick.css"; 
 @import "~slick-carousel/slick/slick-theme.css";
 .product-entry-container {
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 1900px;
+    margin: 40px auto;
     padding: 20px;
     font-family: 'Arial', sans-serif;
+    gap: 30px;
 }
 
 /* Product Info */
@@ -15,19 +16,49 @@
     margin-bottom: 40px;
 }
 
+.favorite-icon {
+    font-size: 1.5rem;
+    color: #ccc;  /* Default color (not favorited) */
+    cursor: pointer;
+    transition: color 0.3s ease;
+    margin-left: 25px;
+}
+
+.favorite-active {
+    color: #f39c12; /* Favorite (gold star) color */
+}
+.report-button {
+    background-color: transparent;
+    border: 1px solid #d9534f;
+    color: #d9534f;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin-left: 45px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.report-button:hover {
+    background-color: #d9534f;
+    color: white;
+}
 .product-image img {
     max-width: 400px;
     border-radius: 10px;
+    margin-left: 400px;
+    margin-right: 40px;
 }
 
 .product-details {
-    max-width: 600px;
+    max-width: 900px;
     padding: 0 20px;
 }
 
 .product-details h1 {
     font-size: 2.5rem;
     color: #212744;
+    display: inline-block;
+    margin-right: 100px;
 }
 
 .average-rating {

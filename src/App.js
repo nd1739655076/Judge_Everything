@@ -20,7 +20,7 @@ function App() {
         <Route path="/forgotPassword" element={<ForgotPassword />} />
         <Route path="/accountSettings" element={<AccountSettings />} />
         <Route path="/creatProductEntry" element={<CreatProductEntry />} />
-        <Route path="/ProductEntry" element={<ProductEntry />} />
+        <Route path="/product/:productId" element={<ProductEntry />} /> {/* Dynamic route for product details */}
       </Routes>
     </Router>
   );

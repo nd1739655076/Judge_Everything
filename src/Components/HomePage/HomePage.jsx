@@ -1,23 +1,47 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
+import { getFirestore, collection, getDocs } from 'firebase/firestore'; // Import Firestore
 import { functions } from '../../firebase';
+import { Link } from 'react-router-dom';
+
+import { FaSearch, FaBell, FaHistory, FaCog, FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter, FaUser, FaBars, FaSignOutAlt } from 'react-icons/fa';
 import './HomePage.css';
 
-import { Link } from 'react-router-dom';
-import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
-import logoImage from "../HomePageAssets/404.jpg";
-
 const Homepage = () => {
-
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
+  const [products, setProducts] = useState([]); // To store the list of products
+  const [loading, setLoading] = useState(true); // Loading state for fetching products
+
+  const db = getFirestore(); // Initialize Firestore
 
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
+
+  // Fetch the list of products from Firestore
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const productEntriesRef = collection(db, 'ProductEntry');
+        const productSnapshot = await getDocs(productEntriesRef);
+        const productList = productSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setProducts(productList); // Update the product list state
+      } catch (error) {
+        console.error("Error fetching product list:", error);
+      } finally {
+        setLoading(false); // Stop loading once the data is fetched
+      }
+    };
+
+    fetchProducts();
+  }, [db]);
+
   useEffect(() => {
     const checkLoginStatus = async () => {
       const localStatusToken = localStorage.getItem('authToken');
@@ -47,6 +71,7 @@ const Homepage = () => {
     };
     checkLoginStatus();
   }, []);
+
   useEffect(() => {
     const now = new Date();
     const hour = now.getHours();
@@ -62,6 +87,7 @@ const Homepage = () => {
     }
     setGreeting(currentGreeting);
   }, []);
+
   const handleLogout = async () => {
     const localStatusToken = localStorage.getItem('authToken');
     if (localStatusToken) {
@@ -84,9 +110,7 @@ const Homepage = () => {
   };
 
   return (
-
     <div className="homepage">
-    
       {/* Top Bar */}
       <div className="topbar">
         <div className="contactinfo">
@@ -179,55 +203,32 @@ const Homepage = () => {
             <button>Create a New Entry</button>
           </Link>
         </div>
-        <div className="createNewEntryImage">
-          <img src={logoImage} alt="Create a New Entry???" />
-        </div>
       </section>
 
-      {/* Create Most Popular Entries Section */}
-      <section className="mostPopularEntries">
-        <div className="mostPopularEntriesHeader">
-          <h1>Ranking</h1>
-          <h2>Most Popular Entries This Week</h2>
-          <p>will update every Thursday 11:59 p.m. EST</p>
-        </div>
-        <div className="mostPopularEntriesGrid">
-          <div className="mostPopularEntryCard">
-            <img src="???.jpg" alt="???" />
-            <h1>???</h1>
-            <p>???</p>
-            <a href="#">View</a>
+      {/* Product Listing Section */}
+      <section className="productListing">
+        <h2>Available Products</h2>
+        {loading ? (
+          <div>Loading products...</div>
+        ) : (
+          <div className="product-list">
+            {products.length > 0 ? (
+              products.map(product => (
+                <div key={product.id} className="product-item">
+                  <Link to={`/product/${product.id}`}>
+                    <h3>{product.productName}</h3>
+                    <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
+                  </Link>
+                </div>
+              ))
+            ) : (
+              <p>No products available</p>
+            )}
           </div>
-        </div>
-        <div className="mostPopularLoadMore">
-          <button>LOAD MORE ENTRIES</button>
-        </div>
+        )}
       </section>
-
-      {/* Create Recommendation Entries Section */}
-      <section className="recommendationEntries">
-        <div className="recommendationEntriesHeader">
-          <h1>Recommendations</h1>
-          <h2>The Products You May Like...</h2>
-          <p>Change your preference in your account setting anytime!</p>
-        </div>
-        <div className="recommendationEntriesGrid">
-          <div className="recommendationEntryCard">
-            <img src="???.jpg" alt="???" />
-            <h1>???</h1>
-            <p>???</p>
-            <a href="#">View</a>
-          </div>
-        </div>
-        <div className="recommendationLoadMore">
-          <button>LOAD MORE ENTRIES</button>
-        </div>
-      </section>
-
     </div>
-
   );
-
 };
 
 export default Homepage;

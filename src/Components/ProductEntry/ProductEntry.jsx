@@ -1,302 +1,185 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ProductEntry.css';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import Modal from 'react-modal';
-import {
-    FaPhone,
-    FaEnvelope,
-    FaInstagram,
-    FaYoutube,
-    FaTwitter,
-    FaSearch,
-    FaUser,
-    FaBars,
-    FaBell,
-    FaHistory,
-    FaCog,
-    FaSignOutAlt,
-    FaStar,
-    FaLightbulb,
-    FaBatteryFull,
-    FaHdd,
-    FaCamera,
-    FaShareAlt,
-    FaThumbsUp,
-    FaExclamationTriangle
-} from 'react-icons/fa';
+import { FaStar } from 'react-icons/fa';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc } from 'firebase/firestore'; // Firestore imports
 import Slider from "react-slick";
 
-// Set Modal root element
 Modal.setAppElement('#root');
 
 const ProductEntry = () => {
-    // State definitions
-    const [isFavorite, setIsFavorite] = useState(false);
-    const [modalIsOpen, setModalIsOpen] = useState(false);
-    const [selectedReview, setSelectedReview] = useState(null);
-    const [isDropdownVisible, setDropdownVisible] = useState(false);
-    const [titleRating, setTitleRating] = useState(0);
-    const [batteryRating, setBatteryRating] = useState(0);
-    const [storageRating, setStorageRating] = useState(0);
-    const [cameraRating, setCameraRating] = useState(0);
+    const { productId } = useParams(); // Get the product ID from URL
+    const [productData, setProductData] = useState(null); // State to store product data
+    const [parameters, setParameters] = useState([]); // State to store product parameters
+    const [userProductRating, setUserProductRating] = useState(0); // Store user's overall product rating
+    const [userRatings, setUserRatings] = useState({}); // Store user's ratings for each parameter
+    const [userComment, setUserComment] = useState(''); // Store user's general comment
+    const [loading, setLoading] = useState(true); // Loading state while fetching data
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
 
-    const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
+    const db = getFirestore(); // Initialize Firestore
 
-    const reviews = [
-        { id: 1, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10030, daysAgo: "2 minutes ago", battery: 5, camera: 4, storage: 5 },
-        { id: 2, title: "OMG It's expensive...", content: "OMG That's sooooo expensive.", user: "PPCAT (poor)", likes: 500000, daysAgo: "1 day ago", battery: 3, camera: 3, storage: 5 },
-        { id: 3, title: "Haha, just got one!", content: "I love this phone. I've gotten my 6th one today.", user: "PPCAT (rich)", likes: 4000, daysAgo: "3 mins ago", battery: 4, camera: 4, storage: 5 },
-        { id: 4, title: "Don't WASTE Your Money!!!!!!!!", content: "Don't buy it, the worst phone I've ever used🤮", user: "Judger", likes: 4, daysAgo: "200 days ago", battery: 1, camera: 0, storage: 1 },
-        { id: 5, title: "I love it, but...", content: "It's good, not different from the iPhone 15 ", user: "TechGuru", likes: 5000, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
-        { id: 6, title: "Great value for money", content: "The product is incredible, and I am really satisfied with its performance.", user: "momo", likes: 50, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
-        { id: 7, title: "Great value for money", content: "The product is incredible, and I am really satisfied with its performance.", user: "TechGuru", likes: 5000, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
-        { id: 8, title: "Great value for money", content: "The product is incredible, and I am really satisfied with its performance.", user: "TechGuru", likes: 5000, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
+    // Fetch product data on component mount
+    useEffect(() => {
+        const fetchProductData = async () => {
+            try {
+                // Fetch the product data from Firestore
+                const productRef = doc(db, 'ProductEntry', productId);
+                const productSnap = await getDoc(productRef);
 
-    ];
+                if (productSnap.exists()) {
+                    setProductData(productSnap.data());
 
-    // Function to open the modal
-    const openModal = (review) => {
-        setSelectedReview(review);
-        setModalIsOpen(true);
+                    // Fetch the parameters associated with the product
+                    const paramsQuery = query(collection(db, 'Parameters'), where('productId', '==', productId));
+                    const paramsSnapshot = await getDocs(paramsQuery);
+                    const paramList = paramsSnapshot.docs.map(doc => doc.data());
+                    setParameters(paramList);
+                }
+            } catch (error) {
+                console.error("Error fetching product data: ", error);
+            } finally {
+                setLoading(false); // Set loading to false once data is fetched
+            }
+        };
+
+        fetchProductData();
+    }, [productId]);
+
+    // Handle user's overall product rating
+    const handleProductRatingChange = (rating) => {
+        setUserProductRating(rating); // Update the overall product rating
     };
 
-    // Function to close the modal
-    const closeModal = () => {
-        setModalIsOpen(false);
+    // Handle user's rating for each parameter
+    const handleRatingChange = (paramId, rating) => {
+        setUserRatings((prevRatings) => ({
+            ...prevRatings,
+            [paramId]: rating, // Store rating for each parameter
+        }));
     };
 
-    // Slider settings
-    const sliderSettings = {
-        dots: true,
-        infinite: false,
-        speed: 500,
-        slidesToShow: 4,
-        slidesToScroll: 1,
+    // Handle comment submission
+    const handleCommentChange = (e) => {
+        setUserComment(e.target.value);
     };
 
-    // Toggle favorite button
-    const handleFavoriteClick = () => {
-        setIsFavorite(!isFavorite);
+    // Submit user ratings and comment to Firestore
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            setSuccessMessage('');
+            setErrorMessage('');
+
+            // Submit the overall product rating
+            const productRef = doc(db, 'ProductEntry', productId);
+            const productSnap = await getDoc(productRef);
+            if (productSnap.exists()) {
+                const productData = productSnap.data();
+                const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
+                const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
+                const newAverageScore = newTotalScore / newTotalRaters;
+
+                // Update product's average rating in Firestore
+                await setDoc(productRef, {
+                    averageScore: {
+                        average: newAverageScore,
+                        totalScore: newTotalScore,
+                        totalRater: newTotalRaters,
+                    }
+                }, { merge: true });
+            }
+
+            // Submit the user's ratings for each parameter
+            for (const [paramId, rating] of Object.entries(userRatings)) {
+                const paramRef = doc(db, 'Parameters', paramId);
+                const paramSnap = await getDoc(paramRef);
+
+                if (paramSnap.exists()) {
+                    const paramData = paramSnap.data();
+                    const newTotalRaters = (paramData.totalRaters || 0) + 1;
+                    const newTotalScore = (paramData.totalScore || 0) + rating;
+                    const newAverageScore = newTotalScore / newTotalRaters;
+
+                    // Update parameter's average rating in Firestore
+                    await setDoc(paramRef, {
+                        averageScore: {
+                            average: newAverageScore,
+                            totalScore: newTotalScore,
+                            totalRaters: newTotalRaters,
+                        }
+                    }, { merge: true });
+                }
+            }
+
+            setSuccessMessage('Your ratings and comment have been submitted!');
+            setUserComment(''); // Clear comment input
+            setUserRatings({}); // Clear user ratings
+            setUserProductRating(0); // Clear product rating
+        } catch (error) {
+            setErrorMessage('Failed to submit your ratings and comment. Please try again.');
+            console.error('Error submitting ratings and comment:', error);
+        }
     };
 
-    // Function to handle star rating click
-    const handleRating = (rating, setRating) => {
-        setRating(rating);
-    };
+    if (loading) {
+        return <div>Loading...</div>; // Show a loading state
+    }
+
+    if (!productData) {
+        return <div>Product not found</div>; // Show a message if the product is not found
+    }
 
     return (
         <div className="product-entry-page">
-            {/* Top bar from Homepage */}
-            <div className="topbar">
-                <div className="contactinfo">
-                    <FaPhone /> (225) 555-0118 | <FaEnvelope /> song748@purdue.edu
-                </div>
-                <div className="subscribeinfo">
-                    Subscribe with email to get newest product information! 🎉
-                </div>
-                <div className="socialicons">
-                    <p>Follow Us :</p>
-                    <a href="#"><FaInstagram /></a>
-                    <a href="#"><FaYoutube /></a>
-                    <a href="#"><FaTwitter /></a>
-                </div>
-            </div>
-
-            {/* Navigation Bar */}
-            <div className="navbar">
-                <div className="logoTitle">
-                    <h1>Judge Everything</h1>
-                </div>
-                <div className="navlinks">
-                    <a href="/">Home</a>
-                    <a href="#">About</a>
-                    <a href="/contact">Support</a>
-                </div>
-                <div className="searchbar">
-                    <FaSearch />
-                    <input type="text" placeholder="Search" />
-                </div>
-
-                <div className="menuContainer">
-                    <FaBars className="menuicon" onClick={toggleDropdown} />
-                    {isDropdownVisible && (
-                        <div className="dropdownMenu">
-                            <ul>
-                                <li>
-                                    <div className="userauth">
-                                        <Link to="/loginSignup"><FaUser /> Login/Register</Link>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="notifcations">
-                                        <a href="#"><FaBell /> Notification</a>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="historys">
-                                        <a href="#"><FaHistory /> History</a>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="settings">
-                                        <Link to="/accountSettings"><FaCog /> Your Account</Link>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Product Review Section */}
             <div className="product-entry-container">
                 <div className="product-info">
-                    <div className="product-image">
-                        <img src="https://via.placeholder.com/400" alt="Product" />
-                    </div>
-                    <div className="product-details">
-                        <h1>iPhone 16
-                            <FaStar
-                                className={`favorite-icon ${isFavorite ? 'favorite-active' : ''}`}
-                                onClick={handleFavoriteClick}
-                            />
-                            <button className="report-button">
-                                <FaExclamationTriangle /> Report
-                            </button>
-                        </h1>
-                        <p className="average-rating">Average: 5.0 / 5.0</p>
-                        <div className="stars">
-                            <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
-                        </div>
-                        <div className="rating-categories">
-                            <ul>
-                                <li><span>Battery:</span> <FaStar /><FaStar /><FaStar /><FaStar /><FaStar /></li>
-                                <li><span>Storage:</span> <FaStar /><FaStar /><FaStar /><FaStar /><FaStar /></li>
-                                <li><span>Camera:</span> <FaStar /><FaStar /><FaStar /><FaStar /><FaStar /></li>
-                            </ul>
-                        </div>
-                        <div className="actions">
-                            <button className="like-button">Like This Entry</button>
-                            <button className="dislike-button">Dislike This Entry</button>
-                        </div>
-                        <div className="creator-info">
-                            <p>Creator: 123456</p>
-                            <button className="share-button"><FaShareAlt /> Share</button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Reviews Section */}
-                <div className="reviews-section">
-                    <h2>Reviews About This Product</h2>
-                    <Slider {...sliderSettings}>
-                        {reviews.map((review) => (
-                            <div key={review.id} className="review-card" onClick={() => openModal(review)}>
-                                <div className="review-stars">
-                                    {[...Array(5)].map((_, index) => (
-                                        <FaStar key={index} className={index < review.battery ? 'filled-star' : ''} />
-                                    ))}
-                                </div>
-                                <p><strong>{review.title}</strong></p>
-                                <p>{review.content.substring(0, 40)}...</p>
-                                <p>{review.user} - {review.daysAgo}</p>
-                                <div className="review-footer">
-                                    <div className="review-likes">
-                                        <FaThumbsUp className="thumbs-up-icon" /> {review.likes}
-                                    </div>
-                                </div>
-                            </div>
+                    <h1>{productData.productName}</h1>
+                    <p className="average-rating">Average: {productData.averageScore.average} / 5.0</p>
+                    
+                    {/* Overall Product Rating */}
+                    <h3>Rate this Product</h3>
+                    <div className="stars">
+                        {[...Array(5)].map((_, index) => (
+                            <FaStar key={index} className={index < userProductRating ? 'filled-star' : ''} onClick={() => handleProductRatingChange(index + 1)} />
                         ))}
-                    </Slider>
+                    </div>
+
+                    {/* Parameter Ratings */}
+                    <div className="rating-categories">
+                        <ul>
+                            {parameters.map((param, index) => (
+                                <li key={index}>
+                                    <span>{param.paramName}:</span> 
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar key={starIndex} className={userRatings[param.paramId] >= starIndex + 1 ? 'filled-star' : ''} onClick={() => handleRatingChange(param.paramId, starIndex + 1)} />
+                                    ))}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
 
-                {/* Review Details Modal */}
-                {selectedReview && (
-                    <Modal
-                        isOpen={modalIsOpen}
-                        onRequestClose={closeModal}
-                        className="review-modal"
-                        overlayClassName="review-modal-overlay"
-                    >
-                        <h2>{selectedReview.title}</h2>
-                        <p><strong>By:</strong> {selectedReview.user}</p>
-                        <p><strong>Posted:</strong> {selectedReview.daysAgo}</p>
-                        <div className="modal-stars">
-                            <span>Overall Rating: </span>
-                            {[...Array(5)].map((_, index) => (
-                                <FaStar key={index} className={index < selectedReview.battery ? 'filled-star' : ''} />
-                            ))}
-                        </div>
-                        <div className="rating-categories">
-                            <p><FaBatteryFull /> Battery: {[...Array(5)].map((_, index) => (
-                                <FaStar key={index} className={index < selectedReview.battery ? 'filled-star' : ''} />
-                            ))}</p>
-                            <p><FaCamera /> Camera: {[...Array(5)].map((_, index) => (
-                                <FaStar key={index} className={index < selectedReview.camera ? 'filled-star' : ''} />
-                            ))}</p>
-                            <p><FaHdd /> Storage: {[...Array(5)].map((_, index) => (
-                                <FaStar key={index} className={index < selectedReview.storage ? 'filled-star' : ''} />
-                            ))}</p>
-                        </div>
-                        <p className="review-content">{selectedReview.content}</p>
-                        <button className="close-modal-button" onClick={closeModal}>Close</button>
-                    </Modal>
-                )}
+                {/* User Rating and Comment Section */}
+                <div className="user-rating-comment">
+                    <h3>Judge It Yourself!</h3>
 
-                {/* Write Review Section */}
-                <div className="write-review-section">
-                    <h2 className="review-heading">Judge It Yourself!</h2>
-                    <form className="review-form">
-                        <div className="review-title">
-                            <input type="text" placeholder="Type Your Title Here" />
-                            <div className="title-stars">
-                                {[...Array(5)].map((_, index) => (
-                                    <FaStar
-                                        key={index}
-                                        className={index < titleRating ? 'filled-star' : ''}
-                                        onClick={() => handleRating(index + 1, setTitleRating)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                        <textarea placeholder="Write Some Comment Here..."></textarea>
-                        <div className="rating-section">
-                            <div className="rating-item">
-                                <FaLightbulb />
-                                <span>Battery Capacity</span>
-                                {[...Array(5)].map((_, index) => (
-                                    <FaStar
-                                        key={index}
-                                        className={index < batteryRating ? 'filled-star' : ''}
-                                        onClick={() => handleRating(index + 1, setBatteryRating)}
-                                    />
-                                ))}
-                            </div>
-                            <div className="rating-item">
-                                <FaHdd />
-                                <span>Storage</span>
-                                {[...Array(5)].map((_, index) => (
-                                    <FaStar
-                                        key={index}
-                                        className={index < storageRating ? 'filled-star' : ''}
-                                        onClick={() => handleRating(index + 1, setStorageRating)}
-                                    />
-                                ))}
-                            </div>
-                            <div className="rating-item">
-                                <FaCamera />
-                                <span>Camera</span>
-                                {[...Array(5)].map((_, index) => (
-                                    <FaStar
-                                        key={index}
-                                        className={index < cameraRating ? 'filled-star' : ''}
-                                        onClick={() => handleRating(index + 1, setCameraRating)}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                        <button type="submit" className="submit-button">Submit</button>
-                    </form>
+                    {/* Comment Box */}
+                    <textarea
+                        value={userComment}
+                        onChange={handleCommentChange}
+                        placeholder="Write your comment here..."
+                    ></textarea>
+
+                    {/* Submit Button */}
+                    <button onClick={handleSubmit}>Submit</button>
+
+                    {/* Success and Error Messages */}
+                    {successMessage && <p className="success-message">{successMessage}</p>}
+                    {errorMessage && <p className="error-message">{errorMessage}</p>}
                 </div>
             </div>
         </div>

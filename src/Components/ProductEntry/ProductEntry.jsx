@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './ProductEntry.css';
 import { Link } from 'react-router-dom';
+import Modal from 'react-modal';
 import {
     FaPhone,
     FaEnvelope,
@@ -25,57 +26,48 @@ import {
 } from 'react-icons/fa';
 import Slider from "react-slick";
 
+// 设置 Modal 的根元素
+Modal.setAppElement('#root');
+
 const ProductEntry = () => {
-    const [titleRating, setTitleRating] = useState(0);  // Add this
-    const [batteryRating, setBatteryRating] = useState(0);  // Add this
-    const [storageRating, setStorageRating] = useState(0);  // Add this
-    const [cameraRating, setCameraRating] = useState(0);  // Add this
+    // 定义所有需要的状态
+    const [isFavorite, setIsFavorite] = useState(false);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [selectedReview, setSelectedReview] = useState(null);
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
-    // State for favorite button
-    const [isFavorite, setIsFavorite] = useState(false);
-
-
-    // Toggle favorite button
-    const handleFavoriteClick = () => {
-        setIsFavorite(!isFavorite);
-    };
-    // Function to handle star click
-    const handleRating = (rating, setRating) => {
-        setRating(rating);
-    };
 
     const reviews = [
-        { id: 1, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10030, daysAgo: "2 minutes ago" },
-        { id: 2, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10090, daysAgo: "2 days ago" },
-        { id: 3, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10005, daysAgo: "2 days ago" },
-        { id: 4, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 1000, daysAgo: "2 days ago" },
-        { id: 5, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 1000, daysAgo: "2 days ago" }
+        { id: 1, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10030, daysAgo: "2 minutes ago", battery: 5, camera: 4, storage: 5 },
+        { id: 2, title: "Great value for money", content: "The product is incredible, and I am really satisfied with its performance.", user: "TechGuru", likes: 5000, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
+        { id: 3, title: "Great value for money", content: "The product is incredible, and I am really satisfied with its performance.", user: "TechGuru", likes: 5000, daysAgo: "1 day ago", battery: 4, camera: 4, storage: 5 },
+
     ];
 
-    // Add the slider settings here
+    // openModal
+    const openModal = (review) => {
+        console.log("Opening modal for review:", review);  // 调试用日志
+        setSelectedReview(review);
+        setModalIsOpen(true);
+    };
+
+    // CloseModal for the review card
+    const closeModal = () => {
+        setModalIsOpen(false);
+    };
+
+    // Slider
     const sliderSettings = {
         dots: true,
         infinite: true,
         speed: 500,
-        slidesToShow: 4, // Adjust based on your need
+        slidesToShow: 2,
         slidesToScroll: 1,
-        responsive: [
-            {
-                breakpoint: 1024,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1,
-                },
-            },
-            {
-                breakpoint: 600,
-                settings: {
-                    slidesToShow: 1,
-                    slidesToScroll: 1,
-                },
-            },
-        ],
+    };
+
+    // Toggle favorite button
+    const handleFavoriteClick = () => {
+        setIsFavorite(!isFavorite);
     };
 
     return (
@@ -142,7 +134,7 @@ const ProductEntry = () => {
                 </div>
             </div>
 
-            {/* Product Image and Info */}
+            {/* Product Review */}
             <div className="product-entry-container">
                 <div className="product-info">
                     <div className="product-image">
@@ -185,12 +177,14 @@ const ProductEntry = () => {
                     <h2>Reviews About This Product</h2>
                     <Slider {...sliderSettings}>
                         {reviews.map((review) => (
-                            <div key={review.id} className="review-card">
+                            <div key={review.id} className="review-card" onClick={() => openModal(review)}>
                                 <div className="review-stars">
-                                    <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
+                                    {[...Array(5)].map((_, index) => (
+                                        <FaStar key={index} className={index < review.battery ? 'filled-star' : ''} />
+                                    ))}
                                 </div>
                                 <p><strong>{review.title}</strong></p>
-                                <p>{review.content}</p>
+                                <p>{review.content.substring(0, 40)}...</p>
                                 <p>{review.user} - {review.daysAgo}</p>
                                 <div className="review-footer">
                                     <div className="review-likes">
@@ -201,6 +195,39 @@ const ProductEntry = () => {
                         ))}
                     </Slider>
                 </div>
+
+                {/* Review Detail Modal */}
+                {selectedReview && (
+                    <Modal
+                        isOpen={modalIsOpen}
+                        onRequestClose={closeModal}
+                        className="review-modal"
+                        overlayClassName="review-modal-overlay"
+                    >
+                        <h2>{selectedReview.title}</h2>
+                        <p><strong>By:</strong> {selectedReview.user}</p>
+                        <p><strong>Posted:</strong> {selectedReview.daysAgo}</p>
+                        <div className="modal-stars">
+                            <span>Overall Rating: </span>
+                            {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.battery ? 'filled-star' : ''} />
+                            ))}
+                        </div>
+                        <div className="rating-categories">
+                            <p><FaBatteryFull /> Battery: {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.battery ? 'filled-star' : ''} />
+                            ))}</p>
+                            <p><FaCamera /> Camera: {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.camera ? 'filled-star' : ''} />
+                            ))}</p>
+                            <p><FaHdd /> Storage: {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.storage ? 'filled-star' : ''} />
+                            ))}</p>
+                        </div>
+                        <p className="review-content">{selectedReview.content}</p>
+                        <button className="close-modal-button" onClick={closeModal}>Close</button>
+                    </Modal>
+                )}
 
                 {/* Write Review Section */}
                 <div className="write-review-section">

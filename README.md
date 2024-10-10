@@ -1,7 +1,7 @@
 # React installs list:
 ## 1. npm install react-icons
 ## 2. npm install react-router-dom
-## 3. npm install bcrypt
+## 3. npm install bcryptjs
 ## 4. npm install jsonwebtoken
 
 # Firebase installs list:

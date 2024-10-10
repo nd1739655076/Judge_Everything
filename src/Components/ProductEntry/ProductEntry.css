@@ -67,15 +67,6 @@
     color: #f39c12;
 }
 
-.stars {
-    margin-top: 5px;
-}
-
-.stars svg {
-    color: #f39c12;
-    font-size: 1.8rem; /* Increased size for better visibility */
-}
-
 .rating-categories ul {
     list-style: none;
     padding: 0;

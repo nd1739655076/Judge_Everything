@@ -32,7 +32,7 @@ exports.handleIdRequest = functions.https.onCall(async (data, context) => {
 // User Handle
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, username, password, email, statusToken, uidNum} = data;
+    const { action, username, password, email, statusToken, uidNum, nickname } = data;
     if (action === 'generate') {
       // username, password, email
       const userDocRef = db.collection('User').where('username', '==', username);
@@ -95,6 +95,26 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: true, data: userDataResponse.data };
       } else {
         return { success: false, message: userDataResponse.message };
+      }
+    }
+
+    else if (action === 'accountSetting') {
+      // username, password, email, nickname, uidNum, nickname
+      const accountUpdateResponse = await User.accountSetting(uidNum, username, password, email, nickname);
+      if (accountUpdateResponse.status === 'success') {
+        return { success: true, message: accountUpdateResponse.message };
+      } else {
+        return { success: false, message: accountUpdateResponse.message };
+      }
+    }
+
+    else if (action === 'delete') {
+      // uidNum
+      const deleteResponse = await User.delete(uidNum);
+      if (deleteResponse.status === 'success') {
+        return { success: true, message: deleteResponse.message };
+      } else {
+        return { success: false, message: deleteResponse.message };
       }
     }
 

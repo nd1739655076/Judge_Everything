@@ -157,6 +157,44 @@ class User {
     };
   }
 
+  // action === 'accountSetting'
+  static async accountSetting(uid, username, password, email, nickname) {
+    const userDocRef = db.collection('User').doc(uid);
+    const userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      return { status: 'error', message: 'User not found' };
+    }
+    if (username) {
+      const usernameQuery = await db.collection('User')
+        .where('username', '==', username)
+        .get();
+      if (!usernameQuery.empty) {
+        const otherUserDoc = usernameQuery.docs[0];
+        if (otherUserDoc.id !== uid) {
+          return { status: 'error', message: 'Username already exists.' };
+        }
+      }
+    }
+    const updateData = {};
+    if (username) updateData.username = username;
+    if (password) updateData.password = password;
+    if (email) updateData.email = email;
+    if (nickname) updateData.nickname = nickname;
+    await userDocRef.update(updateData);
+    return { status: 'success', message: 'User data updated successfully' };
+  }
+
+  // action === 'delete'
+  static async delete(uid) {
+    const userDocRef = db.collection('User').doc(uid);
+    const userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      return { status: 'error', message: 'User not found' };
+    }
+    await userDocRef.delete();
+    return { status: 'success', message: 'User account deleted successfully' }
+  }
+
 }
 
 module.exports = User;

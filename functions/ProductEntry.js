@@ -21,23 +21,21 @@ class ProductEntry {
     }
     this.parametorList = new Array(10).fill(null);
     this.commentList = [];
-    this.reportList = new Map(); // Will be converted to object when saving
+    this.reportList = new Map();
   }
 
   async generateProductEntry() {
     const productDocRef = db.collection('ProductEntry').doc(this.id);
-    
-    // Convert reportList from Map to a regular object
     await productDocRef.set({
       id: this.id,
       productName: this.productName,
       creator: this.creator,
-      tags: this.tagList, // Store tags
-      parametorList: this.parametorList, // Store parameter IDs
-      averageScore: this.averageScore, // Store rating details
+      tags: this.tagList,
+      parametorList: this.parametorList,
+      averageScore: this.averageScore,
       ratingDistribution: this.ratingDistribution,
       commentList: this.commentList,
-      reportList: Object.fromEntries(this.reportList) // Convert Map to object
+      reportList: Object.fromEntries(this.reportList)
     });
   }
 }

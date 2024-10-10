@@ -7,9 +7,9 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
-const Parameter = require('./Parameter');
 const Id = require('./Id');
 const User = require('./User');
+const Parameter = require('./Parameter');
 const ProductEntry = require('./ProductEntry');
 
 // Id Handle
@@ -32,7 +32,7 @@ exports.handleIdRequest = functions.https.onCall(async (data, context) => {
 // User Handle
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, username, password, email, statusToken} = data;
+    const { action, username, password, email, statusToken, uidNum, nickname } = data;
     if (action === 'generate') {
       // username, password, email
       const userDocRef = db.collection('User').where('username', '==', username);
@@ -61,14 +61,61 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
     else if (action === 'checkLoginStatus') {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);
-      return loginStatusResponse;
+      if (loginStatusResponse.status === 'success') {
+        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid };
+      } else {
+        return { success: false, message: loginStatusResponse.message };
+      }
     }
 
     else if (action === 'logout') {
       // statusToken
-      console.log('Logout request with statusToken:', statusToken);
       const logoutResponse = await User.logout(statusToken);
-      return logoutResponse;
+      if (logoutResponse.status === 'success') {
+        return { success: true, message: logoutResponse.message };
+      } else {
+        return { success: false, message: logoutResponse.message };
+      }
+    }
+
+    else if (action === 'accountSetting') {
+      // statusToken
+      const logoutResponse = await User.logout(statusToken);
+      if (logoutResponse.status === 'success') {
+        return { success: true, message: logoutResponse.message };
+      } else {
+        return { success: false, message: logoutResponse.message };
+      }
+    }
+
+    else if (action === 'getUserData') {
+      // uidNum
+      const userDataResponse = await User.getUserData(uidNum);
+      if (userDataResponse.status === 'success') {
+        return { success: true, data: userDataResponse.data };
+      } else {
+        return { success: false, message: userDataResponse.message };
+      }
+    }
+
+    else if (action === 'accountSetting') {
+      // username, password, email, nickname, uidNum, nickname
+      const accountUpdateResponse = await User.accountSetting(uidNum, username, password, email, nickname);
+      if (accountUpdateResponse.status === 'success') {
+        return { success: true, message: accountUpdateResponse.message };
+      } else {
+        return { success: false, message: accountUpdateResponse.message };
+      }
+    }
+
+    else if (action === 'delete') {
+      // uidNum
+      const deleteResponse = await User.delete(uidNum);
+      if (deleteResponse.status === 'success') {
+        return { success: true, message: deleteResponse.message };
+      } else {
+        return { success: false, message: deleteResponse.message };
+      }
     }
 
   } catch (error) {
@@ -106,7 +153,6 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
           console.log(`Parameter ${i + 1} saved: ID ${paramId}`);
         }
       }
-
       newProductEntry.parametorList = parameterIds;
       newProductEntry.tags = tags; 
       await newProductEntry.generateProductEntry();
@@ -116,5 +162,36 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
+  }
+});
+
+//this function is used for write the comment to a product with its scores and id.
+exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const { action, title, content, averageRating, parameterRatings, user, productId } = data;
+
+    if (action === 'generate') {
+      // generate the id of the comment
+      const generateId = new Id();
+      const commentIdResult = await generateId.generateId('comment', title);
+      const commentId = commentIdResult.idNum;
+
+      // create and generate the comment
+      const newComment = new Comment(commentId, title, content, averageRating, parameterRatings, user, productId);
+      await newComment.generateComment();
+
+      // update the comment list in the product entry
+      const productRef = db.collection('ProductEntry').doc(productId);
+      await productRef.update({
+        commentList: admin.firestore.FieldValue.arrayUnion(commentId)
+      });
+      
+      console.log('Comment successfully created and added to product entry.');
+
+      return { message: 'Comment created successfully!' };
+    }
+  } catch (error) {
+    console.error('Error handling comment request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle comment request');
   }
 });

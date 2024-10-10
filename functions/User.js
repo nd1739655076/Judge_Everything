@@ -105,7 +105,6 @@ class User {
       return { status: 'error', message: verificationResponse.message };
     }
     const uid = verificationResponse.user.uid;
-    console.log("UID obtained from token:", uid);
     if (!uid) {
       return { status: 'error', message: 'Invalid UID' };
     }
@@ -128,6 +127,72 @@ class User {
     const userDocRef = db.collection('User').doc(uid);
     await userDocRef.update({ statusToken: null });
     return { status: 'success', message: 'User logged out successfully' };
+  }
+
+  // action === 'getUserData'
+  static async getUserData(uid) {
+    const userDocRef = db.collection('User').doc(uid);
+    const userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      return { status: 'error', message: 'User not found' };
+    }
+    const userDocData = userDoc.data();
+    return {
+      status: 'success',
+      data: {
+        id: userDocData.id,
+        username: userDocData.username,
+        password: userDocData.password,
+        email: userDocData.email,
+        nickname: userDocData.nickname,
+        preferences: userDocData.preferences,
+        productProfileCreateHistory: userDocData.productProfileCreateHistory,
+        followingList: userDocData.followingList,
+        followers: userDocData.followers,
+        conversationList: userDocData.conversationList,
+        searchHistory: userDocData.searchHistory,
+        browseHistory: userDocData.browseHistory,
+        rateCommentHistory: userDocData.rateCommentHistory,
+      },
+    };
+  }
+
+  // action === 'accountSetting'
+  static async accountSetting(uid, username, password, email, nickname) {
+    const userDocRef = db.collection('User').doc(uid);
+    const userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      return { status: 'error', message: 'User not found' };
+    }
+    if (username) {
+      const usernameQuery = await db.collection('User')
+        .where('username', '==', username)
+        .get();
+      if (!usernameQuery.empty) {
+        const otherUserDoc = usernameQuery.docs[0];
+        if (otherUserDoc.id !== uid) {
+          return { status: 'error', message: 'Username already exists.' };
+        }
+      }
+    }
+    const updateData = {};
+    if (username) updateData.username = username;
+    if (password) updateData.password = password;
+    if (email) updateData.email = email;
+    if (nickname) updateData.nickname = nickname;
+    await userDocRef.update(updateData);
+    return { status: 'success', message: 'User data updated successfully' };
+  }
+
+  // action === 'delete'
+  static async delete(uid) {
+    const userDocRef = db.collection('User').doc(uid);
+    const userDoc = await userDocRef.get();
+    if (!userDoc.exists) {
+      return { status: 'error', message: 'User not found' };
+    }
+    await userDocRef.delete();
+    return { status: 'success', message: 'User account deleted successfully' }
   }
 
 }

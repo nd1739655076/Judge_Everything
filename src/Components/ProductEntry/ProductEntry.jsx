@@ -24,7 +24,7 @@ import {
     FaExclamationTriangle
 } from 'react-icons/fa';
 import Slider from "react-slick";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 
 Modal.setAppElement('#root');
 
@@ -35,6 +35,7 @@ const ProductEntry = () => {
     const [userProductRating, setUserProductRating] = useState(0);
     const [userRatings, setUserRatings] = useState({});
     const [userComment, setUserComment] = useState('');
+    const [userCommentTitle, setUserCommentTitle] = useState('');
     const [loading, setLoading] = useState(true);
     const [successMessage, setSuccessMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
@@ -42,28 +43,30 @@ const ProductEntry = () => {
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [selectedReview, setSelectedReview] = useState(null);
     const [isDropdownVisible, setDropdownVisible] = useState(false);
+    const [likedComments, setLikedComments] = useState([]);
     const db = getFirestore();
 
-    useEffect(() => {
-        const fetchProductData = async () => {
-            try {
-                const productRef = doc(db, 'ProductEntry', productId);
-                const productSnap = await getDoc(productRef);
+    // 定义 fetchProductData 函数
+    const fetchProductData = async () => {
+        try {
+            const productRef = doc(db, 'ProductEntry', productId);
+            const productSnap = await getDoc(productRef);
 
-                if (productSnap.exists()) {
-                    setProductData(productSnap.data());
-                    const paramsQuery = query(collection(db, 'Parameters'), where('productId', '==', productId));
-                    const paramsSnapshot = await getDocs(paramsQuery);
-                    const paramList = paramsSnapshot.docs.map(doc => ({ ...doc.data(), paramId: doc.id }));
-                    setParameters(paramList);
-                }
-            } catch (error) {
-                console.error("Error fetching product data: ", error);
-            } finally {
-                setLoading(false);
+            if (productSnap.exists()) {
+                setProductData(productSnap.data());
+                const paramsQuery = query(collection(db, 'Parameters'), where('productId', '==', productId));
+                const paramsSnapshot = await getDocs(paramsQuery);
+                const paramList = paramsSnapshot.docs.map(doc => ({ ...doc.data(), paramId: doc.id }));
+                setParameters(paramList);
             }
-        };
+        } catch (error) {
+            console.error("Error fetching product data: ", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchProductData();
     }, [productId]);
 
@@ -84,6 +87,10 @@ const ProductEntry = () => {
         setUserComment(e.target.value);
     };
 
+    const handleCommentTitleChange = (e) => {
+        setUserCommentTitle(e.target.value);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -99,22 +106,40 @@ const ProductEntry = () => {
                 const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
                 const newAverageScore = newTotalScore / newTotalRaters;
 
-                await setDoc(productRef, {
+                const newComment = {
+                    title: userCommentTitle,
+                    content: userComment,
+                    rating: userProductRating,
+                    parameterRatings: userRatings,
+                    timestamp: new Date(),
+                    likes: 0,
+                };
+
+                await updateDoc(productRef, {
                     averageScore: {
                         average: newAverageScore,
                         totalScore: newTotalScore,
                         totalRater: newTotalRaters,
-                    }
-                }, { merge: true });
+                    },
+                    commentList: arrayUnion(newComment)
+                });
 
+                // 将新的评论直接添加到状态中，而不需要刷新页面
                 setProductData((prevData) => ({
                     ...prevData,
                     averageScore: {
                         average: newAverageScore,
                         totalScore: newTotalScore,
                         totalRater: newTotalRaters,
-                    }
+                    },
+                    commentList: [...(prevData.commentList || []), newComment],
                 }));
+
+                setSuccessMessage('Your ratings and comment have been submitted!');
+                setUserComment('');
+                setUserCommentTitle('');
+                setUserRatings({});
+                setUserProductRating(0);
             }
 
             for (const [paramId, rating] of Object.entries(userRatings)) {
@@ -151,11 +176,6 @@ const ProductEntry = () => {
                     );
                 }
             }
-
-            setSuccessMessage('Your ratings and comment have been submitted!');
-            setUserComment('');
-            setUserRatings({});
-            setUserProductRating(0);
         } catch (error) {
             setErrorMessage('Failed to submit your ratings and comment. Please try again.');
             console.error('Error submitting ratings and comment:', error);
@@ -175,10 +195,23 @@ const ProductEntry = () => {
         setIsFavorite(!isFavorite);
     };
 
-    const reviews = [
-        { id: 1, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10030, daysAgo: "2 minutes ago", battery: 5, camera: 4, storage: 5 },
-        // Additional reviews...
-    ];
+    const handleLikeClick = async (review) => {
+        const productRef = doc(db, 'ProductEntry', productId);
+        const updatedCommentList = productData.commentList.map((comment) => {
+            if (comment.timestamp.seconds === review.timestamp.seconds && comment.content === review.content) {
+                return { ...comment, likes: comment.likes + 1 };
+            }
+            return comment;
+        });
+        await updateDoc(productRef, {
+            commentList: updatedCommentList
+        });
+        setProductData((prevData) => ({
+            ...prevData,
+            commentList: updatedCommentList,
+        }));
+        setLikedComments((prevLikedComments) => [...prevLikedComments, review]);
+    };
 
     const sliderSettings = {
         dots: true,
@@ -296,19 +329,19 @@ const ProductEntry = () => {
                 <div className="reviews-section">
                     <h2>Reviews About This Product</h2>
                     <Slider {...sliderSettings}>
-                        {reviews.map((review) => (
-                            <div key={review.id} className="review-card" onClick={() => openModal(review)}>
+                        {(productData.commentList || []).map((review, index) => (
+                            <div key={index} className="review-card" onClick={() => openModal(review)}>
                                 <div className="review-stars">
-                                    {[...Array(5)].map((_, index) => (
-                                        <FaStar key={index} className={index < review.battery ? 'filled-star' : ''} />
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
                                     ))}
                                 </div>
                                 <p><strong>{review.title}</strong></p>
                                 <p>{review.content.substring(0, 40)}...</p>
-                                <p>{review.user} - {review.daysAgo}</p>
+                                <p>Posted on: {review.timestamp && review.timestamp.seconds ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">
-                                    <div className="review-likes">
-                                        <FaThumbsUp className="thumbs-up-icon" /> {review.likes}
+                                    <div className="review-likes" onClick={() => handleLikeClick(review)}>
+                                        <FaThumbsUp className={`thumbs-up-icon ${likedComments.includes(review) ? 'liked' : ''}`} /> {review.likes}
                                     </div>
                                 </div>
                             </div>
@@ -324,19 +357,22 @@ const ProductEntry = () => {
                         overlayClassName="review-modal-overlay"
                     >
                         <h2>{selectedReview.title}</h2>
-                        <p><strong>By:</strong> {selectedReview.user}</p>
-                        <p><strong>Posted:</strong> {selectedReview.daysAgo}</p>
+                        <p><strong>Posted:</strong> {new Date(new Date(selectedReview.timestamp.seconds * 1000)).toLocaleString()}</p>
                         <div className="modal-stars">
                             <span>Overall Rating: </span>
                             {[...Array(5)].map((_, index) => (
-                                <FaStar key={index} className={index < selectedReview.battery ? 'filled-star' : ''} />
+                                <FaStar key={index} className={index < selectedReview.rating ? 'filled-star' : ''} />
                             ))}
                         </div>
                         <div className="rating-categories">
-                            {parameters.map((param, index) => (
-                                <p key={index}><FaLightbulb /> {param.paramName}: ({param.averageScore.average.toFixed(1)}/5) {[...Array(5)].map((_, starIndex) => (
-                                    <FaStar key={starIndex} className={starIndex < Math.round(param.averageScore.average) ? 'filled-star' : ''} />
-                                ))}</p>
+                            <h3>Parameter Ratings:</h3>
+                            {Object.entries(selectedReview.parameterRatings).map(([paramId, rating], index) => (
+                                <div key={index} className="rating-item">
+                                    <span>{parameters.find(param => param.paramId === paramId)?.paramName || 'Parameter'}: </span>
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar key={starIndex} className={starIndex < rating ? 'filled-star' : ''} />
+                                    ))}
+                                </div>
                             ))}
                         </div>
                         <p className="review-content">{selectedReview.content}</p>
@@ -348,7 +384,7 @@ const ProductEntry = () => {
                     <h2 className="review-heading">Judge It Yourself!</h2>
                     <form className="review-form" onSubmit={handleSubmit}>
                         <div className="review-title">
-                            <input type="text" placeholder="Type Your Title Here" />
+                            <input type="text" value={userCommentTitle} onChange={handleCommentTitleChange} placeholder="Type Your Title Here" />
                             <div className="title-stars">
                                 {[...Array(5)].map((_, index) => (
                                     <FaStar

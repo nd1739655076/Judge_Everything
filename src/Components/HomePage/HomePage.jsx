@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import './HomePage.css';
-import { getFirestore, collection, getDocs } from 'firebase/firestore'; 
+
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
 import logoImage from "../HomePageAssets/404.jpg";
+import Modal from 'react-modal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import './HomePage.css';
+
+Modal.setAppElement('#root');
 
 const Homepage = () => {
 
@@ -16,12 +21,18 @@ const Homepage = () => {
   const [greeting, setGreeting] = useState("");
   const [products, setProducts] = useState([]); // To store the list of products
   const [loading, setLoading] = useState(true);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedProductData, setSelectedProductData] = useState(null);
+  const [ratingDistribution, setRatingDistribution] = useState([]); 
   const db = getFirestore();
 
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
-
+  useEffect(() => {
+    console.log('Modal is open state changed:', modalIsOpen);
+  }, [modalIsOpen]);
+  
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -41,6 +52,42 @@ const Homepage = () => {
 
     fetchProducts();
   }, [db]);
+  
+  const handleViewRatingDistribution = async (productId) => {
+    try {
+      const productRef = doc(db, 'ProductEntry', productId);
+      const productSnap = await getDoc(productRef);
+
+      if (productSnap.exists()) {
+        const productData = productSnap.data();
+        setSelectedProductData(productData);
+
+        // Assuming the rating distribution is stored in the product document (as an example)
+        const distribution = productData.ratingDistribution || {
+          'fiveStars': 0,
+          'fourStars': 0,
+          'threeStars': 0,
+          'twoStars': 0,
+          'oneStars': 0,
+        };
+
+        // Convert distribution object into an array format for the graph
+        const distributionArray = Object.entries(distribution).map(([rating, count]) => ({
+          rating,
+          count,
+        }));
+
+        setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
+        console.log('Rating distribution:', distributionArray); 
+        setModalIsOpen(true); // Open the modal
+        console.log('Modal is open:', modalIsOpen); 
+      } else {
+        console.log("Product not found");
+      }
+    } catch (error) {
+      console.error("Error fetching product rating distribution:", error);
+    }
+  };
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -105,6 +152,10 @@ const Homepage = () => {
         console.error("Error logging out:", error);
       }
     }
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
   };
 
   return (
@@ -222,8 +273,10 @@ const Homepage = () => {
                 <div key={product.id} className="product-item">
                   <Link to={`/product/${product.id}`}>
                     <h3>{product.productName}</h3>
-                    <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
                   </Link>
+                  <p onClick={() => handleViewRatingDistribution(product.id)} style={{ cursor: 'pointer' }}>
+                    Average Rating: {product.averageScore?.average || "No ratings yet"}
+                  </p>
                 </div>
               ))
             ) : (
@@ -235,6 +288,35 @@ const Homepage = () => {
           <button>LOAD MORE ENTRIES</button>
         </div>
       </section>
+
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel="Rating Distribution Modal"
+        className="rating-distribution-modal"
+        overlayClassName="rating-distribution-overlay"
+      >
+        <h2>Rating Distribution for {selectedProductData?.productName}</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            data={[
+      { rating: '5 Stars', count: 10 },
+      { rating: '4 Stars', count: 5 },
+      { rating: '3 Stars', count: 3 },
+      { rating: '2 Stars', count: 2 },
+      { rating: '1 Star', count: 1 },
+    ]}
+  >
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="rating" />
+    <YAxis />
+    <Tooltip />
+    <Legend />
+    <Bar dataKey="count" fill="#8884d8" />
+  </BarChart>
+</ResponsiveContainer>
+        <button onClick={closeModal}>Close</button>
+      </Modal>
 
       {/* Create Recommendation Entries Section */}
       <section className="recommendationEntries">

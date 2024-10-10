@@ -82,14 +82,41 @@ const ProductEntry = () => {
                 const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
                 const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
                 const newAverageScore = newTotalScore / newTotalRaters;
-
+                const currentDistribution = productData.ratingDistribution || {
+                    'fiveStars': 0,
+                    'fourStars': 0,
+                    'threeStars': 0,
+                    'twoStars': 0,
+                    'oneStars': 0,
+                };
+            
+                switch (userProductRating) {
+                    case 5:
+                        currentDistribution['fiveStars'] += 1;
+                        break;
+                    case 4:
+                        currentDistribution['fourStars'] += 1;
+                        break;
+                    case 3:
+                        currentDistribution['threeStars'] += 1;
+                        break;
+                    case 2:
+                        currentDistribution['twoStars'] += 1;
+                        break;
+                    case 1:
+                        currentDistribution['oneStars'] += 1;
+                        break;
+                    default:
+                        console.error('Invalid rating input');
+                }
                 // Update product's average rating in Firestore
                 await setDoc(productRef, {
                     averageScore: {
                         average: newAverageScore,
                         totalScore: newTotalScore,
                         totalRater: newTotalRaters,
-                    }
+                    },
+                    ratingDistribution: currentDistribution
                 }, { merge: true });
             }
 

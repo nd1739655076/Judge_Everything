@@ -30,7 +30,9 @@ const Homepage = () => {
     setDropdownVisible(!isDropdownVisible);
   };
   useEffect(() => {
-    console.log('Modal is open state changed:', modalIsOpen);
+    if (modalIsOpen) {
+      console.log('Modal is open:', modalIsOpen);
+    }
   }, [modalIsOpen]);
   
   useEffect(() => {
@@ -297,16 +299,9 @@ const Homepage = () => {
         overlayClassName="rating-distribution-overlay"
       >
         <h2>Rating Distribution for {selectedProductData?.productName}</h2>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart
-            data={[
-      { rating: '5 Stars', count: 10 },
-      { rating: '4 Stars', count: 5 },
-      { rating: '3 Stars', count: 3 },
-      { rating: '2 Stars', count: 2 },
-      { rating: '1 Star', count: 1 },
-    ]}
-  >
+        <ResponsiveContainer width={500} height={300}>
+  <BarChart
+    data={ratingDistribution}>
     <CartesianGrid strokeDasharray="3 3" />
     <XAxis dataKey="rating" />
     <YAxis />
@@ -336,6 +331,7 @@ const Homepage = () => {
         <div className="recommendationLoadMore">
           <button>LOAD MORE ENTRIES</button>
         </div>
+        
       </section>
 
     </div>

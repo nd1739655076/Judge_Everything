@@ -37,27 +37,21 @@ const CreateProductEntry = () => {
     try {
       // Initialize Firebase Cloud Functions
       const functions = getFunctions();
-      const generateId = httpsCallable(functions, 'handleIdRequest');
-      const result = await generateId({ action: 'generate', type: 'productEntry', name: productName });
-      const generatedId = result.data.idNum;
       const generateProductEntry = httpsCallable(functions, 'handleProductEntryRequest');
 
       // Call the Cloud Function to create a product entry
       const resultEntry = await generateProductEntry({
         action: 'generate',
-        prodidNum: generatedId, // Temporary random ID generation (you may have a better system)
         productName: productName,
         uidNum: creatorId,
-        //tagList: tags.filter(Boolean), // Filter out any empty tags
-        //parametorList: parameters.filter(Boolean) // Filter out empty parameters
+        tags: tags.filter(Boolean), 
+        paramList: parameters.filter(Boolean), 
       });
 
       console.log('Product entry created:', resultEntry);
 
-      // Show success message
       setSuccess('Product entry created successfully!');
 
-      // Reset form fields after successful submission
       setProductName('');
       setCreatorId('');
       setTags(new Array(5).fill(''));

@@ -7,6 +7,7 @@ admin.initializeApp();
 
 const db = admin.firestore();
 
+const Parameter = require('./Parameter');
 const Id = require('./Id');
 const User = require('./User');
 const ProductEntry = require('./ProductEntry');
@@ -78,10 +79,39 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const {action, prodidNum, productName, uidNum} = data;
+    const { action, productName, uidNum, tags, paramList } = data;
     if (action === 'generate') {
+      const generateId = new Id();
+      const productIdResult = await generateId.generateId('productEntry', productName);
+      const prodidNum = productIdResult.idNum;
       const newProductEntry = new ProductEntry(prodidNum, productName, uidNum);
+      const parameterIds = [];
+
+      if (paramList && paramList.length > 0) {
+        for (let i = 0; i < paramList.length; i++) {
+          // Generate parameter ID using the custom ID generation function
+          const paramIdResult = await generateId.generateId('parameter', paramList[i]);
+          const paramId = paramIdResult.idNum; // Extract the generated parameter ID
+          const paramName = paramList[i]; // Parameter name
+
+          console.log(`Creating parameter ${i + 1}: ID ${paramId}, Name: ${paramName}`);
+
+          const parameter = new Parameter(paramId, prodidNum, paramName); // Create new parameter
+
+          // Save the parameter to Firestore
+          await parameter.save(); // Save parameter to Firestore
+          
+          parameterIds.push(paramId); // Add the parameter ID to the list
+
+          console.log(`Parameter ${i + 1} saved: ID ${paramId}`);
+        }
+      }
+
+      newProductEntry.parametorList = parameterIds;
+      newProductEntry.tags = tags; 
       await newProductEntry.generateProductEntry();
+      console.log('Product entry successfully created.');
+      return { message: 'Product entry created successfully!' };
     } 
   } catch (error) {
     console.error('Error handling product entry request:', error);

@@ -25,9 +25,9 @@ class ProductEntry {
       id: this.id,
       productName: this.productName,
       creator: this.creator,
-      tagList: this.tagList,
-      averageScore: this.averageScore,
-      parametorList: this.parametorList,
+      tags: this.tagList, // Store tags
+      parametorList: this.parametorList, // Store parameter IDs
+      averageScore: this.averageScore, // Store rating details
       commentList: this.commentList,
       reportList: Object.fromEntries(this.reportList) // Convert Map to object
     });

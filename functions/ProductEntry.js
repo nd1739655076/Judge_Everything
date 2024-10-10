@@ -6,13 +6,13 @@ class ProductEntry {
     this.id = prodidNum;
     this.productName = productName;
     this.creator = uidNum;
-    this.tagList = new Array(5).fill(null); // Initialize with empty values
+    this.tagList = new Array(5).fill(null);
     this.averageScore = {
       average: 0,
       totalScore: 0,
       totalRater: 0,
     };
-    this.parametorList = new Array(10).fill(null); // Initialize with empty values
+    this.parametorList = new Array(10).fill(null);
     this.commentList = [];
     this.reportList = new Map(); // Will be converted to object when saving
   }

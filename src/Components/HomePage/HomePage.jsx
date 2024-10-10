@@ -1,27 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
-import { getFirestore, collection, getDocs } from 'firebase/firestore'; // Import Firestore
 import { functions } from '../../firebase';
-import { Link } from 'react-router-dom';
 
-import { FaSearch, FaBell, FaHistory, FaCog, FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter, FaUser, FaBars, FaSignOutAlt } from 'react-icons/fa';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
+import { Link } from 'react-router-dom';
+import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
+import logoImage from "../HomePageAssets/404.jpg";
+import Modal from 'react-modal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './HomePage.css';
 
+Modal.setAppElement('#root');
+
 const Homepage = () => {
+
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
   const [products, setProducts] = useState([]); // To store the list of products
-  const [loading, setLoading] = useState(true); // Loading state for fetching products
-
-  const db = getFirestore(); // Initialize Firestore
+  const [loading, setLoading] = useState(true);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedProductData, setSelectedProductData] = useState(null);
+  const [ratingDistribution, setRatingDistribution] = useState([]); 
+  const db = getFirestore();
 
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
-
-  // Fetch the list of products from Firestore
+  useEffect(() => {
+    if (modalIsOpen) {
+      console.log('Modal is open:', modalIsOpen);
+    }
+  }, [modalIsOpen]);
+  
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -41,6 +54,42 @@ const Homepage = () => {
 
     fetchProducts();
   }, [db]);
+  
+  const handleViewRatingDistribution = async (productId) => {
+    try {
+      const productRef = doc(db, 'ProductEntry', productId);
+      const productSnap = await getDoc(productRef);
+
+      if (productSnap.exists()) {
+        const productData = productSnap.data();
+        setSelectedProductData(productData);
+
+        // Assuming the rating distribution is stored in the product document (as an example)
+        const distribution = productData.ratingDistribution || {
+          'fiveStars': 0,
+          'fourStars': 0,
+          'threeStars': 0,
+          'twoStars': 0,
+          'oneStars': 0,
+        };
+
+        // Convert distribution object into an array format for the graph
+        const distributionArray = Object.entries(distribution).map(([rating, count]) => ({
+          rating,
+          count,
+        }));
+
+        setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
+        console.log('Rating distribution:', distributionArray); 
+        setModalIsOpen(true); // Open the modal
+        console.log('Modal is open:', modalIsOpen); 
+      } else {
+        console.log("Product not found");
+      }
+    } catch (error) {
+      console.error("Error fetching product rating distribution:", error);
+    }
+  };
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -71,7 +120,6 @@ const Homepage = () => {
     };
     checkLoginStatus();
   }, []);
-
   useEffect(() => {
     const now = new Date();
     const hour = now.getHours();
@@ -87,7 +135,6 @@ const Homepage = () => {
     }
     setGreeting(currentGreeting);
   }, []);
-
   const handleLogout = async () => {
     const localStatusToken = localStorage.getItem('authToken');
     if (localStatusToken) {
@@ -109,8 +156,14 @@ const Homepage = () => {
     }
   };
 
+  const closeModal = () => {
+    setModalIsOpen(false);
+  };
+
   return (
+
     <div className="homepage">
+    
       {/* Top Bar */}
       <div className="topbar">
         <div className="contactinfo">
@@ -203,32 +256,88 @@ const Homepage = () => {
             <button>Create a New Entry</button>
           </Link>
         </div>
+        <div className="createNewEntryImage">
+          <img src={logoImage} alt="Create a New Entry???" />
+        </div>
       </section>
 
-      {/* Product Listing Section */}
-      <section className="productListing">
-        <h2>Available Products</h2>
-        {loading ? (
-          <div>Loading products...</div>
-        ) : (
+      {/* Create Most Popular Entries Section */}
+      <section className="mostPopularEntries">
+        <div className="mostPopularEntriesHeader">
+          <h1>Ranking</h1>
+          <h2>Most Popular Entries This Week</h2>
+          <p>will update every Thursday 11:59 p.m. EST</p>
+        </div>
+        <div className="mostPopularEntriesGrid">
           <div className="product-list">
             {products.length > 0 ? (
               products.map(product => (
                 <div key={product.id} className="product-item">
                   <Link to={`/product/${product.id}`}>
                     <h3>{product.productName}</h3>
-                    <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
                   </Link>
+                  <p onClick={() => handleViewRatingDistribution(product.id)} style={{ cursor: 'pointer' }}>
+                    Average Rating: {product.averageScore?.average || "No ratings yet"}
+                  </p>
                 </div>
               ))
             ) : (
               <p>No products available</p>
             )}
           </div>
-        )}
+        </div>
+        <div className="mostPopularLoadMore">
+          <button>LOAD MORE ENTRIES</button>
+        </div>
       </section>
+
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel="Rating Distribution Modal"
+        className="rating-distribution-modal"
+        overlayClassName="rating-distribution-overlay"
+      >
+        <h2>Rating Distribution for {selectedProductData?.productName}</h2>
+        <ResponsiveContainer width={500} height={300}>
+  <BarChart
+    data={ratingDistribution}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="rating" />
+    <YAxis />
+    <Tooltip />
+    <Legend />
+    <Bar dataKey="count" fill="#8884d8" />
+  </BarChart>
+</ResponsiveContainer>
+        <button onClick={closeModal}>Close</button>
+      </Modal>
+
+      {/* Create Recommendation Entries Section */}
+      <section className="recommendationEntries">
+        <div className="recommendationEntriesHeader">
+          <h1>Recommendations</h1>
+          <h2>The Products You May Like...</h2>
+          <p>Change your preference in your account setting anytime!</p>
+        </div>
+        <div className="recommendationEntriesGrid">
+          <div className="recommendationEntryCard">
+            <img src="???.jpg" alt="???" />
+            <h1>???</h1>
+            <p>???</p>
+            <a href="#">View</a>
+          </div>
+        </div>
+        <div className="recommendationLoadMore">
+          <button>LOAD MORE ENTRIES</button>
+        </div>
+        
+      </section>
+
     </div>
+
   );
+
 };
 
 export default Homepage;

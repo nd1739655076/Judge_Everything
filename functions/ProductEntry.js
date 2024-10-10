@@ -12,6 +12,13 @@ class ProductEntry {
       totalScore: 0,
       totalRater: 0,
     };
+    this.ratingDistribution = {
+      fiveStars : 0,
+      fourStars : 0,
+      threeStars : 0,
+      twoStars : 0,
+      oneStars : 0
+    }
     this.parametorList = new Array(10).fill(null);
     this.commentList = [];
     this.reportList = new Map(); // Will be converted to object when saving
@@ -28,6 +35,7 @@ class ProductEntry {
       tags: this.tagList, // Store tags
       parametorList: this.parametorList, // Store parameter IDs
       averageScore: this.averageScore, // Store rating details
+      ratingDistribution: this.ratingDistribution,
       commentList: this.commentList,
       reportList: Object.fromEntries(this.reportList) // Convert Map to object
     });

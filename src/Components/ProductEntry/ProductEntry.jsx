@@ -274,11 +274,6 @@ const ProductEntry = () => {
                             </button>
                         </h1>
                         <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
-                        <div className="stars">
-                            {[...Array(5)].map((_, index) => (
-                                <FaStar key={index} className={index < Math.round(productData.averageScore.average) ? 'filled-star' : ''} />
-                            ))}
-                        </div>
                         <div className="rating-categories">
                             <ul>
                                 {parameters.map((param, index) => (

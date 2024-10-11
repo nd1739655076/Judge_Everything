@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ProductEntry.css';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import Modal from 'react-modal';
 import {
     FaPhone,
     FaEnvelope,
@@ -13,7 +14,6 @@ import {
     FaBell,
     FaHistory,
     FaCog,
-    FaSignOutAlt,
     FaStar,
     FaLightbulb,
     FaBatteryFull,
@@ -24,63 +24,213 @@ import {
     FaExclamationTriangle
 } from 'react-icons/fa';
 import Slider from "react-slick";
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+
+Modal.setAppElement('#root');
 
 const ProductEntry = () => {
-    const [titleRating, setTitleRating] = useState(0);  // Add this
-    const [batteryRating, setBatteryRating] = useState(0);  // Add this
-    const [storageRating, setStorageRating] = useState(0);  // Add this
-    const [cameraRating, setCameraRating] = useState(0);  // Add this
-    const [isDropdownVisible, setDropdownVisible] = useState(false);
-    const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
-    // State for favorite button
+    const { productId } = useParams();
+    const [productData, setProductData] = useState(null);
+    const [parameters, setParameters] = useState([]);
+    const [userProductRating, setUserProductRating] = useState(0);
+    const [userRatings, setUserRatings] = useState({});
+    const [userComment, setUserComment] = useState('');
+    const [userCommentTitle, setUserCommentTitle] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [successMessage, setSuccessMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
     const [isFavorite, setIsFavorite] = useState(false);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [selectedReview, setSelectedReview] = useState(null);
+    const [isDropdownVisible, setDropdownVisible] = useState(false);
+    const [likedComments, setLikedComments] = useState([]);
+    const db = getFirestore();
 
+    // 定义 fetchProductData 函数
+    const fetchProductData = async () => {
+        try {
+            const productRef = doc(db, 'ProductEntry', productId);
+            const productSnap = await getDoc(productRef);
 
-    // Toggle favorite button
+            if (productSnap.exists()) {
+                setProductData(productSnap.data());
+                const paramsQuery = query(collection(db, 'Parameters'), where('productId', '==', productId));
+                const paramsSnapshot = await getDocs(paramsQuery);
+                const paramList = paramsSnapshot.docs.map(doc => ({ ...doc.data(), paramId: doc.id }));
+                setParameters(paramList);
+            }
+        } catch (error) {
+            console.error("Error fetching product data: ", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchProductData();
+    }, [productId]);
+
+    const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
+
+    const handleProductRatingChange = (rating) => {
+        setUserProductRating(rating);
+    };
+
+    const handleRatingChange = (paramId, rating) => {
+        setUserRatings((prevRatings) => ({
+            ...prevRatings,
+            [paramId]: rating,
+        }));
+    };
+
+    const handleCommentChange = (e) => {
+        setUserComment(e.target.value);
+    };
+
+    const handleCommentTitleChange = (e) => {
+        setUserCommentTitle(e.target.value);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            setSuccessMessage('');
+            setErrorMessage('');
+
+            const productRef = doc(db, 'ProductEntry', productId);
+            const productSnap = await getDoc(productRef);
+            if (productSnap.exists()) {
+                const productData = productSnap.data();
+                const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
+                const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
+                const newAverageScore = newTotalScore / newTotalRaters;
+
+                const newComment = {
+                    title: userCommentTitle,
+                    content: userComment,
+                    rating: userProductRating,
+                    parameterRatings: userRatings,
+                    timestamp: new Date(),
+                    likes: 0,
+                };
+
+                await updateDoc(productRef, {
+                    averageScore: {
+                        average: newAverageScore,
+                        totalScore: newTotalScore,
+                        totalRater: newTotalRaters,
+                    },
+                    commentList: arrayUnion(newComment)
+                });
+
+                // 将新的评论直接添加到状态中，而不需要刷新页面
+                setProductData((prevData) => ({
+                    ...prevData,
+                    averageScore: {
+                        average: newAverageScore,
+                        totalScore: newTotalScore,
+                        totalRater: newTotalRaters,
+                    },
+                    commentList: [...(prevData.commentList || []), newComment],
+                }));
+
+                setSuccessMessage('Your ratings and comment have been submitted!');
+                setUserComment('');
+                setUserCommentTitle('');
+                setUserRatings({});
+                setUserProductRating(0);
+            }
+
+            for (const [paramId, rating] of Object.entries(userRatings)) {
+                const paramRef = doc(db, 'Parameters', paramId);
+                const paramSnap = await getDoc(paramRef);
+
+                if (paramSnap.exists()) {
+                    const paramData = paramSnap.data();
+                    const newTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
+                    const newTotalScore = (paramData.averageScore.totalScore || 0) + rating;
+                    const newAverageScore = newTotalScore / newTotalRaters;
+
+                    await setDoc(paramRef, {
+                        averageScore: {
+                            average: newAverageScore,
+                            totalScore: newTotalScore,
+                            totalRater: newTotalRaters,
+                        }
+                    }, { merge: true });
+
+                    setParameters((prevParams) =>
+                        prevParams.map((param) =>
+                            param.paramId === paramId
+                                ? {
+                                      ...param,
+                                      averageScore: {
+                                          average: newAverageScore,
+                                          totalScore: newTotalScore,
+                                          totalRater: newTotalRaters,
+                                      },
+                                  }
+                                : param
+                        )
+                    );
+                }
+            }
+        } catch (error) {
+            setErrorMessage('Failed to submit your ratings and comment. Please try again.');
+            console.error('Error submitting ratings and comment:', error);
+        }
+    };
+
+    const openModal = (review) => {
+        setSelectedReview(review);
+        setModalIsOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalIsOpen(false);
+    };
+
     const handleFavoriteClick = () => {
         setIsFavorite(!isFavorite);
     };
-    // Function to handle star click
-    const handleRating = (rating, setRating) => {
-        setRating(rating);
+
+    const handleLikeClick = async (review) => {
+        const productRef = doc(db, 'ProductEntry', productId);
+        const updatedCommentList = productData.commentList.map((comment) => {
+            if (comment.timestamp.seconds === review.timestamp.seconds && comment.content === review.content) {
+                return { ...comment, likes: comment.likes + 1 };
+            }
+            return comment;
+        });
+        await updateDoc(productRef, {
+            commentList: updatedCommentList
+        });
+        setProductData((prevData) => ({
+            ...prevData,
+            commentList: updatedCommentList,
+        }));
+        setLikedComments((prevLikedComments) => [...prevLikedComments, review]);
     };
 
-    const reviews = [
-        { id: 1, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10030, daysAgo: "2 minutes ago" },
-        { id: 2, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10090, daysAgo: "2 days ago" },
-        { id: 3, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 10005, daysAgo: "2 days ago" },
-        { id: 4, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 1000, daysAgo: "2 days ago" },
-        { id: 5, title: "Best on the market", content: "I love this product because the support is great. Please ...", user: "WorldTraveler", likes: 1000, daysAgo: "2 days ago" }
-    ];
-
-    // Add the slider settings here
     const sliderSettings = {
         dots: true,
-        infinite: true,
+        infinite: false,
         speed: 500,
-        slidesToShow: 4, // Adjust based on your need
+        slidesToShow: 4,
         slidesToScroll: 1,
-        responsive: [
-            {
-                breakpoint: 1024,
-                settings: {
-                    slidesToShow: 2,
-                    slidesToScroll: 1,
-                },
-            },
-            {
-                breakpoint: 600,
-                settings: {
-                    slidesToShow: 1,
-                    slidesToScroll: 1,
-                },
-            },
-        ],
     };
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (!productData) {
+        return <div>Product not found</div>;
+    }
 
     return (
         <div className="product-entry-page">
-            {/* Tab Bar from Homepage */}
             <div className="topbar">
                 <div className="contactinfo">
                     <FaPhone /> (225) 555-0118 | <FaEnvelope /> song748@purdue.edu
@@ -96,7 +246,6 @@ const ProductEntry = () => {
                 </div>
             </div>
 
-            {/* Navigation Bar */}
             <div className="navbar">
                 <div className="logoTitle">
                     <h1>Judge Everything</h1>
@@ -142,14 +291,13 @@ const ProductEntry = () => {
                 </div>
             </div>
 
-            {/* Product Image and Info */}
             <div className="product-entry-container">
                 <div className="product-info">
                     <div className="product-image">
                         <img src="https://via.placeholder.com/400" alt="Product" />
                     </div>
                     <div className="product-details">
-                        <h1>iPhone 16
+                        <h1>{productData.productName}
                             <FaStar
                                 className={`favorite-icon ${isFavorite ? 'favorite-active' : ''}`}
                                 onClick={handleFavoriteClick}
@@ -158,43 +306,42 @@ const ProductEntry = () => {
                                 <FaExclamationTriangle /> Report
                             </button>
                         </h1>
-                        <p className="average-rating">Average: 5.0 / 5.0</p>
-                        <div className="stars">
-                            <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
-                        </div>
+                        <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
                         <div className="rating-categories">
                             <ul>
-                                <li><span>Battery:</span> <FaStar /><FaStar /><FaStar /><FaStar /><FaStar /></li>
-                                <li><span>Storage:</span> <FaStar /><FaStar /><FaStar /><FaStar /><FaStar /></li>
-                                <li><span>Camera:</span> <FaStar /><FaStar /><FaStar /><FaStar /><FaStar /></li>
+                                {parameters.map((param, index) => (
+                                    <li key={index}>
+                                        <span>{param.paramName}: ({param.averageScore.average.toFixed(1)}/5)</span>
+                                        {[...Array(5)].map((_, starIndex) => (
+                                            <FaStar key={starIndex} className={starIndex < Math.round(param.averageScore.average) ? 'filled-star' : ''} />
+                                        ))}
+                                    </li>
+                                ))}
                             </ul>
                         </div>
-                        <div className="actions">
-                            <button className="like-button">Like This Entry</button>
-                            <button className="dislike-button">Dislike This Entry</button>
-                        </div>
                         <div className="creator-info">
-                            <p>Creator: 123456</p>
+                            <p>Creator: {productData.creator}</p>
                             <button className="share-button"><FaShareAlt /> Share</button>
                         </div>
                     </div>
                 </div>
 
-                {/* Reviews Section */}
                 <div className="reviews-section">
                     <h2>Reviews About This Product</h2>
                     <Slider {...sliderSettings}>
-                        {reviews.map((review) => (
-                            <div key={review.id} className="review-card">
+                        {(productData.commentList || []).map((review, index) => (
+                            <div key={index} className="review-card" onClick={() => openModal(review)}>
                                 <div className="review-stars">
-                                    <FaStar /><FaStar /><FaStar /><FaStar /><FaStar />
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
+                                    ))}
                                 </div>
                                 <p><strong>{review.title}</strong></p>
-                                <p>{review.content}</p>
-                                <p>{review.user} - {review.daysAgo}</p>
+                                <p>{review.content.substring(0, 40)}...</p>
+                                <p>Posted on: {review.timestamp && review.timestamp.seconds ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">
-                                    <div className="review-likes">
-                                        <FaThumbsUp className="thumbs-up-icon" /> {review.likes}
+                                    <div className="review-likes" onClick={() => handleLikeClick(review)}>
+                                        <FaThumbsUp className={`thumbs-up-icon ${likedComments.includes(review) ? 'liked' : ''}`} /> {review.likes}
                                     </div>
                                 </div>
                             </div>
@@ -202,19 +349,76 @@ const ProductEntry = () => {
                     </Slider>
                 </div>
 
-                {/* Write Review Section */}
-                <div className="write-review-section">
-                    <h2>Judge It Yourself!</h2>
-                    <form className="review-form">
-                        <input type="text" placeholder="Type Your Title Here" />
-                        <textarea placeholder="Write Some Comment Here..."></textarea>
-                        <div className="rating-section">
-                            <p><FaLightbulb /> Battery Capacity</p>
-                            <p><FaHdd /> Storage</p>
-                            <p><FaCamera /> Camera</p>
+                {selectedReview && (
+                    <Modal
+                        isOpen={modalIsOpen}
+                        onRequestClose={closeModal}
+                        className="review-modal"
+                        overlayClassName="review-modal-overlay"
+                    >
+                        <h2>{selectedReview.title}</h2>
+                        <p><strong>Posted:</strong> {new Date(new Date(selectedReview.timestamp.seconds * 1000)).toLocaleString()}</p>
+                        <div className="modal-stars">
+                            <span>Overall Rating: </span>
+                            {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.rating ? 'filled-star' : ''} />
+                            ))}
                         </div>
-                        <button type="submit">Submit</button>
+                        <div className="rating-categories">
+                            <h3>Parameter Ratings:</h3>
+                            {Object.entries(selectedReview.parameterRatings).map(([paramId, rating], index) => (
+                                <div key={index} className="rating-item">
+                                    <span>{parameters.find(param => param.paramId === paramId)?.paramName || 'Parameter'}: </span>
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar key={starIndex} className={starIndex < rating ? 'filled-star' : ''} />
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                        <p className="review-content">{selectedReview.content}</p>
+                        <button className="close-modal-button" onClick={closeModal}>Close</button>
+                    </Modal>
+                )}
+
+                <div className="write-review-section">
+                    <h2 className="review-heading">Judge It Yourself!</h2>
+                    <form className="review-form" onSubmit={handleSubmit}>
+                        <div className="review-title">
+                            <input type="text" value={userCommentTitle} onChange={handleCommentTitleChange} placeholder="Type Your Title Here" />
+                            <div className="title-stars">
+                                {[...Array(5)].map((_, index) => (
+                                    <FaStar
+                                        key={index}
+                                        className={index < userProductRating ? 'filled-star' : ''}
+                                        onClick={() => handleProductRatingChange(index + 1)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                        <textarea
+                            value={userComment}
+                            onChange={handleCommentChange}
+                            placeholder="Write your comment here..."
+                        ></textarea>
+                        <div className="rating-section">
+                            {parameters.map((param, index) => (
+                                <div key={index} className="rating-item">
+                                    <FaLightbulb />
+                                    <span>{param.paramName}</span>
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar
+                                            key={starIndex}
+                                            className={userRatings[param.paramId] >= starIndex + 1 ? 'filled-star' : ''}
+                                            onClick={() => handleRatingChange(param.paramId, starIndex + 1)}
+                                        />
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                        <button type="submit" className="submit-button">Submit</button>
                     </form>
+                    {successMessage && <p className="success-message">{successMessage}</p>}
+                    {errorMessage && <p className="error-message">{errorMessage}</p>}
                 </div>
             </div>
         </div>

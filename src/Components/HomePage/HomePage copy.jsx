@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
+import './HomePage.css';
 
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
 import logoImage from "../HomePageAssets/404.jpg";
-import Modal from 'react-modal';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import './HomePage.css';
-
-Modal.setAppElement('#root');
 
 const Homepage = () => {
 
@@ -19,77 +14,6 @@ const Homepage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
-  const [products, setProducts] = useState([]); // To store the list of products
-  const [loading, setLoading] = useState(true);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [selectedProductData, setSelectedProductData] = useState(null);
-  const [ratingDistribution, setRatingDistribution] = useState([]); 
-  const db = getFirestore();
-
-  const toggleDropdown = () => {
-    setDropdownVisible(!isDropdownVisible);
-  };
-  useEffect(() => {
-    if (modalIsOpen) {
-      console.log('Modal is open:', modalIsOpen);
-    }
-  }, [modalIsOpen]);
-  
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const productEntriesRef = collection(db, 'ProductEntry');
-        const productSnapshot = await getDocs(productEntriesRef);
-        const productList = productSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setProducts(productList); // Update the product list state
-      } catch (error) {
-        console.error("Error fetching product list:", error);
-      } finally {
-        setLoading(false); // Stop loading once the data is fetched
-      }
-    };
-
-    fetchProducts();
-  }, [db]);
-  
-  const handleViewRatingDistribution = async (productId) => {
-    try {
-      const productRef = doc(db, 'ProductEntry', productId);
-      const productSnap = await getDoc(productRef);
-
-      if (productSnap.exists()) {
-        const productData = productSnap.data();
-        setSelectedProductData(productData);
-
-        // Assuming the rating distribution is stored in the product document (as an example)
-        const distribution = productData.ratingDistribution || {
-          'fiveStars': 0,
-          'fourStars': 0,
-          'threeStars': 0,
-          'twoStars': 0,
-          'oneStars': 0,
-        };
-
-        // Convert distribution object into an array format for the graph
-        const distributionArray = Object.entries(distribution).map(([rating, count]) => ({
-          rating,
-          count,
-        }));
-
-        setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
-        console.log('Rating distribution:', distributionArray); 
-        setModalIsOpen(true); // Open the modal
-        console.log('Modal is open:', modalIsOpen); 
-      } else {
-        console.log("Product not found");
-      }
-    } catch (error) {
-      console.error("Error fetching product rating distribution:", error);
-    }
-  };
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -97,13 +21,11 @@ const Homepage = () => {
       if (localStatusToken) {
         const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
         try {
-          console.log("Checking login status with token:", localStatusToken);
           const response = await handleUserRequest({
             action: 'checkLoginStatus',
             statusToken: localStatusToken,
           });
-          console.log("Response from checkLoginStatus:", response.data);
-          if (response.data.status === 'success') {
+          if (response.data.success) {
             setIsLoggedIn(true);
             setUsername(response.data.username);
           } else {
@@ -118,23 +40,29 @@ const Homepage = () => {
         setIsLoggedIn(false);
       }
     };
+    const setTimeGreeting = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      let currentGreeting = "Good ";
+      if (hour >= 5 && hour < 12) {
+        currentGreeting += "morning";
+      } else if (hour >= 12 && hour < 17) {
+        currentGreeting += "afternoon";
+      } else if (hour >= 17 && hour < 21) {
+        currentGreeting += "evening";
+      } else {
+        currentGreeting += "night";
+      }
+      setGreeting(currentGreeting);
+    };
+
     checkLoginStatus();
+    setTimeGreeting();
   }, []);
-  useEffect(() => {
-    const now = new Date();
-    const hour = now.getHours();
-    let currentGreeting = "Good ";
-    if (hour >= 5 && hour < 12) {
-      currentGreeting += "morning";
-    } else if (hour >= 12 && hour < 17) {
-      currentGreeting += "afternoon";
-    } else if (hour >= 17 && hour < 21) {
-      currentGreeting += "evening";
-    } else {
-      currentGreeting += "night";
-    }
-    setGreeting(currentGreeting);
-  }, []);
+
+  const toggleDropdown = () => {
+    setDropdownVisible(!isDropdownVisible);
+  };
   const handleLogout = async () => {
     const localStatusToken = localStorage.getItem('authToken');
     if (localStatusToken) {
@@ -144,7 +72,7 @@ const Homepage = () => {
           action: 'logout',
           statusToken: localStatusToken,
         });
-        if (response.data.status === 'success') {
+        if (response.data.success) {
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
           setUsername("");
@@ -155,11 +83,7 @@ const Homepage = () => {
       }
     }
   };
-
-  const closeModal = () => {
-    setModalIsOpen(false);
-  };
-
+  
   return (
 
     <div className="homepage">
@@ -269,49 +193,17 @@ const Homepage = () => {
           <p>will update every Thursday 11:59 p.m. EST</p>
         </div>
         <div className="mostPopularEntriesGrid">
-          <div className="product-list">
-            {products.length > 0 ? (
-              products.map(product => (
-                <div key={product.id} className="product-item">
-                  <Link to={`/product/${product.id}`}>
-                    <h3>{product.productName}</h3>
-                  </Link>
-                  <p onClick={() => handleViewRatingDistribution(product.id)} style={{ cursor: 'pointer' }}>
-                    Average Rating: {product.averageScore?.average || "No ratings yet"}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p>No products available</p>
-            )}
+          <div className="mostPopularEntryCard">
+            <img src="???.jpg" alt="???" />
+            <h1>???</h1>
+            <p>???</p>
+            <a href="#">View</a>
           </div>
         </div>
         <div className="mostPopularLoadMore">
           <button>LOAD MORE ENTRIES</button>
         </div>
       </section>
-
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        contentLabel="Rating Distribution Modal"
-        className="rating-distribution-modal"
-        overlayClassName="rating-distribution-overlay"
-      >
-        <h2>Rating Distribution for {selectedProductData?.productName}</h2>
-        <ResponsiveContainer width={500} height={300}>
-  <BarChart
-    data={ratingDistribution}>
-    <CartesianGrid strokeDasharray="3 3" />
-    <XAxis dataKey="rating" />
-    <YAxis />
-    <Tooltip />
-    <Legend />
-    <Bar dataKey="count" fill="#8884d8" />
-  </BarChart>
-</ResponsiveContainer>
-        <button onClick={closeModal}>Close</button>
-      </Modal>
 
       {/* Create Recommendation Entries Section */}
       <section className="recommendationEntries">
@@ -331,7 +223,6 @@ const Homepage = () => {
         <div className="recommendationLoadMore">
           <button>LOAD MORE ENTRIES</button>
         </div>
-        
       </section>
 
     </div>

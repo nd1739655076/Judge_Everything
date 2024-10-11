@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
 import logoImage from "../HomePageAssets/404.jpg";
-import Joyride from "react-joyride";
 
 const Homepage = () => {
 
@@ -15,83 +14,6 @@ const Homepage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
-<<<<<<< HEAD
-  const [run, setRun] = useState(false);
-  const [showTourAgain, setShowTourAgain] = useState(true);
-  const toggleDropdown = () => {
-    setDropdownVisible(!isDropdownVisible);
-  };
-
-  const steps = [
-    {
-      target: ".step-1",
-      content: "You can view or modify your account information here"
-    },
-    {
-      target: ".step-2",
-      content: "Create new product entries here"
-    },
-    {
-      target: ".step-3",
-      content: "Have any doubts or want to give feedback? Click here!"
-    },
-    {
-      target: ".step-4",
-      content: "Brows Most Popular Entries Every Week"
-    },
-    {
-      target: ".step-5",
-      content: "Personalized recommendations, Just for YOU!"
-    }
-  ];
-  useEffect(() => {
-    const shouldRunTourAgain = localStorage.getItem("showTourAgain");
-    setShowTourAgain(shouldRunTourAgain !== "false");
-  }, []);
-  const handleTourFinish = () => {
-    localStorage.setItem("showTourAgain", "false");
-    setShowTourAgain(false);
-  }
-  // useEffect(() => {
-  //   const currentUser = auth.onAuthStateChanged(async (user) => {
-  //     if (currentUser) {
-  //       setIsLoggedIn(true);
-  //       const currentUserRef = doc(db, 'User', user.idNum);
-  //       const currentUserDoc = await getDoc(currentUserRef);
-  //       if (currentUserDoc.exists()) {
-  //         setUsername(currentUserDoc.data().nickname || currentUserDoc.data().username);
-  //       }
-  //     } else {
-  //       setIsLoggedIn(false);
-  //     }
-  //   });
-  //   return () => currentUser();
-  // }, []);
-  // useEffect(() => {
-  //   const now = new Date();
-  //   const hour = now.getHours();
-  //   let currentGreeting = "Good ";
-  //   if (hour >= 5 && hour < 12) {
-  //     currentGreeting += "morning";
-  //   } else if (hour >= 12 && hour < 17) {
-  //     currentGreeting += "afternoon";
-  //   } else if (hour >= 17 && hour < 21) {
-  //     currentGreeting += "evening";
-  //   } else {
-  //     currentGreeting += "night";
-  //   }
-  //   setGreeting(currentGreeting);
-  // }, []);
-  // const handleLogout = async () => {
-  //   try {
-  //     await auth.signOut();
-  //     window.location.reload();
-  //   } catch (error) {
-  //     console.error("Error logging out:", error);
-  //   }
-  // };
-=======
->>>>>>> e729a27606b508f7d308c58556f290bb41340bf2
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -161,18 +83,11 @@ const Homepage = () => {
       }
     }
   };
-<<<<<<< HEAD
-
-
-=======
   
->>>>>>> e729a27606b508f7d308c58556f290bb41340bf2
   return (
 
     <div className="homepage">
-      {showTourAgain && (
-        <button onClick={() => setRun(true)}>Start Tour</button>
-      )}
+    
       {/* Top Bar */}
       <div className="topbar">
         <div className="contactinfo">
@@ -197,7 +112,7 @@ const Homepage = () => {
         <div className="navlinks">
           <a href="/">Home</a>
           <a href="#">About</a>
-          <a href="/contact" className="step-3">Support</a>
+          <a href="/contact">Support</a>
         </div>
         <div className="searchbar">
           <FaSearch />
@@ -243,7 +158,7 @@ const Homepage = () => {
                       </div>
                     </li>
                     <li>
-                      <div className="settings step-1">
+                      <div className="settings">
                         <Link to="/accountSettings"><FaCog /> Your Account</Link>
                       </div>
                     </li>
@@ -262,7 +177,7 @@ const Homepage = () => {
           <p className="p1">Found in 2024</p>
           <p className="p2">Bought/Used something? Share it!</p>
           <Link to="/creatProductEntry">
-            <button className="step-2">Create a New Entry</button>
+            <button>Create a New Entry</button>
           </Link>
         </div>
         <div className="createNewEntryImage">
@@ -271,7 +186,7 @@ const Homepage = () => {
       </section>
 
       {/* Create Most Popular Entries Section */}
-      <section className="mostPopularEntries step-4">
+      <section className="mostPopularEntries">
         <div className="mostPopularEntriesHeader">
           <h1>Ranking</h1>
           <h2>Most Popular Entries This Week</h2>
@@ -291,7 +206,7 @@ const Homepage = () => {
       </section>
 
       {/* Create Recommendation Entries Section */}
-      <section className="recommendationEntries step-5">
+      <section className="recommendationEntries">
         <div className="recommendationEntriesHeader">
           <h1>Recommendations</h1>
           <h2>The Products You May Like...</h2>
@@ -309,36 +224,9 @@ const Homepage = () => {
           <button>LOAD MORE ENTRIES</button>
         </div>
       </section>
-      <Joyride steps={steps}
-      run={run}
-      continuous
-      scrollToFirstStep
-      showProgress
-      showSkipButton
-      disableScrolling
-      callback={data => {
-        const { action } = data;
-        if (
-          action === "close" ||
-          action === "skip" ||
-          action === "finished"
-        ) {
-          setRun(false);
-        }
-      }}
-      styles={{
-        tooltip: {
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
-          color: "#fff"
-        },
-        buttonNext: {
-          backgroundColor: "#007bff"
-        }
-      }}
-      onFinish={handleTourFinish}
-      />
+
     </div>
-    
+
   );
 
 };

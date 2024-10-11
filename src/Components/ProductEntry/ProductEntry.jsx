@@ -132,36 +132,36 @@ const ProductEntry = () => {
         try {
             setSuccessMessage('');
             setErrorMessage('');
-
+    
             if (!loggedInUser) {
                 setErrorMessage('You must be logged in to submit a comment.');
                 return;
             }
-
+    
             if (!userCommentTitle.trim()) {
                 setErrorMessage('Cannot submit a comment without a title.');
                 return;
             }
-
+    
             if (!userComment.trim()) {
                 setErrorMessage('Cannot submit an empty comment.');
                 return;
             }
-
+    
             if ((productData.commentList || []).filter(comment => comment.userId === loggedInUser.uid).length >= 3) {
                 setErrorMessage('You have already provided three reviews for this entry. Please delete or edit your previous reviews before you start a new one.');
                 return;
             }
-
+    
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
-
+    
             if (productSnap.exists()) {
                 const productData = productSnap.data();
                 const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
                 const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
                 const newAverageScore = newTotalScore / newTotalRaters;
-
+    
                 const newComment = {
                     title: userCommentTitle,
                     content: userComment,
@@ -172,7 +172,8 @@ const ProductEntry = () => {
                     userId: loggedInUser.uid,
                     username: loggedInUser.username
                 };
-
+    
+                // Update ProductEntry with new comment and average score
                 await updateDoc(productRef, {
                     averageScore: {
                         average: newAverageScore,
@@ -181,17 +182,30 @@ const ProductEntry = () => {
                     },
                     commentList: arrayUnion(newComment)
                 });
-
-                setProductData((prevData) => ({
-                    ...prevData,
-                    averageScore: {
-                        average: newAverageScore,
-                        totalScore: newTotalScore,
-                        totalRater: newTotalRaters,
-                    },
-                    commentList: [...(prevData.commentList || []), newComment],
-                }));
-
+    
+                // Update Parameters collection
+                for (const [paramId, rating] of Object.entries(userRatings)) {
+                    const paramRef = doc(db, 'Parameters', paramId);
+                    const paramSnap = await getDoc(paramRef);
+                    if (paramSnap.exists()) {
+                        const paramData = paramSnap.data();
+                        const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
+                        const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
+                        const newParamAverage = newParamTotalScore / newParamTotalRaters;
+    
+                        await updateDoc(paramRef, {
+                            averageScore: {
+                                average: newParamAverage,
+                                totalScore: newParamTotalScore,
+                                totalRater: newParamTotalRaters,
+                            }
+                        });
+                    }
+                }
+    
+                // Fetch updated product and parameter data to ensure UI reflects latest changes
+                await fetchProductData();
+    
                 setSuccessMessage('Your ratings and comment have been submitted!');
                 setUserComment('');
                 setUserCommentTitle('');
@@ -205,7 +219,7 @@ const ProductEntry = () => {
             console.error('Error submitting ratings and comment:', error);
         }
     };
-
+    
     const handleEditReview = () => {
         if (selectedReview && loggedInUser && selectedReview.userId === loggedInUser.uid) {
             setUserCommentTitle(selectedReview.title);
@@ -221,22 +235,22 @@ const ProductEntry = () => {
         try {
             setSuccessMessage('');
             setErrorMessage('');
-
+    
             if (!loggedInUser) {
                 setErrorMessage('You must be logged in to edit a comment.');
                 return;
             }
-
+    
             if (!userCommentTitle.trim()) {
                 setErrorMessage('Cannot submit a comment without a title.');
                 return;
             }
-
+    
             if (!userComment.trim()) {
                 setErrorMessage('Cannot submit an empty comment.');
                 return;
             }
-
+    
             if (userCommentTitle === selectedReview.title &&
                 userComment === selectedReview.content &&
                 userProductRating === selectedReview.rating &&
@@ -244,7 +258,7 @@ const ProductEntry = () => {
                 setErrorMessage('Cannot submit a new comment without changing.');
                 return;
             }
-
+    
             const productRef = doc(db, 'ProductEntry', productId);
             const updatedCommentList = productData.commentList.map((comment) => {
                 if (comment.timestamp.seconds === selectedReview.timestamp.seconds && comment.content === selectedReview.content) {
@@ -259,16 +273,39 @@ const ProductEntry = () => {
                 }
                 return comment;
             });
-
+    
             await updateDoc(productRef, {
                 commentList: updatedCommentList
             });
-
+    
+            // Update Parameters collection
+            for (const [paramId, rating] of Object.entries(userRatings)) {
+                const paramRef = doc(db, 'Parameters', paramId);
+                const paramSnap = await getDoc(paramRef);
+                if (paramSnap.exists()) {
+                    const paramData = paramSnap.data();
+                    const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
+                    const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
+                    const newParamAverage = newParamTotalScore / newParamTotalRaters;
+    
+                    await updateDoc(paramRef, {
+                        averageScore: {
+                            average: newParamAverage,
+                            totalScore: newParamTotalScore,
+                            totalRater: newParamTotalRaters,
+                        }
+                    });
+                }
+            }
+    
+            // Fetch updated product and parameter data to ensure UI reflects latest changes
+            await fetchProductData();
+    
             setProductData((prevData) => ({
                 ...prevData,
                 commentList: updatedCommentList,
             }));
-
+    
             setSuccessMessage('Your review has been updated!');
             setUserComment('');
             setUserCommentTitle('');
@@ -280,10 +317,12 @@ const ProductEntry = () => {
             console.error('Error updating review:', error);
         }
     };
+    
+    
 
     const handleEditProduct = () => {
         if (loggedInUser && productData.creator === loggedInUser.uid) {
-            navigate('/creatProductEntry', { state: { productData, parameters, editMode: true } });
+            navigate('../EditProduct', { state: { productId: productData.id, productData, parameters, editMode: true } });
         }
     };
 

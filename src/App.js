@@ -9,6 +9,7 @@ import ForgotPassword from './Components/LoginSignup/ForgotPassword';
 import AccountSettings from './Components/HomePage/AccountSettings';
 import CreatProductEntry from './Components/HomePage/CreatProductEntry';
 import ProductEntry from './Components/ProductEntry/ProductEntry';
+import EditProduct from './Components/ProductEntry/EditProductEntry'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/accountSettings" element={<AccountSettings />} />
         <Route path="/creatProductEntry" element={<CreatProductEntry />} />
         <Route path="/product/:productId" element={<ProductEntry />} /> {/* Dynamic route for product details */}
+        <Route path="/editproduct" element={<EditProduct />} />
       </Routes>
     </Router>
   );

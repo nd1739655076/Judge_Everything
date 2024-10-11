@@ -204,18 +204,19 @@ class User {
     }
     console.log("email found");
 
-    // generate random number
-    // const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-    // let randomPassword = '';
+    //generate random number
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    let randomPassword = '';
     
-    // for (let i = 0; i < 10; i++) {
-    //   const randomIndex = Math.floor(Math.random() * characters.length);
-    //   randomPassword += characters.charAt(randomIndex);
-    // }
-    // console.log(randomPassword);
+    for (let i = 0; i < 10; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      randomPassword += characters.charAt(randomIndex);
+    }
+    console.log(randomPassword);
     //update password
-    // await userDocRef.update({password: newPassword});
-    // send email here
+    await userDocRef.update({password: newPassword});
+    return { status: 'success', statusToken: statusToken };
+    //send email here
     
     
     // var transporter = nodemailer.createTransport({

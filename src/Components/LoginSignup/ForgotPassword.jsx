@@ -22,7 +22,7 @@ const ForgotPassword = () => {
       const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
       const resetResponse = await handleUserRequest({
         action: 'reset',
-        // statusToken: localStatusToken,
+        statusToken: null,
         email: email,
       });
       if (resetResponse.data.success) {

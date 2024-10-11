@@ -276,6 +276,8 @@ const Homepage = () => {
                   <Link to={`/product/${product.id}`}>
                     <h3>{product.productName}</h3>
                   </Link>
+                  <p>{product.description || "No description available"}</p>
+                  <p>Tags: {product.tagList?.join(", ") || "No tags"}</p>
                   <p onClick={() => handleViewRatingDistribution(product.id)} style={{ cursor: 'pointer' }}>
                     Average Rating: {product.averageScore?.average || "No ratings yet"}
                   </p>

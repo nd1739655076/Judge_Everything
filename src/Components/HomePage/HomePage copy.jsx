@@ -8,12 +8,25 @@ import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-ic
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
 import logoImage from "../HomePageAssets/404.jpg";
 
+// add
+import Modal from 'react-modal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+Modal.setAppElement('#root');
+
 const Homepage = () => {
 
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
+
+  // add
+  const [products, setProducts] = useState([]); // To store the list of products
+  const [loading, setLoading] = useState(true);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedProductData, setSelectedProductData] = useState(null);
+  const [ratingDistribution, setRatingDistribution] = useState([]); 
+  const db = getFirestore();
 
   useEffect(() => {
     const checkLoginStatus = async () => {

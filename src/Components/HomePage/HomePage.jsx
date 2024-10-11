@@ -295,7 +295,7 @@ const Homepage = () => {
           <h1>Judge Everything</h1>
           <p className="p1">Found in 2024</p>
           <p className="p2">Bought/Used something? Share it!</p>
-          <Link to="/creatProductEntry">
+          <Link to="/createProductEntry">
             <button className="step-2">Create a New Entry</button>
           </Link>
         </div>

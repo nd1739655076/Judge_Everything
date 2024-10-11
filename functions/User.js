@@ -228,7 +228,7 @@ class User {
     if (password) updateData.password = password;
     if (email) updateData.email = email;
     if (nickname) updateData.nickname = nickname;
-    if (preferences) updateData.preferences[0] = preferences;
+    //if (preferences) updateData.preferences[0] = preferences;
     await userDocRef.update(updateData);
     return { status: 'success', message: 'User data updated successfully' };
   }

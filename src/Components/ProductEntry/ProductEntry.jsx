@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './ProductEntry.css';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
     FaPhone,
     FaEnvelope,
@@ -16,20 +17,19 @@ import {
     FaCog,
     FaStar,
     FaLightbulb,
-    FaBatteryFull,
-    FaHdd,
-    FaCamera,
     FaShareAlt,
     FaThumbsUp,
-    FaExclamationTriangle
+    FaExclamationTriangle,
+    FaEdit
 } from 'react-icons/fa';
 import Slider from "react-slick";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
 
 Modal.setAppElement('#root');
 
 const ProductEntry = () => {
     const { productId } = useParams();
+    const navigate = useNavigate();
     const [productData, setProductData] = useState(null);
     const [parameters, setParameters] = useState([]);
     const [userProductRating, setUserProductRating] = useState(0);
@@ -44,9 +44,10 @@ const ProductEntry = () => {
     const [selectedReview, setSelectedReview] = useState(null);
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const [likedComments, setLikedComments] = useState([]);
+    const [loggedInUser, setLoggedInUser] = useState(null);
     const db = getFirestore();
+    const [productCreatorExists, setProductCreatorExists] = useState(true);
 
-    // 定义 fetchProductData 函数
     const fetchProductData = async () => {
         try {
             const productRef = doc(db, 'ProductEntry', productId);
@@ -57,10 +58,21 @@ const ProductEntry = () => {
                 const paramsQuery = query(collection(db, 'Parameters'), where('productId', '==', productId));
                 const paramsSnapshot = await getDocs(paramsQuery);
                 const paramList = paramsSnapshot.docs.map(doc => ({ ...doc.data(), paramId: doc.id }));
+                const userId = productData.creator;
+                 const userRef = doc(db, 'User', userId);
+                 const userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    setProductCreatorExists(true);  // User exists
+                } else {
+                    setProductCreatorExists(false); // User does not exist
+                }
                 setParameters(paramList);
+            } else {
+                console.error("No product found for the given productId:", productId);
             }
         } catch (error) {
-            console.error("Error fetching product data: ", error);
+            console.error("Error fetching product data:", error);
         } finally {
             setLoading(false);
         }
@@ -68,7 +80,41 @@ const ProductEntry = () => {
 
     useEffect(() => {
         fetchProductData();
+        const fetchUserStatus = async () => {
+            const userData = await getCurrentLoggedInUser();
+            if (userData) {
+                setLoggedInUser(userData);
+            }
+        };
+        fetchUserStatus();
     }, [productId]);
+
+    const getCurrentLoggedInUser = async () => {
+        const localStatusToken = localStorage.getItem('authToken');
+        if (localStatusToken) {
+            const functions = getFunctions();
+            const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+            try {
+                const response = await handleUserRequest({
+                    action: 'checkLoginStatus',
+                    statusToken: localStatusToken
+                });
+                if (response.data.success) {
+                    return {
+                        uid: response.data.uid,
+                        username: response.data.username
+                    };
+                } else {
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error checking login status:", error);
+                return null;
+            }
+        } else {
+            return null;
+        }
+    };
 
     const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
 
@@ -93,94 +139,236 @@ const ProductEntry = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
             setSuccessMessage('');
             setErrorMessage('');
-
+    
+            if (!loggedInUser) {
+                setErrorMessage('You must be logged in to submit a comment.');
+                return;
+            }
+    
+            if (!userCommentTitle.trim()) {
+                setErrorMessage('Cannot submit a comment without a title.');
+                return;
+            }
+    
+            if (!userComment.trim()) {
+                setErrorMessage('Cannot submit an empty comment.');
+                return;
+            }
+    
+            if ((productData.commentList || []).filter(comment => comment.userId === loggedInUser.uid).length >= 3) {
+                setErrorMessage('You have already provided three reviews for this entry. Please delete or edit your previous reviews before you start a new one.');
+                return;
+            }
+    
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
+    
             if (productSnap.exists()) {
                 const productData = productSnap.data();
                 const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
                 const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
                 const newAverageScore = newTotalScore / newTotalRaters;
 
-                const newComment = {
+                const currentDistribution = productData.ratingDistribution || {
+                    'fiveStars': 0,
+                    'fourStars': 0,
+                    'threeStars': 0,
+                    'twoStars': 0,
+                    'oneStar': 0,
+                };
+                switch (userProductRating) {
+                    case 5:
+                        currentDistribution['fiveStars'] += 1;
+                        break;
+                    case 4:
+                        currentDistribution['fourStars'] += 1;
+                        break;
+                    case 3:
+                        currentDistribution['threeStars'] += 1;
+                        break;
+                    case 2:
+                        currentDistribution['twoStars'] += 1;
+                        break;
+                    case 1:
+                        currentDistribution['oneStar'] += 1;
+                        break;
+                    default:
+                        console.error('Invalid rating input');
+                }
+                 const newComment = {
                     title: userCommentTitle,
                     content: userComment,
                     rating: userProductRating,
                     parameterRatings: userRatings,
                     timestamp: new Date(),
                     likes: 0,
+                    userId: loggedInUser.uid,
+                    username: loggedInUser.username
                 };
-
+    
+                // Update ProductEntry with new comment and average score
                 await updateDoc(productRef, {
                     averageScore: {
                         average: newAverageScore,
                         totalScore: newTotalScore,
                         totalRater: newTotalRaters,
                     },
+                    ratingDistribution: currentDistribution,
                     commentList: arrayUnion(newComment)
                 });
-
-                // 将新的评论直接添加到状态中，而不需要刷新页面
-                setProductData((prevData) => ({
-                    ...prevData,
-                    averageScore: {
-                        average: newAverageScore,
-                        totalScore: newTotalScore,
-                        totalRater: newTotalRaters,
-                    },
-                    commentList: [...(prevData.commentList || []), newComment],
-                }));
-
+    
+                // Update Parameters collection
+                for (const [paramId, rating] of Object.entries(userRatings)) {
+                    const paramRef = doc(db, 'Parameters', paramId);
+                    const paramSnap = await getDoc(paramRef);
+                    if (paramSnap.exists()) {
+                        const paramData = paramSnap.data();
+                        const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
+                        const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
+                        const newParamAverage = newParamTotalScore / newParamTotalRaters;
+    
+                        await updateDoc(paramRef, {
+                            averageScore: {
+                                average: newParamAverage,
+                                totalScore: newParamTotalScore,
+                                totalRater: newParamTotalRaters,
+                            }
+                        });
+                    }
+                }
+    
+                // Fetch updated product and parameter data to ensure UI reflects latest changes
+                await fetchProductData();
                 setSuccessMessage('Your ratings and comment have been submitted!');
                 setUserComment('');
                 setUserCommentTitle('');
                 setUserRatings({});
                 setUserProductRating(0);
-            }
-
-            for (const [paramId, rating] of Object.entries(userRatings)) {
-                const paramRef = doc(db, 'Parameters', paramId);
-                const paramSnap = await getDoc(paramRef);
-
-                if (paramSnap.exists()) {
-                    const paramData = paramSnap.data();
-                    const newTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
-                    const newTotalScore = (paramData.averageScore.totalScore || 0) + rating;
-                    const newAverageScore = newTotalScore / newTotalRaters;
-
-                    await setDoc(paramRef, {
-                        averageScore: {
-                            average: newAverageScore,
-                            totalScore: newTotalScore,
-                            totalRater: newTotalRaters,
-                        }
-                    }, { merge: true });
-
-                    setParameters((prevParams) =>
-                        prevParams.map((param) =>
-                            param.paramId === paramId
-                                ? {
-                                      ...param,
-                                      averageScore: {
-                                          average: newAverageScore,
-                                          totalScore: newTotalScore,
-                                          totalRater: newTotalRaters,
-                                      },
-                                  }
-                                : param
-                        )
-                    );
-                }
+            } else {
+                console.error("Product not found for the given productId:", productId);
             }
         } catch (error) {
             setErrorMessage('Failed to submit your ratings and comment. Please try again.');
             console.error('Error submitting ratings and comment:', error);
         }
     };
+    
+    const handleEditReview = () => {
+        if (selectedReview && loggedInUser && selectedReview.userId === loggedInUser.uid) {
+            setUserCommentTitle(selectedReview.title);
+            setUserComment(selectedReview.content);
+            setUserProductRating(selectedReview.rating);
+            setUserRatings(selectedReview.parameterRatings);
+            setModalIsOpen(false);
+        }
+    };
+
+    const handleUpdateReview = async (e) => {
+        e.preventDefault();
+        try {
+            setSuccessMessage('');
+            setErrorMessage('');
+    
+            if (!loggedInUser) {
+                setErrorMessage('You must be logged in to edit a comment.');
+                return;
+            }
+    
+            if (!userCommentTitle.trim()) {
+                setErrorMessage('Cannot submit a comment without a title.');
+                return;
+            }
+    
+            if (!userComment.trim()) {
+                setErrorMessage('Cannot submit an empty comment.');
+                return;
+            }
+    
+            if (userCommentTitle === selectedReview.title &&
+                userComment === selectedReview.content &&
+                userProductRating === selectedReview.rating &&
+                JSON.stringify(userRatings) === JSON.stringify(selectedReview.parameterRatings)) {
+                setErrorMessage('Cannot submit a new comment without changing.');
+                return;
+            }
+    
+            const productRef = doc(db, 'ProductEntry', productId);
+            const updatedCommentList = productData.commentList.map((comment) => {
+                if (comment.timestamp.seconds === selectedReview.timestamp.seconds && comment.content === selectedReview.content) {
+                    return {
+                        ...comment,
+                        title: userCommentTitle,
+                        content: userComment,
+                        rating: userProductRating,
+                        parameterRatings: userRatings,
+                        timestamp: new Date(),
+                    };
+                }
+                return comment;
+            });
+    
+            await updateDoc(productRef, {
+                commentList: updatedCommentList
+            });
+    
+            // Update Parameters collection
+            for (const [paramId, rating] of Object.entries(userRatings)) {
+                const paramRef = doc(db, 'Parameters', paramId);
+                const paramSnap = await getDoc(paramRef);
+                if (paramSnap.exists()) {
+                    const paramData = paramSnap.data();
+                    const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
+                    const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
+                    const newParamAverage = newParamTotalScore / newParamTotalRaters;
+    
+                    await updateDoc(paramRef, {
+                        averageScore: {
+                            average: newParamAverage,
+                            totalScore: newParamTotalScore,
+                            totalRater: newParamTotalRaters,
+                        }
+                    });
+                }
+            }
+    
+            // Fetch updated product and parameter data to ensure UI reflects latest changes
+            await fetchProductData();
+    
+            setProductData((prevData) => ({
+                ...prevData,
+                commentList: updatedCommentList,
+            }));
+    
+            setSuccessMessage('Your review has been updated!');
+            setUserComment('');
+            setUserCommentTitle('');
+            setUserRatings({});
+            setUserProductRating(0);
+            setSelectedReview(null);
+        } catch (error) {
+            setErrorMessage('Failed to update your review. Please try again.');
+            console.error('Error updating review:', error);
+        }
+    };
+    
+    
+
+    const handleEditProduct = () => {
+        if (loggedInUser && productData.creator === loggedInUser.uid) {
+            navigate('../EditProduct', { state: { productId: productData.id, productData, parameters, editMode: true } });
+        }
+    };
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (!productData) {
+        return <div>Product not found</div>;
+    }
 
     const openModal = (review) => {
         setSelectedReview(review);
@@ -194,6 +382,7 @@ const ProductEntry = () => {
     const handleFavoriteClick = () => {
         setIsFavorite(!isFavorite);
     };
+
 
     const handleLikeClick = async (review) => {
         const productRef = doc(db, 'ProductEntry', productId);
@@ -216,18 +405,12 @@ const ProductEntry = () => {
     const sliderSettings = {
         dots: true,
         infinite: false,
+        infinite: false,
         speed: 500,
+        slidesToShow: 4,
         slidesToShow: 4,
         slidesToScroll: 1,
     };
-
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    if (!productData) {
-        return <div>Product not found</div>;
-    }
 
     return (
         <div className="product-entry-page">
@@ -244,6 +427,13 @@ const ProductEntry = () => {
                     <a href="#"><FaYoutube /></a>
                     <a href="#"><FaTwitter /></a>
                 </div>
+                {loggedInUser && (
+                    <div className="currentUserStatus">
+                        <div className="greeting">
+                            Hello, {loggedInUser.username}!
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="navbar">
@@ -265,26 +455,31 @@ const ProductEntry = () => {
                     {isDropdownVisible && (
                         <div className="dropdownMenu">
                             <ul>
-                                <li>
-                                    <div className="userauth">
-                                        <Link to="/loginSignup"><FaUser /> Login/Register</Link>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="notifcations">
-                                        <a href="#"><FaBell /> Notification</a>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="historys">
-                                        <a href="#"><FaHistory /> History</a>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="settings">
-                                        <Link to="/accountSettings"><FaCog /> Your Account</Link>
-                                    </div>
-                                </li>
+                                {!loggedInUser ? (
+                                    <li>
+                                        <div className="userauth">
+                                            <Link to="/loginSignup"><FaUser /> Login/Register</Link>
+                                        </div>
+                                    </li>
+                                ) : (
+                                    <>
+                                        <li>
+                                            <div className="notifcations">
+                                                <a href="#"><FaBell /> Notification</a>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div className="historys">
+                                                <a href="#"><FaHistory /> History</a>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div className="settings">
+                                                <Link to="/accountSettings"><FaCog /> Your Account</Link>
+                                            </div>
+                                        </li>
+                                    </>
+                                )}
                             </ul>
                         </div>
                     )}
@@ -305,7 +500,13 @@ const ProductEntry = () => {
                             <button className="report-button">
                                 <FaExclamationTriangle /> Report
                             </button>
+                            {loggedInUser && productData.creator === loggedInUser.uid && (
+                                <button className="edit-product-button" onClick={handleEditProduct}>
+                                    <FaEdit /> Edit Product
+                                </button>
+                            )}
                         </h1>
+                        <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
                         <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
                         <div className="rating-categories">
                             <ul>
@@ -320,7 +521,11 @@ const ProductEntry = () => {
                             </ul>
                         </div>
                         <div className="creator-info">
-                            <p>Creator: {productData.creator}</p>
+                            {productCreatorExists ? (
+        <p>Creator: {productData.creator}</p>
+    ) : (
+        <p>Creator: Account no longer exists</p>
+    )}
                             <button className="share-button"><FaShareAlt /> Share</button>
                         </div>
                     </div>
@@ -336,7 +541,7 @@ const ProductEntry = () => {
                                         <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
                                     ))}
                                 </div>
-                                <p><strong>{review.title}</strong></p>
+                                <p><strong>{review.title}</strong> by {review.username ? review.username : 'Anonymous Judger'}</p>
                                 <p>{review.content.substring(0, 40)}...</p>
                                 <p>Posted on: {review.timestamp && review.timestamp.seconds ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">
@@ -356,6 +561,11 @@ const ProductEntry = () => {
                         className="review-modal"
                         overlayClassName="review-modal-overlay"
                     >
+                        <div className="modal-header">
+                            {loggedInUser && selectedReview.userId === loggedInUser.uid && (
+                                <button className="edit-review-button" onClick={handleEditReview}><FaEdit /> Edit</button>
+                            )}
+                        </div>
                         <h2>{selectedReview.title}</h2>
                         <p><strong>Posted:</strong> {new Date(new Date(selectedReview.timestamp.seconds * 1000)).toLocaleString()}</p>
                         <div className="modal-stars">
@@ -382,7 +592,7 @@ const ProductEntry = () => {
 
                 <div className="write-review-section">
                     <h2 className="review-heading">Judge It Yourself!</h2>
-                    <form className="review-form" onSubmit={handleSubmit}>
+                    <form className="review-form" onSubmit={selectedReview ? handleUpdateReview : handleSubmit}>
                         <div className="review-title">
                             <input type="text" value={userCommentTitle} onChange={handleCommentTitleChange} placeholder="Type Your Title Here" />
                             <div className="title-stars">
@@ -414,9 +624,25 @@ const ProductEntry = () => {
                                     ))}
                                 </div>
                             ))}
+                            {parameters.map((param, index) => (
+                                <div key={index} className="rating-item">
+                                    <FaLightbulb />
+                                    <span>{param.paramName}</span>
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar
+                                            key={starIndex}
+                                            className={userRatings[param.paramId] >= starIndex + 1 ? 'filled-star' : ''}
+                                            onClick={() => handleRatingChange(param.paramId, starIndex + 1)}
+                                        />
+                                    ))}
+                                </div>
+                            ))}
                         </div>
                         <button type="submit" className="submit-button">Submit</button>
+                        <button type="submit" className="submit-button">Submit</button>
                     </form>
+                    {successMessage && <p className="success-message">{successMessage}</p>}
+                    {errorMessage && <p className="error-message">{errorMessage}</p>}
                     {successMessage && <p className="success-message">{successMessage}</p>}
                     {errorMessage && <p className="error-message">{errorMessage}</p>}
                 </div>

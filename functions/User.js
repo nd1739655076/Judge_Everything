@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 //const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+// const nodemailer = require('nodemailer');
 
 const db = admin.firestore();
 
@@ -194,7 +195,54 @@ class User {
     await userDocRef.delete();
     return { status: 'success', message: 'User account deleted successfully' }
   }
+  static async reset(email) {
+    console.log("call to User");
+    const userDocRef = db.collection('User').where('email', '==', email);
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not exist' };
+    }
+    console.log("email found");
 
+    // generate random number
+    // const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    // let randomPassword = '';
+    
+    // for (let i = 0; i < 10; i++) {
+    //   const randomIndex = Math.floor(Math.random() * characters.length);
+    //   randomPassword += characters.charAt(randomIndex);
+    // }
+    // console.log(randomPassword);
+    //update password
+    // await userDocRef.update({password: newPassword});
+    // send email here
+    
+    
+    // var transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: 'judge.everything404@gmail.com',
+    //     pass: 'zfqw jgrr kkuq mrnh'
+    //     }
+    // });
+        
+    // var mailOptions = {
+    //   from: 'judge.everything404@gmail.com',
+    //   to: {email},
+    //   subject: 'Password Reset',
+    //   text: `Your password was seccessfully reset! \nYour temporary new password is: ${randomPassword}`
+    // };
+        
+    // transporter.sendMail(mailOptions, function(error, info){
+    //   if (error) {
+    //     console.log(error);
+    //   } else {
+    //     console.log('Email sent: ' + info.response);
+    //   }
+    // });
+    
+    // return { status: 'success', message: 'Password reset successfully' };
+  }
 }
 
 module.exports = User;

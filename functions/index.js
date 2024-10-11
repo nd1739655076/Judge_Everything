@@ -109,6 +109,16 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: deleteResponse.message };
       }
     }
+    else if (action === 'reset') {
+      console.log("call to index.js");
+      const resetResponse = await User.reset(email);
+      console.log("call complete");
+      if (loginResponse.status === 'success') {
+          return { success: true, statusToken: loginResponse.statusToken };
+      } else {
+          return { success: false, message: loginResponse.message };
+      }
+  }
 
   } catch (error) {
     console.error('Error handling User request:', error);

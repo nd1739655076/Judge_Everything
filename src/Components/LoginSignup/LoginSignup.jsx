@@ -28,12 +28,10 @@ const LoginSignup = () => {
     setErrorMessage("");
     setSuccessMessage("");
   };
-
   const handleModeSwitch = () => {
     setAction(action === "Login" ? "Sign Up" : "Login");
     resetForm();
   };
-
   const handleSignup = async () => {
     if (!username.trim()) {
       setErrorMessage("Username cannot be empty.");
@@ -71,7 +69,6 @@ const LoginSignup = () => {
       setErrorMessage("An error occurred during signup. Please try again.");
     }
   };
-
   const handleLogin = async () => {
     try {
       setLoading(true);

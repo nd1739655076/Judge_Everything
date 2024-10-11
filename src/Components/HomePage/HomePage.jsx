@@ -15,6 +15,7 @@ const Homepage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
+<<<<<<< HEAD
   const [run, setRun] = useState(false);
   const [showTourAgain, setShowTourAgain] = useState(true);
   const toggleDropdown = () => {
@@ -89,6 +90,8 @@ const Homepage = () => {
   //     console.error("Error logging out:", error);
   //   }
   // };
+=======
+>>>>>>> e729a27606b508f7d308c58556f290bb41340bf2
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -96,13 +99,11 @@ const Homepage = () => {
       if (localStatusToken) {
         const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
         try {
-          console.log("Checking login status with token:", localStatusToken);
           const response = await handleUserRequest({
             action: 'checkLoginStatus',
             statusToken: localStatusToken,
           });
-          console.log("Response from checkLoginStatus:", response.data);
-          if (response.data.status === 'success') {
+          if (response.data.success) {
             setIsLoggedIn(true);
             setUsername(response.data.username);
           } else {
@@ -117,23 +118,29 @@ const Homepage = () => {
         setIsLoggedIn(false);
       }
     };
+    const setTimeGreeting = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      let currentGreeting = "Good ";
+      if (hour >= 5 && hour < 12) {
+        currentGreeting += "morning";
+      } else if (hour >= 12 && hour < 17) {
+        currentGreeting += "afternoon";
+      } else if (hour >= 17 && hour < 21) {
+        currentGreeting += "evening";
+      } else {
+        currentGreeting += "night";
+      }
+      setGreeting(currentGreeting);
+    };
+
     checkLoginStatus();
+    setTimeGreeting();
   }, []);
-  useEffect(() => {
-    const now = new Date();
-    const hour = now.getHours();
-    let currentGreeting = "Good ";
-    if (hour >= 5 && hour < 12) {
-      currentGreeting += "morning";
-    } else if (hour >= 12 && hour < 17) {
-      currentGreeting += "afternoon";
-    } else if (hour >= 17 && hour < 21) {
-      currentGreeting += "evening";
-    } else {
-      currentGreeting += "night";
-    }
-    setGreeting(currentGreeting);
-  }, []);
+
+  const toggleDropdown = () => {
+    setDropdownVisible(!isDropdownVisible);
+  };
   const handleLogout = async () => {
     const localStatusToken = localStorage.getItem('authToken');
     if (localStatusToken) {
@@ -143,7 +150,7 @@ const Homepage = () => {
           action: 'logout',
           statusToken: localStatusToken,
         });
-        if (response.data.status === 'success') {
+        if (response.data.success) {
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
           setUsername("");
@@ -154,8 +161,12 @@ const Homepage = () => {
       }
     }
   };
+<<<<<<< HEAD
 
 
+=======
+  
+>>>>>>> e729a27606b508f7d308c58556f290bb41340bf2
   return (
 
     <div className="homepage">

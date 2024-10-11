@@ -4,6 +4,9 @@ import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 // import { httpsCallable } from 'firebase/functions';
 const nodemailer = require('nodemailer');
+import { useNavigate } from 'react-router-dom';
+// import { httpsCallable } from 'firebase/functions';
+const nodemailer = require('nodemailer');
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -22,28 +25,28 @@ const ForgotPassword = () => {
       //   email: email,
       // });
       // await sendPasswordResetEmail(auth, email);
-      // var transporter = nodemailer.createTransport({
-      //   service: 'gmail',
-      //   auth: {
-      //     user: 'judge.everything404@gmail.com',
-      //     pass: 'zfqw jgrr kkuq mrnh'
-      //   }
-      // });
+      var transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: 'judge.everything404@gmail.com',
+          pass: 'zfqw jgrr kkuq mrnh'
+        }
+      });
       
-      // var mailOptions = {
-      //   from: 'judge.everything404@gmail.com',
-      //   to: email,
-      //   subject: 'Password Reset',
-      //   text: 'That was easy!'
-      // };
+      var mailOptions = {
+        from: 'judge.everything404@gmail.com',
+        to: email,
+        subject: 'Password Reset',
+        text: 'That was easy!'
+      };
       
-      // transporter.sendMail(mailOptions, function(error, info){
-      //   if (error) {
-      //     console.log(error);
-      //   } else {
-      //     console.log('Email sent: ' + info.response);
-      //   }
-      // });
+      transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+          console.log(error);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      });
       setMessage('Password reset email sent! Check your inbox.\nRedirecting to Login page...');
       setError('');  // Clear any previous errors
       

@@ -1,5 +1,4 @@
 const admin = require('firebase-admin');
-
 const db = admin.firestore();
 
 class ProductEntry {
@@ -13,6 +12,13 @@ class ProductEntry {
       totalScore: 0,
       totalRater: 0,
     };
+    this.ratingDistribution = {
+      fiveStars : 0,
+      fourStars : 0,
+      threeStars : 0,
+      twoStars : 0,
+      oneStars : 0
+    }
     this.parametorList = new Array(10).fill(null);
     this.commentList = [];
     this.reportList = new Map();
@@ -24,9 +30,10 @@ class ProductEntry {
       id: this.id,
       productName: this.productName,
       creator: this.creator,
-      tagList: this.tagList,
-      averageScore: this.averageScore,
+      tags: this.tagList,
       parametorList: this.parametorList,
+      averageScore: this.averageScore,
+      ratingDistribution: this.ratingDistribution,
       commentList: this.commentList,
       reportList: Object.fromEntries(this.reportList)
     });

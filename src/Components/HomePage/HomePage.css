@@ -113,9 +113,12 @@ body {
 .currentUserStatus .currentUserStatusInfo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
   font-size: 1rem;
-  color: #333333;
+  color: #007bff;
+}
+.currentUserStatus .currentUserStatusInfo .username {
+  font-weight: bold;
 }
 .currentUserStatus .currentUserStatusInfo svg {
   font-size: 1.2rem;

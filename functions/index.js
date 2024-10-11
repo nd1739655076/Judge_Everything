@@ -9,79 +9,158 @@ const db = admin.firestore();
 
 const Id = require('./Id');
 const User = require('./User');
+const Parameter = require('./Parameter');
 const ProductEntry = require('./ProductEntry');
 
+// Id Handle
 exports.handleIdRequest = functions.https.onCall(async (data, context) => {
   try {
     const {action, type, name} = data;
+    // type, name
     if (action === 'generate') {
       const newId = new Id();
-      const result = await newId.generateId(type, name);
-      return result;
+      const idResponse = await newId.generateId(type, name);
+      return idResponse;
     }
+
   } catch (error) {
-    console.error('Error generating ID:', error);
-    throw new functions.https.HttpsError('internal', 'Failed to generate ID.');
+    console.error('Error handling Id request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle Id request.');
   }
 });
 
+// User Handle
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, uidNum, username, password, email } = data;
+    const { action, username, password, email, statusToken, uidNum, nickname } = data;
     if (action === 'generate') {
-      console.log("Checking if username exists:", username);
-      
-      // check whether the same username in Firebase database
-      const usersRef = db.collection('User');
-      const querySnapshot = await usersRef.where('username', '==', username).get();
-      
-      if (!querySnapshot.empty) {
-        console.log("Username already exists.");
-        throw new functions.https.HttpsError('already-exists', 'The username is already taken. Please choose another one.');
+      // username, password, email
+      const userDocRef = db.collection('User').where('username', '==', username);
+      const userDoc = await userDocRef.get();
+      if (!userDoc.empty) {
+        return { success: false, message: "Username exist" };
       }
-
+      const newId = new Id();
+      const idResponse = await newId.generateId('user', username);
+      const uidNum = idResponse.idNum;
       const newUser = new User(uidNum, username, password, email);
-      console.log("Creating new user with ID:", uidNum);
-      await newUser.generateUser();  // use generate user
-      console.log("User successfully created.");
-
-      return { success: true, message: "User successfully created" };
-    } else {
-      throw new functions.https.HttpsError('invalid-argument', 'Invalid action.');
+      await newUser.generateUser();
+      return { success: true, message: "Sign up successful! You can now log in." };
     }
+
+    else if (action == 'login') {
+      // username, password
+      const loginResponse = await User.login(username, password);
+      if (loginResponse.status === 'success') {
+        return { success: true, statusToken: loginResponse.statusToken };
+      } else {
+        return { success: false, message: loginResponse.message };
+      }
+    }
+
+    else if (action === 'checkLoginStatus') {
+      // statusToken
+      const loginStatusResponse = await User.checkLoginStatus(statusToken);
+      if (loginStatusResponse.status === 'success') {
+        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid };
+      } else {
+        return { success: false, message: loginStatusResponse.message };
+      }
+    }
+
+    else if (action === 'logout') {
+      // statusToken
+      const logoutResponse = await User.logout(statusToken);
+      if (logoutResponse.status === 'success') {
+        return { success: true, message: logoutResponse.message };
+      } else {
+        return { success: false, message: logoutResponse.message };
+      }
+    }
+
+    else if (action === 'accountSetting') {
+      // statusToken
+      const logoutResponse = await User.logout(statusToken);
+      if (logoutResponse.status === 'success') {
+        return { success: true, message: logoutResponse.message };
+      } else {
+        return { success: false, message: logoutResponse.message };
+      }
+    }
+
+    else if (action === 'getUserData') {
+      // uidNum
+      const userDataResponse = await User.getUserData(uidNum);
+      if (userDataResponse.status === 'success') {
+        return { success: true, data: userDataResponse.data };
+      } else {
+        return { success: false, message: userDataResponse.message };
+      }
+    }
+
+    else if (action === 'accountSetting') {
+      // username, password, email, nickname, uidNum, nickname
+      const accountUpdateResponse = await User.accountSetting(uidNum, username, password, email, nickname);
+      if (accountUpdateResponse.status === 'success') {
+        return { success: true, message: accountUpdateResponse.message };
+      } else {
+        return { success: false, message: accountUpdateResponse.message };
+      }
+    }
+
+    else if (action === 'delete') {
+      // uidNum
+      const deleteResponse = await User.delete(uidNum);
+      if (deleteResponse.status === 'success') {
+        return { success: true, message: deleteResponse.message };
+      } else {
+        return { success: false, message: deleteResponse.message };
+      }
+    }
+
   } catch (error) {
-    console.error('Error handling user request:', error);
+    console.error('Error handling User request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle user request.');
   }
 });
 
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const {action, prodidNum, productName, uidNum} = data;
+    const { action, productName, uidNum, tags, paramList } = data;
     if (action === 'generate') {
-      const productEntry = new ProductEntry(prodidNum, productName, uidNum);
-      await productEntry.generateProductEntry();
+      const generateId = new Id();
+      const productIdResult = await generateId.generateId('productEntry', productName);
+      const prodidNum = productIdResult.idNum;
+      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum);
+      const parameterIds = [];
+
+      if (paramList && paramList.length > 0) {
+        for (let i = 0; i < paramList.length; i++) {
+          // Generate parameter ID using the custom ID generation function
+          const paramIdResult = await generateId.generateId('parameter', paramList[i]);
+          const paramId = paramIdResult.idNum; // Extract the generated parameter ID
+          const paramName = paramList[i]; // Parameter name
+
+          console.log(`Creating parameter ${i + 1}: ID ${paramId}, Name: ${paramName}`);
+
+          const parameter = new Parameter(paramId, prodidNum, paramName); // Create new parameter
+
+          // Save the parameter to Firestore
+          await parameter.save(); // Save parameter to Firestore
+          
+          parameterIds.push(paramId); // Add the parameter ID to the list
+
+          console.log(`Parameter ${i + 1} saved: ID ${paramId}`);
+        }
+      }
+      newProductEntry.parametorList = parameterIds;
+      newProductEntry.tags = tags; 
+      await newProductEntry.generateProductEntry();
+      console.log('Product entry successfully created.');
+      return { message: 'Product entry created successfully!' };
     } 
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
   }
-});
-
-exports.checkLoginStatus = functions.https.onCall(async (data, context) => {
-  if (context.auth) {
-    const uid = context.auth.uid;
-    const userDoc = await admin.firestore().collection('Users').doc(uid).get();
-    if (userDoc.exists) {
-      return { loggedIn: true, username: userDoc.data().username };
-    } else {
-      return { loggedIn: false };
-    }
-  } else {
-    return { loggedIn: false };
-  }
-});
-
-exports.handleLogout = functions.https.onCall(async (data, context) => {
-  return { success: true };
 });

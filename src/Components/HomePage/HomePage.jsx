@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { auth, db } from "../../firebase";
-import { doc, getDoc } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../firebase';
 import './HomePage.css';
 
 import { Link } from 'react-router-dom';
@@ -20,6 +20,7 @@ const Homepage = () => {
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
+
   const steps = [
     {
       target: ".step-1",
@@ -89,6 +90,72 @@ const Homepage = () => {
   //   }
   // };
 
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const localStatusToken = localStorage.getItem('authToken');
+      if (localStatusToken) {
+        const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+        try {
+          console.log("Checking login status with token:", localStatusToken);
+          const response = await handleUserRequest({
+            action: 'checkLoginStatus',
+            statusToken: localStatusToken,
+          });
+          console.log("Response from checkLoginStatus:", response.data);
+          if (response.data.status === 'success') {
+            setIsLoggedIn(true);
+            setUsername(response.data.username);
+          } else {
+            setIsLoggedIn(false);
+            localStorage.removeItem('authToken');
+          }
+        } catch (error) {
+          setIsLoggedIn(false);
+          localStorage.removeItem('authToken');
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+    };
+    checkLoginStatus();
+  }, []);
+  useEffect(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    let currentGreeting = "Good ";
+    if (hour >= 5 && hour < 12) {
+      currentGreeting += "morning";
+    } else if (hour >= 12 && hour < 17) {
+      currentGreeting += "afternoon";
+    } else if (hour >= 17 && hour < 21) {
+      currentGreeting += "evening";
+    } else {
+      currentGreeting += "night";
+    }
+    setGreeting(currentGreeting);
+  }, []);
+  const handleLogout = async () => {
+    const localStatusToken = localStorage.getItem('authToken');
+    if (localStatusToken) {
+      const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+      try {
+        const response = await handleUserRequest({
+          action: 'logout',
+          statusToken: localStatusToken,
+        });
+        if (response.data.status === 'success') {
+          localStorage.removeItem('authToken');
+          setIsLoggedIn(false);
+          setUsername("");
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error("Error logging out:", error);
+      }
+    }
+  };
+
+
   return (
 
     <div className="homepage">
@@ -131,9 +198,10 @@ const Homepage = () => {
               {greeting} !
             </div>
             <div className="currentUserStatusInfo">
-              <FaUser /> {username} 
+              <FaUser />
+              <span className="username">{username}</span>
               <FaSignOutAlt
-                //onClick={handleLogout}
+                onClick={handleLogout}
                 title="Logout"
                 className="logout-icon"
               />
@@ -145,13 +213,13 @@ const Homepage = () => {
           {isDropdownVisible && (
             <div className="dropdownMenu">
               <ul>
-                {/* {!isLoggedIn ? ( */}
+                {!isLoggedIn ? (
                   <li>
                     <div className="userauth">
                       <Link to="/loginSignup"><FaUser /> Login/Register</Link>
                     </div>
                   </li>
-                {/* ) : ( */}
+                ) : (
                   <>
                     <li>
                       <div className="notifcations">
@@ -169,7 +237,7 @@ const Homepage = () => {
                       </div>
                     </li>
                   </>
-                {/* )} */}
+                )}
               </ul>
             </div>
           )}

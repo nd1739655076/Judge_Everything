@@ -5,6 +5,7 @@
 ## 4. npm install react-slick slick-carousel (used for the sliding review card)
 ## 5. npm install react-modal (used for detail modal for the review card)
 ## 6. npm install recharts
+## 7. npm install react-joyride
 
 # Firebase installs list:
 ## 1. npm install -g firebase-tools

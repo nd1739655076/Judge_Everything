@@ -34,7 +34,7 @@ exports.handleIdRequest = functions.https.onCall(async (data, context) => {
 // User Handle
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, username, password, email, statusToken, uidNum, nickname } = data;
+    const { action, username, password, email, statusToken, uidNum, nickname, preferences } = data;
     if (action === 'generate') {
       // username, password, email
       const userDocRef = db.collection('User').where('username', '==', username);
@@ -49,6 +49,17 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       await newUser.generateUser();
       return { success: true, message: "Sign up successful! You can now log in." };
     }
+
+  //   else if (action === 'reset') {
+  //     console.log("call to index.js");
+  //     const resetResponse = await User.resetPassword(email, uidNum);
+  //     console.log("call complete");
+  //     if (resetResponse.status === 'success') {
+  //       return { success: true, message: resetResponse.message };
+  //     } else {
+  //       return { success: false, message: resetResponse.message };
+  //     }
+  //  }
 
     else if (action == 'login') {
       // username, password
@@ -91,8 +102,8 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
     }
 
     else if (action === 'accountSetting') {
-      // username, password, email, nickname, uidNum, nickname
-      const accountUpdateResponse = await User.accountSetting(uidNum, username, password, email, nickname);
+      // username, password, email, nickname, uidNum, nickname, preferences
+      const accountUpdateResponse = await User.accountSetting(uidNum, username, password, email, nickname, preferences);
       if (accountUpdateResponse.status === 'success') {
         return { success: true, message: accountUpdateResponse.message };
       } else {
@@ -109,16 +120,6 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: deleteResponse.message };
       }
     }
-    else if (action === 'reset') {
-      console.log("call to index.js");
-      const resetResponse = await User.reset(email);
-      console.log("call complete");
-      if (resetResponse.status === 'success') {
-          return { success: true, statusToken: resetResponse.statusToken };
-      } else {
-          return { success: false, message: resetResponse.message };
-      }
-  }
 
   } catch (error) {
     console.error('Error handling User request:', error);

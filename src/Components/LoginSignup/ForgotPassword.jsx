@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-// import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import '../LoginSignup/LoginSignup.css';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { httpsCallable } from 'firebase/functions';
+// import { httpsCallable } from 'firebase/functions';
 // const nodemailer = require('nodemailer');
 
 const ForgotPassword = () => {
@@ -19,18 +19,14 @@ const ForgotPassword = () => {
 
     try {
       setError('');
-      const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
-      const resetResponse = await handleUserRequest({
-        action: 'reset',
-        // statusToken: localStatusToken,
-        email: email,
-      });
-      if (resetResponse.data.success) {
+      const handleUserRequest = functions.httpsCallable('handleUserRequest');
+      const response = await handleUserRequest({ action: 'reset', email: email, });
+      if (response.data.success) {
         console.log('success');
         setError('');
         setMessage('Password reset email sent! Check your inbox.\nRedirecting to Login page...');
       } else {
-        setError(resetResponse.data.message);
+        setError(response.data.message);
       }
 
       setTimeout(() => {

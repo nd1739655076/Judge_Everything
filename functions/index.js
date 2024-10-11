@@ -11,7 +11,6 @@ const bucket = admin.storage().bucket();
 const Id = require('./Id');
 const User = require('./User');
 const Parameter = require('./Parameter');
-const Parameter = require('./Parameter');
 const Comment = require('./Comment');
 const ProductEntry = require('./ProductEntry');
 
@@ -157,7 +156,7 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
         }
       }
       newProductEntry.parametorList = parameterIds;
-      newProductEntry.tags = tags; 
+      newProductEntry.tagList = tags; 
       await newProductEntry.generateProductEntry();
       console.log('Product entry successfully created.');
       return { message: 'Product entry created successfully!' };

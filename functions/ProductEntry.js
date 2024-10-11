@@ -31,7 +31,7 @@ class ProductEntry {
       id: this.id,
       productName: this.productName,
       creator: this.creator,
-      tags: this.tagList,
+      tagList: this.tagList,
       description: this.description,
       parametorList: this.parametorList,
       averageScore: this.averageScore,

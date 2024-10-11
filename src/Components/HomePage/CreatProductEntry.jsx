@@ -3,6 +3,7 @@ import { db } from '../../firebase'; // Firebase Firestore instance
 import { collection, doc, setDoc } from "firebase/firestore"; // Firestore methods
 import { getFunctions, httpsCallable } from "firebase/functions"; // Firebase Cloud Functions
 import './CreatProductEntry.css'; // Import your custom CSS for styling
+import { Link } from 'react-router-dom';
 
 const CreateProductEntry = () => {
   const [productName, setProductName] = useState('');
@@ -12,6 +13,7 @@ const CreateProductEntry = () => {
   const [loading, setLoading] = useState(false); // For showing loading state during submission
   const [error, setError] = useState(''); // For showing error messages
   const [success, setSuccess] = useState(''); // For showing success messages
+  const [description, setDescription] = useState('');
 
   useEffect(() => {
     // Fetch current logged in user's UID
@@ -89,7 +91,8 @@ const CreateProductEntry = () => {
         productName: productName,
         uidNum: creatorId,
         tags: tags.filter(Boolean), 
-        paramList: parameters.filter(Boolean), 
+        paramList: parameters.filter(Boolean),
+        description: description  
       });
 
       console.log('Product entry created:', resultEntry);
@@ -99,6 +102,7 @@ const CreateProductEntry = () => {
       setProductName('');
       setTags(new Array(5).fill(''));
       setParameters(new Array(10).fill(''));
+      setDescription('');
     } catch (err) {
       console.error('Error creating product entry:', err);
       setError('Failed to create product entry. Please try again.');
@@ -162,10 +166,22 @@ const CreateProductEntry = () => {
           ))}
         </label>
         <br />
-
+        <label>
+          Description:
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter product description"
+            rows="4"
+          />
+        </label>
+        <br /> 
         <button type="submit" disabled={loading}>
           {loading ? 'Creating Product Entry...' : 'Create Product Entry'}
         </button>
+        <Link to="/">
+            <button>Homepage</button>
+          </Link>
       </form>
     </div>
   );

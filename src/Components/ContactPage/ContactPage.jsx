@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import './ContactPage.css';
+import clock_icon from '../ContactPageAssets/clock.png';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
@@ -18,7 +19,26 @@ const ContactPage = () => {
     const [email, setEmail] = useState("");
     const [subject, setSubject] = useState("");
     const [message, setMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+
     const handleSubmit = async() => {
+        setErrorMessage("");
+        if (!name.trim()) {
+            setErrorMessage("Please enter a name.");
+            return;
+        }
+        if (!email.trim()) {
+            setErrorMessage("Please enter an email.");
+            return;
+        }
+        if (!subject.trim()) {
+            setErrorMessage("Please enter the subject of your message.");
+            return;
+        }
+        if (!message.trim()) {
+            setErrorMessage("Please enter your message.");
+            return;
+        }
         try {
             const dbref = collection(db, "contacts")
             await addDoc(dbref, {
@@ -145,6 +165,7 @@ const ContactPage = () => {
                                     value={message} onChange={(e) => setMessage(e.target.value)} />
                             </div>
                         </div>
+                        {errorMessage && <p className="error-message">{errorMessage}</p>}
                         <button className="submit-btn" onClick={handleSubmit}>
                             Submit
                         </button>
@@ -167,6 +188,11 @@ const ContactPage = () => {
                             <div className="address text-box">
                                 <img className="contact-svg" src="https://workik-widget-assets.s3.amazonaws.com/widget-assets/images/ET23.jpg" />
                                 <p className="contact-text"> Address: 102 N Grant Street</p>
+                            </div>
+                            <div className="hour text-box">
+                                <img className="contact-svg" src={clock_icon} />
+                                
+                                <p className="contact-text"> Working Hours: 10am-6pm </p>
                             </div>
                             <div className="social-media-links mob">
                                 <a className="social-icon-link" href="#">

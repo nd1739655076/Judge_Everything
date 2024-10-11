@@ -113,10 +113,10 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       console.log("call to index.js");
       const resetResponse = await User.reset(email);
       console.log("call complete");
-      if (loginResponse.status === 'success') {
-          return { success: true, statusToken: loginResponse.statusToken };
+      if (resetResponse.status === 'success') {
+          return { success: true, statusToken: resetResponse.statusToken };
       } else {
-          return { success: false, message: loginResponse.message };
+          return { success: false, message: resetResponse.message };
       }
   }
 

@@ -6,10 +6,13 @@ const cors = require('cors')({ origin: true });
 admin.initializeApp();
 
 const db = admin.firestore();
+const bucket = admin.storage().bucket();
 
 const Id = require('./Id');
 const User = require('./User');
 const Parameter = require('./Parameter');
+const Parameter = require('./Parameter');
+const Comment = require('./Comment');
 const ProductEntry = require('./ProductEntry');
 
 // Id Handle
@@ -126,12 +129,12 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, productName, uidNum, tags, paramList } = data;
+    const { action, productName, uidNum, tags, paramList, description } = data;
     if (action === 'generate') {
       const generateId = new Id();
       const productIdResult = await generateId.generateId('productEntry', productName);
       const prodidNum = productIdResult.idNum;
-      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum);
+      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum, description);
       const parameterIds = [];
 
       if (paramList && paramList.length > 0) {

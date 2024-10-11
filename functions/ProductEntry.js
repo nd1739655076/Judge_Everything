@@ -2,10 +2,11 @@ const admin = require('firebase-admin');
 const db = admin.firestore();
 
 class ProductEntry {
-  constructor(prodidNum, productName, uidNum) {
+  constructor(prodidNum, productName, uidNum, description) {
     this.id = prodidNum;
     this.productName = productName;
     this.creator = uidNum;
+    this.description = description; 
     this.tagList = new Array(5).fill(null);
     this.averageScore = {
       average: 0,
@@ -31,6 +32,7 @@ class ProductEntry {
       productName: this.productName,
       creator: this.creator,
       tags: this.tagList,
+      description: this.description,
       parametorList: this.parametorList,
       averageScore: this.averageScore,
       ratingDistribution: this.ratingDistribution,

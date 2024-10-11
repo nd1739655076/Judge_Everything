@@ -46,6 +46,7 @@ const ProductEntry = () => {
     const [likedComments, setLikedComments] = useState([]);
     const [loggedInUser, setLoggedInUser] = useState(null);
     const db = getFirestore();
+    const [productCreatorExists, setProductCreatorExists] = useState(true);
 
     const fetchProductData = async () => {
         try {
@@ -57,6 +58,15 @@ const ProductEntry = () => {
                 const paramsQuery = query(collection(db, 'Parameters'), where('productId', '==', productId));
                 const paramsSnapshot = await getDocs(paramsQuery);
                 const paramList = paramsSnapshot.docs.map(doc => ({ ...doc.data(), paramId: doc.id }));
+                const userId = productData.creator;
+                 const userRef = doc(db, 'User', userId);
+                 const userSnap = await getDoc(userRef);
+
+                if (userSnap.exists()) {
+                    setProductCreatorExists(true);  // User exists
+                } else {
+                    setProductCreatorExists(false); // User does not exist
+                }
                 setParameters(paramList);
             } else {
                 console.error("No product found for the given productId:", productId);
@@ -511,7 +521,11 @@ const ProductEntry = () => {
                             </ul>
                         </div>
                         <div className="creator-info">
-                            <p>Creator: {productData.creator || 'Canceled Account'}</p>
+                            {productCreatorExists ? (
+        <p>Creator: {productData.creator}</p>
+    ) : (
+        <p>Creator: Account no longer exists</p>
+    )}
                             <button className="share-button"><FaShareAlt /> Share</button>
                         </div>
                     </div>

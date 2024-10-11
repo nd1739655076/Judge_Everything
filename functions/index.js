@@ -130,12 +130,12 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 // ProductEntry Handle
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, productName, uidNum, tags, paramList } = data;
+    const { action, productName, uidNum, tags, paramList, description, imageBase64, imageName } = data;
     if (action === 'generate') {
       const generateId = new Id();
       const productIdResult = await generateId.generateId('productEntry', productName);
       const prodidNum = productIdResult.idNum;
-      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum);
+      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum, description);
       const parameterIds = [];
 
       if (paramList && paramList.length > 0) {
@@ -157,11 +157,31 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
           console.log(`Parameter ${i + 1} saved: ID ${paramId}`);
         }
       }
+      let productImageUrl = '';
+      if (imageBase64 && imageName) {
+        const handleImageUpload = httpsCallable(functions, 'handleImageRequest');
+        const imageResult = await handleImageUpload({
+          action: 'upload',
+          base64: imageBase64,
+          filename: imageName,
+          productId: prodidNum,
+        });
+
+        if (imageResult.data.success) {
+          productImageUrl = imageResult.data.imageUrl;
+        } else {
+          console.error('Image upload failed:', imageResult.data.message);
+        }
+      }
       newProductEntry.parametorList = parameterIds;
-      newProductEntry.tags = tags; 
+      newProductEntry.tagList = tags; 
       await newProductEntry.generateProductEntry();
       console.log('Product entry successfully created.');
-      return { message: 'Product entry created successfully!' };
+      return {
+        success: true,
+        idNum: prodidNum,  // Make sure to include the product ID in the response
+        message: 'Product entry created successfully!'
+      };
     } 
   } catch (error) {
     console.error('Error handling product entry request:', error);

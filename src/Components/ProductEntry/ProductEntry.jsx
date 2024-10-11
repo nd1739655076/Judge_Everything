@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ProductEntry.css';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
@@ -29,6 +29,7 @@ Modal.setAppElement('#root');
 
 const ProductEntry = () => {
     const { productId } = useParams();
+    const navigate = useNavigate();
     const [productData, setProductData] = useState(null);
     const [parameters, setParameters] = useState([]);
     const [userProductRating, setUserProductRating] = useState(0);
@@ -206,7 +207,7 @@ const ProductEntry = () => {
     };
 
     const handleEditReview = () => {
-        if (selectedReview) {
+        if (selectedReview && loggedInUser && selectedReview.userId === loggedInUser.uid) {
             setUserCommentTitle(selectedReview.title);
             setUserComment(selectedReview.content);
             setUserProductRating(selectedReview.rating);
@@ -277,6 +278,12 @@ const ProductEntry = () => {
         } catch (error) {
             setErrorMessage('Failed to update your review. Please try again.');
             console.error('Error updating review:', error);
+        }
+    };
+
+    const handleEditProduct = () => {
+        if (loggedInUser && productData.creator === loggedInUser.uid) {
+            navigate('/creatProductEntry', { state: { productData, parameters, editMode: true } });
         }
     };
 
@@ -415,6 +422,11 @@ const ProductEntry = () => {
                             <button className="report-button">
                                 <FaExclamationTriangle /> Report
                             </button>
+                            {loggedInUser && productData.creator === loggedInUser.uid && (
+                                <button className="edit-product-button" onClick={handleEditProduct}>
+                                    <FaEdit /> Edit Product
+                                </button>
+                            )}
                         </h1>
                         <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
                         <div className="rating-categories">
@@ -430,7 +442,7 @@ const ProductEntry = () => {
                             </ul>
                         </div>
                         <div className="creator-info">
-                            <p>Creator: {productData.creator}</p>
+                            <p>Creator: {productData.creator || 'Canceled Account'}</p>
                             <button className="share-button"><FaShareAlt /> Share</button>
                         </div>
                     </div>
@@ -446,7 +458,7 @@ const ProductEntry = () => {
                                         <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
                                     ))}
                                 </div>
-                                <p><strong>{review.title}</strong> by {review.username}</p>
+                                <p><strong>{review.title}</strong> by {review.username ? review.username : 'Anonymous Judger'}</p>
                                 <p>{review.content.substring(0, 40)}...</p>
                                 <p>Posted on: {review.timestamp && review.timestamp.seconds ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">
@@ -466,6 +478,11 @@ const ProductEntry = () => {
                         className="review-modal"
                         overlayClassName="review-modal-overlay"
                     >
+                        <div className="modal-header">
+                            {loggedInUser && selectedReview.userId === loggedInUser.uid && (
+                                <button className="edit-review-button" onClick={handleEditReview}><FaEdit /> Edit</button>
+                            )}
+                        </div>
                         <h2>{selectedReview.title}</h2>
                         <p><strong>Posted:</strong> {new Date(new Date(selectedReview.timestamp.seconds * 1000)).toLocaleString()}</p>
                         <div className="modal-stars">
@@ -486,7 +503,6 @@ const ProductEntry = () => {
                             ))}
                         </div>
                         <p className="review-content">{selectedReview.content}</p>
-                        <button className="edit-review-button" onClick={handleEditReview}><FaEdit /> Edit</button>
                         <button className="close-modal-button" onClick={closeModal}>Close</button>
                     </Modal>
                 )}

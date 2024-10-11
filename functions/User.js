@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 //const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+// const nodemailer = require('nodemailer');
 
 const db = admin.firestore();
 
@@ -49,6 +50,53 @@ class User {
       browseHistory: null,
       rateCommentHistory: null,
     });
+  }
+
+  // action == 'resetPassword'
+  static async resetPassword(uid, email) {
+    const userDocRef = db.collection('User').where('email', '==', email);
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not exist' };
+    }
+    // generate random number
+    // const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    // let randomPassword = '';
+    
+    // for (let i = 0; i < 10; i++) {
+    //   const randomIndex = Math.floor(Math.random() * characters.length);
+    //   randomPassword += characters.charAt(randomIndex);
+    // }
+    // console.log(randomPassword);
+    // update password
+    // await userDocRef.update({password: newPassword});
+    // send email here
+    
+    
+    // var transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: 'judge.everything404@gmail.com',
+    //     pass: 'zfqw jgrr kkuq mrnh'
+    //     }
+    // });
+        
+    // var mailOptions = {
+    //   from: 'judge.everything404@gmail.com',
+    //   to: {email},
+    //   subject: 'Password Reset',
+    //   text: `Your password was seccessfully reset! \nYour temporary new password is: ${randomPassword}`
+    // };
+        
+    // transporter.sendMail(mailOptions, function(error, info){
+    //   if (error) {
+    //     console.log(error);
+    //   } else {
+    //     console.log('Email sent: ' + info.response);
+    //   }
+    // });
+    
+    // return { status: 'success', message: 'Password reset successfully' };
   }
 
   // helper
@@ -158,7 +206,7 @@ class User {
   }
 
   // action === 'accountSetting'
-  static async accountSetting(uid, username, password, email, nickname) {
+  static async accountSetting(uid, username, password, email, nickname, preferences) {
     const userDocRef = db.collection('User').doc(uid);
     const userDoc = await userDocRef.get();
     if (!userDoc.exists) {
@@ -180,6 +228,7 @@ class User {
     if (password) updateData.password = password;
     if (email) updateData.email = email;
     if (nickname) updateData.nickname = nickname;
+    if (preferences) updateData.preferences[0] = preferences;
     await userDocRef.update(updateData);
     return { status: 'success', message: 'User data updated successfully' };
   }

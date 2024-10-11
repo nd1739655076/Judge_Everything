@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { functions } from '../../firebase';
 import '../LoginSignup/LoginSignup.css';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -11,42 +13,22 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
+  const handleForgotPassword = async () => {
+    // e.preventDefault();
 
 
     try {
-      // const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
-      // const response = await handleUserRequest({
-      //   action: 'reset',
-      //   email: email,
-      // });
-      // await sendPasswordResetEmail(auth, email);
-      // var transporter = nodemailer.createTransport({
-      //   service: 'gmail',
-      //   auth: {
-      //     user: 'judge.everything404@gmail.com',
-      //     pass: 'zfqw jgrr kkuq mrnh'
-      //   }
-      // });
-      
-      // var mailOptions = {
-      //   from: 'judge.everything404@gmail.com',
-      //   to: email,
-      //   subject: 'Password Reset',
-      //   text: 'That was easy!'
-      // };
-      
-      // transporter.sendMail(mailOptions, function(error, info){
-      //   if (error) {
-      //     console.log(error);
-      //   } else {
-      //     console.log('Email sent: ' + info.response);
-      //   }
-      // });
-      setMessage('Password reset email sent! Check your inbox.\nRedirecting to Login page...');
-      setError('');  // Clear any previous errors
-      
+      setError('');
+      const handleUserRequest = functions.httpsCallable('handleUserRequest');
+      const response = await handleUserRequest({ action: 'reset', email: email, });
+      if (response.data.success) {
+        console.log('success');
+        setError('');
+        setMessage('Password reset email sent! Check your inbox.\nRedirecting to Login page...');
+      } else {
+        setError(response.data.message);
+      }
+
       setTimeout(() => {
         navigate("/loginSignup");
       }, 1000);
@@ -61,7 +43,7 @@ const ForgotPassword = () => {
       <div className="header">
         <h2 className="text">Forgot Password</h2>
       </div>
-      <form className="inputs" onSubmit={handleForgotPassword}>
+      <div className="inputs">
         <div className="email">
           <div className="label">Enter Your Email</div>
           <div className="input">
@@ -76,14 +58,14 @@ const ForgotPassword = () => {
         </div>
 
         <div className="submit-container">
-          <button className="submit" type="submit">
+          <button className="submit" onClick={handleForgotPassword}>
             Send Reset Link
           </button>
         </div>
 
         {message && <p className="signup-success">{message}</p>}
         {error && <p className="login-error">{error}</p>}
-      </form>
+      </div>
     </div>
   );
 };

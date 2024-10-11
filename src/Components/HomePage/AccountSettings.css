@@ -80,6 +80,12 @@ body {
 .placeholder-editable::placeholder {
   color: gray;
 }
+.placeholder-locked[type="password"]::placeholder {
+  color: #54a4e5;
+}
+.placeholder-editable[type="password"]::placeholder {
+  color: gray;
+}
 .disabled-button {
   background-color: gray !important;
   cursor: not-allowed;
@@ -96,5 +102,191 @@ body {
   transition: background-color 0.3s;
 }
 .accountSettingsFormGroup button:hover {
+  background-color: #0056b3;
+}
+
+/* Message */
+.message {
+  width: 100%;
+  font-size: 15px;
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+.loadingMessage {
+  color: #2ab4cc;
+  display: inline;
+}
+.errorMessage {
+  color: red;
+  display: inline;
+}
+.successMessage {
+  color: rgb(41, 108, 208);
+  display: inline;
+}
+
+/* ButtonContainer */
+.buttonContainer button {
+  padding: 8px 15px;
+  margin-top: 5px;
+  margin-bottom: 50px;
+  margin-left: 20px;
+  margin-right: 20px;
+  background-color: #007BFF;
+  border: none;
+  color: white;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.button-container button:hover {
+  background-color: #0056b3;
+}
+
+/* PasswordModal */
+.passwordModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.passwordModalContent {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 500px;
+  max-width: 90%;
+  text-align: center;
+}
+.passwordModalHeader {
+  font-size: 24px;
+  color: #007BFF;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+.passwordModalContent p {
+  font-size: 16px;
+  margin-bottom: 10px;
+  text-align: center;
+  color: black;
+}
+.passwordModalContent input {
+  padding: 10px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+  width: 80%;
+  margin: 10px auto;
+  display: block;
+  background-color: #f8f8f8;
+  color: #212121;
+}
+.passwordModalContent input:focus {
+  border-color: #007BFF;
+}
+.passwordModalContent .passwordErrorMessage {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+.passwordModalButtons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.passwordModalContent button {
+  padding: 8px 15px;
+  background-color: #007BFF;
+  border: none;
+  color: white;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.passwordModalContent button:hover {
+  background-color: #0056b3;
+}
+
+/* DeleteModal */
+.deleteModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.deleteModalContent {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 500px;
+  max-width: 90%;
+  text-align: center;
+}
+.deleteModalHeader {
+  font-size: 24px;
+  color: #007BFF;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+.deleteModalContent p {
+  font-size: 16px;
+  margin-bottom: 10px;
+  text-align: center;
+  color: red;
+}
+.deleteModalContent input {
+  padding: 10px;
+  font-size: 16px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  outline: none;
+  width: 80%;
+  margin: 10px auto;
+  display: block;
+  background-color: #f8f8f8;
+  color: #212121;
+}
+.deleteModalContent input:focus {
+  border-color: #007BFF;
+}
+.deleteModalContent .deleteErrorMessage {
+  color: red;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+.deleteModalButtons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.deleteModalContent button {
+  padding: 8px 15px;
+  background-color: #007BFF;
+  border: none;
+  color: white;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.deleteModalContent button:hover {
   background-color: #0056b3;
 }

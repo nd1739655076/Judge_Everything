@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './ProductEntry.css';
 import { Link, useParams } from 'react-router-dom';
 import Modal from 'react-modal';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
     FaPhone,
     FaEnvelope,
@@ -16,15 +17,12 @@ import {
     FaCog,
     FaStar,
     FaLightbulb,
-    FaBatteryFull,
-    FaHdd,
-    FaCamera,
     FaShareAlt,
     FaThumbsUp,
     FaExclamationTriangle
 } from 'react-icons/fa';
 import Slider from "react-slick";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, setDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
 
 Modal.setAppElement('#root');
 
@@ -44,9 +42,9 @@ const ProductEntry = () => {
     const [selectedReview, setSelectedReview] = useState(null);
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const [likedComments, setLikedComments] = useState([]);
+    const [loggedInUser, setLoggedInUser] = useState(null);
     const db = getFirestore();
 
-    // 定义 fetchProductData 函数
     const fetchProductData = async () => {
         try {
             const productRef = doc(db, 'ProductEntry', productId);
@@ -58,9 +56,11 @@ const ProductEntry = () => {
                 const paramsSnapshot = await getDocs(paramsQuery);
                 const paramList = paramsSnapshot.docs.map(doc => ({ ...doc.data(), paramId: doc.id }));
                 setParameters(paramList);
+            } else {
+                console.error("No product found for the given productId:", productId);
             }
         } catch (error) {
-            console.error("Error fetching product data: ", error);
+            console.error("Error fetching product data:", error);
         } finally {
             setLoading(false);
         }
@@ -68,7 +68,41 @@ const ProductEntry = () => {
 
     useEffect(() => {
         fetchProductData();
+        const fetchUserStatus = async () => {
+            const userData = await getCurrentLoggedInUser();
+            if (userData) {
+                setLoggedInUser(userData);
+            }
+        };
+        fetchUserStatus();
     }, [productId]);
+
+    const getCurrentLoggedInUser = async () => {
+        const localStatusToken = localStorage.getItem('authToken');
+        if (localStatusToken) {
+            const functions = getFunctions();
+            const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+            try {
+                const response = await handleUserRequest({
+                    action: 'checkLoginStatus',
+                    statusToken: localStatusToken
+                });
+                if (response.data.success) {
+                    return {
+                        uid: response.data.uid,
+                        username: response.data.username
+                    };
+                } else {
+                    return null;
+                }
+            } catch (error) {
+                console.error("Error checking login status:", error);
+                return null;
+            }
+        } else {
+            return null;
+        }
+    };
 
     const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
 
@@ -93,13 +127,18 @@ const ProductEntry = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
             setSuccessMessage('');
             setErrorMessage('');
 
+            if (!loggedInUser) {
+                setErrorMessage('You must be logged in to submit a comment.');
+                return;
+            }
+
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
+
             if (productSnap.exists()) {
                 const productData = productSnap.data();
                 const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
@@ -113,6 +152,8 @@ const ProductEntry = () => {
                     parameterRatings: userRatings,
                     timestamp: new Date(),
                     likes: 0,
+                    userId: loggedInUser.uid,
+                    username: loggedInUser.username
                 };
 
                 await updateDoc(productRef, {
@@ -124,7 +165,6 @@ const ProductEntry = () => {
                     commentList: arrayUnion(newComment)
                 });
 
-                // 将新的评论直接添加到状态中，而不需要刷新页面
                 setProductData((prevData) => ({
                     ...prevData,
                     averageScore: {
@@ -140,47 +180,22 @@ const ProductEntry = () => {
                 setUserCommentTitle('');
                 setUserRatings({});
                 setUserProductRating(0);
-            }
-
-            for (const [paramId, rating] of Object.entries(userRatings)) {
-                const paramRef = doc(db, 'Parameters', paramId);
-                const paramSnap = await getDoc(paramRef);
-
-                if (paramSnap.exists()) {
-                    const paramData = paramSnap.data();
-                    const newTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
-                    const newTotalScore = (paramData.averageScore.totalScore || 0) + rating;
-                    const newAverageScore = newTotalScore / newTotalRaters;
-
-                    await setDoc(paramRef, {
-                        averageScore: {
-                            average: newAverageScore,
-                            totalScore: newTotalScore,
-                            totalRater: newTotalRaters,
-                        }
-                    }, { merge: true });
-
-                    setParameters((prevParams) =>
-                        prevParams.map((param) =>
-                            param.paramId === paramId
-                                ? {
-                                      ...param,
-                                      averageScore: {
-                                          average: newAverageScore,
-                                          totalScore: newTotalScore,
-                                          totalRater: newTotalRaters,
-                                      },
-                                  }
-                                : param
-                        )
-                    );
-                }
+            } else {
+                console.error("Product not found for the given productId:", productId);
             }
         } catch (error) {
             setErrorMessage('Failed to submit your ratings and comment. Please try again.');
             console.error('Error submitting ratings and comment:', error);
         }
     };
+
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (!productData) {
+        return <div>Product not found</div>;
+    }
 
     const openModal = (review) => {
         setSelectedReview(review);
@@ -221,14 +236,6 @@ const ProductEntry = () => {
         slidesToScroll: 1,
     };
 
-    if (loading) {
-        return <div>Loading...</div>;
-    }
-
-    if (!productData) {
-        return <div>Product not found</div>;
-    }
-
     return (
         <div className="product-entry-page">
             <div className="topbar">
@@ -244,6 +251,13 @@ const ProductEntry = () => {
                     <a href="#"><FaYoutube /></a>
                     <a href="#"><FaTwitter /></a>
                 </div>
+                {loggedInUser && (
+                    <div className="currentUserStatus">
+                        <div className="greeting">
+                            Hello, {loggedInUser.username}!
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="navbar">
@@ -265,26 +279,31 @@ const ProductEntry = () => {
                     {isDropdownVisible && (
                         <div className="dropdownMenu">
                             <ul>
-                                <li>
-                                    <div className="userauth">
-                                        <Link to="/loginSignup"><FaUser /> Login/Register</Link>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="notifcations">
-                                        <a href="#"><FaBell /> Notification</a>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="historys">
-                                        <a href="#"><FaHistory /> History</a>
-                                    </div>
-                                </li>
-                                <li>
-                                    <div className="settings">
-                                        <Link to="/accountSettings"><FaCog /> Your Account</Link>
-                                    </div>
-                                </li>
+                                {!loggedInUser ? (
+                                    <li>
+                                        <div className="userauth">
+                                            <Link to="/loginSignup"><FaUser /> Login/Register</Link>
+                                        </div>
+                                    </li>
+                                ) : (
+                                    <>
+                                        <li>
+                                            <div className="notifcations">
+                                                <a href="#"><FaBell /> Notification</a>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div className="historys">
+                                                <a href="#"><FaHistory /> History</a>
+                                            </div>
+                                        </li>
+                                        <li>
+                                            <div className="settings">
+                                                <Link to="/accountSettings"><FaCog /> Your Account</Link>
+                                            </div>
+                                        </li>
+                                    </>
+                                )}
                             </ul>
                         </div>
                     )}
@@ -336,7 +355,7 @@ const ProductEntry = () => {
                                         <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
                                     ))}
                                 </div>
-                                <p><strong>{review.title}</strong></p>
+                                <p><strong>{review.title}</strong> by {review.username}</p>
                                 <p>{review.content.substring(0, 40)}...</p>
                                 <p>Posted on: {review.timestamp && review.timestamp.seconds ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">

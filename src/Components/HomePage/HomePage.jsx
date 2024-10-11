@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
+import './HomePage.css';
 
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
 import logoImage from "../HomePageAssets/404.jpg";
 import Modal from 'react-modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import './HomePage.css';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
 
 Modal.setAppElement('#root');
 
@@ -97,13 +97,11 @@ const Homepage = () => {
       if (localStatusToken) {
         const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
         try {
-          console.log("Checking login status with token:", localStatusToken);
           const response = await handleUserRequest({
             action: 'checkLoginStatus',
             statusToken: localStatusToken,
           });
-          console.log("Response from checkLoginStatus:", response.data);
-          if (response.data.status === 'success') {
+          if (response.data.success) {
             setIsLoggedIn(true);
             setUsername(response.data.username);
           } else {
@@ -118,22 +116,24 @@ const Homepage = () => {
         setIsLoggedIn(false);
       }
     };
+    const setTimeGreeting = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      let currentGreeting = "Good ";
+      if (hour >= 5 && hour < 12) {
+        currentGreeting += "morning";
+      } else if (hour >= 12 && hour < 17) {
+        currentGreeting += "afternoon";
+      } else if (hour >= 17 && hour < 21) {
+        currentGreeting += "evening";
+      } else {
+        currentGreeting += "night";
+      }
+      setGreeting(currentGreeting);
+    };
+
     checkLoginStatus();
-  }, []);
-  useEffect(() => {
-    const now = new Date();
-    const hour = now.getHours();
-    let currentGreeting = "Good ";
-    if (hour >= 5 && hour < 12) {
-      currentGreeting += "morning";
-    } else if (hour >= 12 && hour < 17) {
-      currentGreeting += "afternoon";
-    } else if (hour >= 17 && hour < 21) {
-      currentGreeting += "evening";
-    } else {
-      currentGreeting += "night";
-    }
-    setGreeting(currentGreeting);
+    setTimeGreeting();
   }, []);
   const handleLogout = async () => {
     const localStatusToken = localStorage.getItem('authToken');
@@ -144,7 +144,7 @@ const Homepage = () => {
           action: 'logout',
           statusToken: localStatusToken,
         });
-        if (response.data.status === 'success') {
+        if (response.data.success) {
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
           setUsername("");

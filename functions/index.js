@@ -10,6 +10,7 @@ const db = admin.firestore();
 const Id = require('./Id');
 const User = require('./User');
 const Parameter = require('./Parameter');
+const Comment = require('./Comment');
 const ProductEntry = require('./ProductEntry');
 
 // Id Handle
@@ -69,16 +70,6 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
     }
 
     else if (action === 'logout') {
-      // statusToken
-      const logoutResponse = await User.logout(statusToken);
-      if (logoutResponse.status === 'success') {
-        return { success: true, message: logoutResponse.message };
-      } else {
-        return { success: false, message: logoutResponse.message };
-      }
-    }
-
-    else if (action === 'accountSetting') {
       // statusToken
       const logoutResponse = await User.logout(statusToken);
       if (logoutResponse.status === 'success') {
@@ -162,5 +153,36 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
+  }
+});
+
+//this function is used for write the comment to a product with its scores and id.
+exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const { action, title, content, averageRating, parameterRatings, user, productId } = data;
+
+    if (action === 'generate') {
+      // generate the id of the comment
+      const generateId = new Id();
+      const commentIdResult = await generateId.generateId('comment', title);
+      const commentId = commentIdResult.idNum;
+
+      // create and generate the comment
+      const newComment = new Comment(commentId, title, content, averageRating, parameterRatings, user, productId);
+      await newComment.generateComment();
+
+      // update the comment list in the product entry
+      const productRef = db.collection('ProductEntry').doc(productId);
+      await productRef.update({
+        commentList: admin.firestore.FieldValue.arrayUnion(commentId)
+      });
+      
+      console.log('Comment successfully created and added to product entry.');
+
+      return { message: 'Comment created successfully!' };
+    }
+  } catch (error) {
+    console.error('Error handling comment request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle comment request');
   }
 });

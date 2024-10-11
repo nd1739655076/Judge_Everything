@@ -59,14 +59,7 @@ const Homepage = () => {
   ];
   useEffect(() => {
     const shouldRunTourAgain = localStorage.getItem("showTourAgain");
-    const firstLogin = localStorage.getItem("firstLogin");
-    if (firstLogin === null) {
-      localStorage.setItem("firstLogin", "false");
-      setRun(true);
-    } else {
-      localStorage.setItem("showTourAgain", "false");
-      setRun(shouldRunTourAgain !== "false");
-    }
+    setShowTourAgain(shouldRunTourAgain !== "false");
   }, []);
   const handleTourFinish = () => {
     localStorage.setItem("showTourAgain", "false");

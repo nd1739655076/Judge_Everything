@@ -6,6 +6,7 @@ const cors = require('cors')({ origin: true });
 admin.initializeApp();
 
 const db = admin.firestore();
+const bucket = admin.storage().bucket();
 
 const Id = require('./Id');
 const User = require('./User');
@@ -115,6 +116,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   }
 });
 
+// ProductEntry Handle
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action, productName, uidNum, tags, paramList } = data;
@@ -153,6 +155,56 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
+  }
+});
+
+// Image Handle
+exports.handleImageRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const { action, base64, filename, userId, productId } = data;
+    if (action === 'upload') {
+      if (!base64 || !filename || (!userId && !productId)) {
+        return { success: false, message: 'Invalid input parameters' };
+      }
+      const buffer = Buffer.from(base64, 'base64');
+      let imageUrl = '';
+      let docRef = null;
+      if (userId) {
+        const userImageFilePath = `userImage/${userId}/${filename}`;
+        const userImageFile = bucket.file(userImageFilePath);
+        await userImageFile.save(buffer, {
+          contentType: 'image/jpeg',
+          public: true,
+        });
+        imageUrl = userImageFile.publicUrl();
+        docRef = db.collection('User').doc(userId);
+        await docRef.update({
+          profileImage: imageUrl
+        });
+      }
+      else if (productId) {
+        const productImageFilePath = `productImage/${productId}/${filename}`;
+        const productImageFile = bucket.file(productImageFilePath);
+        await productImageFile.save(buffer, {
+          contentType: 'image/jpeg',
+          public: true,
+        });
+        imageUrl = productImageFile.publicUrl();
+        docRef = db.collection('ProductEntry').doc(productId);
+        await docRef.update({
+          productImage: imageUrl
+        });
+      }
+      return {
+        success: true,
+        message: 'Image uploaded and metadata stored successfully.',
+        imageUrl: imageUrl
+      };
+    }
+    
+  } catch (error) {
+      console.error('Error uploading image:', error);
+      throw new functions.https.HttpsError('internal', 'Failed to upload image and store metadata');
   }
 });
 

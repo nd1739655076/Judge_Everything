@@ -36,6 +36,8 @@ class ProductEntry {
       parametorList: this.parametorList,
       averageScore: this.averageScore,
       ratingDistribution: this.ratingDistribution,
+      averageScore: this.averageScore,
+      ratingDistribution: this.ratingDistribution,
       commentList: this.commentList,
       reportList: Object.fromEntries(this.reportList)
     });

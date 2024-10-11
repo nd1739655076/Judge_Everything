@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ProductEntry.css';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
@@ -391,10 +392,31 @@ const ProductEntry = () => {
         setLikedComments((prevLikedComments) => [...prevLikedComments, review]);
     };
 
+
+    const handleLikeClick = async (review) => {
+        const productRef = doc(db, 'ProductEntry', productId);
+        const updatedCommentList = productData.commentList.map((comment) => {
+            if (comment.timestamp.seconds === review.timestamp.seconds && comment.content === review.content) {
+                return { ...comment, likes: comment.likes + 1 };
+            }
+            return comment;
+        });
+        await updateDoc(productRef, {
+            commentList: updatedCommentList
+        });
+        setProductData((prevData) => ({
+            ...prevData,
+            commentList: updatedCommentList,
+        }));
+        setLikedComments((prevLikedComments) => [...prevLikedComments, review]);
+    };
+
     const sliderSettings = {
         dots: true,
         infinite: false,
+        infinite: false,
         speed: 500,
+        slidesToShow: 4,
         slidesToShow: 4,
         slidesToScroll: 1,
     };
@@ -480,6 +502,7 @@ const ProductEntry = () => {
                     </div>
                     <div className="product-details">
                         <h1>{productData.productName}
+                        <h1>{productData.productName}
                             <FaStar
                                 className={`favorite-icon ${isFavorite ? 'favorite-active' : ''}`}
                                 onClick={handleFavoriteClick}
@@ -494,8 +517,17 @@ const ProductEntry = () => {
                             )}
                         </h1>
                         <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
+                        <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
                         <div className="rating-categories">
                             <ul>
+                                {parameters.map((param, index) => (
+                                    <li key={index}>
+                                        <span>{param.paramName}: ({param.averageScore.average.toFixed(1)}/5)</span>
+                                        {[...Array(5)].map((_, starIndex) => (
+                                            <FaStar key={starIndex} className={starIndex < Math.round(param.averageScore.average) ? 'filled-star' : ''} />
+                                        ))}
+                                    </li>
+                                ))}
                                 {parameters.map((param, index) => (
                                     <li key={index}>
                                         <span>{param.paramName}: ({param.averageScore.average.toFixed(1)}/5)</span>
@@ -518,7 +550,12 @@ const ProductEntry = () => {
                     <Slider {...sliderSettings}>
                         {(productData.commentList || []).map((review, index) => (
                             <div key={index} className="review-card" onClick={() => openModal(review)}>
+                        {(productData.commentList || []).map((review, index) => (
+                            <div key={index} className="review-card" onClick={() => openModal(review)}>
                                 <div className="review-stars">
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
+                                    ))}
                                     {[...Array(5)].map((_, starIndex) => (
                                         <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
                                     ))}
@@ -527,6 +564,8 @@ const ProductEntry = () => {
                                 <p>{review.content.substring(0, 40)}...</p>
                                 <p>Posted on: {review.timestamp && review.timestamp.seconds ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">
+                                    <div className="review-likes" onClick={() => handleLikeClick(review)}>
+                                        <FaThumbsUp className={`thumbs-up-icon ${likedComments.includes(review) ? 'liked' : ''}`} /> {review.likes}
                                     <div className="review-likes" onClick={() => handleLikeClick(review)}>
                                         <FaThumbsUp className={`thumbs-up-icon ${likedComments.includes(review) ? 'liked' : ''}`} /> {review.likes}
                                     </div>
@@ -606,9 +645,25 @@ const ProductEntry = () => {
                                     ))}
                                 </div>
                             ))}
+                            {parameters.map((param, index) => (
+                                <div key={index} className="rating-item">
+                                    <FaLightbulb />
+                                    <span>{param.paramName}</span>
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar
+                                            key={starIndex}
+                                            className={userRatings[param.paramId] >= starIndex + 1 ? 'filled-star' : ''}
+                                            onClick={() => handleRatingChange(param.paramId, starIndex + 1)}
+                                        />
+                                    ))}
+                                </div>
+                            ))}
                         </div>
                         <button type="submit" className="submit-button">Submit</button>
+                        <button type="submit" className="submit-button">Submit</button>
                     </form>
+                    {successMessage && <p className="success-message">{successMessage}</p>}
+                    {errorMessage && <p className="error-message">{errorMessage}</p>}
                     {successMessage && <p className="success-message">{successMessage}</p>}
                     {errorMessage && <p className="error-message">{errorMessage}</p>}
                 </div>

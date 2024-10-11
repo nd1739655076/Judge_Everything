@@ -1,19 +1,55 @@
 import React, { useState } from 'react';
 import '../LoginSignup/LoginSignup.css';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
+// import { httpsCallable } from 'firebase/functions';
+// const nodemailer = require('nodemailer');
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
-    const auth = getAuth();
+
+
     try {
-      await sendPasswordResetEmail(auth, email);
-      setMessage('Password reset email sent! Check your inbox.');
+      // const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+      // const response = await handleUserRequest({
+      //   action: 'reset',
+      //   email: email,
+      // });
+      // await sendPasswordResetEmail(auth, email);
+      // var transporter = nodemailer.createTransport({
+      //   service: 'gmail',
+      //   auth: {
+      //     user: 'judge.everything404@gmail.com',
+      //     pass: 'zfqw jgrr kkuq mrnh'
+      //   }
+      // });
+      
+      // var mailOptions = {
+      //   from: 'judge.everything404@gmail.com',
+      //   to: email,
+      //   subject: 'Password Reset',
+      //   text: 'That was easy!'
+      // };
+      
+      // transporter.sendMail(mailOptions, function(error, info){
+      //   if (error) {
+      //     console.log(error);
+      //   } else {
+      //     console.log('Email sent: ' + info.response);
+      //   }
+      // });
+      setMessage('Password reset email sent! Check your inbox.\nRedirecting to Login page...');
       setError('');  // Clear any previous errors
+      
+      setTimeout(() => {
+        navigate("/loginSignup");
+      }, 1000);
     } catch (err) {
       setError(`Error: ${err.message}`);
       setMessage('');  // Clear the success message
@@ -21,7 +57,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="container">
+    <div className="container" style={{ marginTop: '17%' }}>
       <div className="header">
         <h2 className="text">Forgot Password</h2>
       </div>

@@ -19,7 +19,8 @@ import {
     FaLightbulb,
     FaShareAlt,
     FaThumbsUp,
-    FaExclamationTriangle
+    FaExclamationTriangle,
+    FaEdit
 } from 'react-icons/fa';
 import Slider from "react-slick";
 import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
@@ -136,6 +137,21 @@ const ProductEntry = () => {
                 return;
             }
 
+            if (!userCommentTitle.trim()) {
+                setErrorMessage('Cannot submit a comment without a title.');
+                return;
+            }
+
+            if (!userComment.trim()) {
+                setErrorMessage('Cannot submit an empty comment.');
+                return;
+            }
+
+            if ((productData.commentList || []).filter(comment => comment.userId === loggedInUser.uid).length >= 3) {
+                setErrorMessage('You have already provided three reviews for this entry. Please delete or edit your previous reviews before you start a new one.');
+                return;
+            }
+
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
 
@@ -186,6 +202,81 @@ const ProductEntry = () => {
         } catch (error) {
             setErrorMessage('Failed to submit your ratings and comment. Please try again.');
             console.error('Error submitting ratings and comment:', error);
+        }
+    };
+
+    const handleEditReview = () => {
+        if (selectedReview) {
+            setUserCommentTitle(selectedReview.title);
+            setUserComment(selectedReview.content);
+            setUserProductRating(selectedReview.rating);
+            setUserRatings(selectedReview.parameterRatings);
+            setModalIsOpen(false);
+        }
+    };
+
+    const handleUpdateReview = async (e) => {
+        e.preventDefault();
+        try {
+            setSuccessMessage('');
+            setErrorMessage('');
+
+            if (!loggedInUser) {
+                setErrorMessage('You must be logged in to edit a comment.');
+                return;
+            }
+
+            if (!userCommentTitle.trim()) {
+                setErrorMessage('Cannot submit a comment without a title.');
+                return;
+            }
+
+            if (!userComment.trim()) {
+                setErrorMessage('Cannot submit an empty comment.');
+                return;
+            }
+
+            if (userCommentTitle === selectedReview.title &&
+                userComment === selectedReview.content &&
+                userProductRating === selectedReview.rating &&
+                JSON.stringify(userRatings) === JSON.stringify(selectedReview.parameterRatings)) {
+                setErrorMessage('Cannot submit a new comment without changing.');
+                return;
+            }
+
+            const productRef = doc(db, 'ProductEntry', productId);
+            const updatedCommentList = productData.commentList.map((comment) => {
+                if (comment.timestamp.seconds === selectedReview.timestamp.seconds && comment.content === selectedReview.content) {
+                    return {
+                        ...comment,
+                        title: userCommentTitle,
+                        content: userComment,
+                        rating: userProductRating,
+                        parameterRatings: userRatings,
+                        timestamp: new Date(),
+                    };
+                }
+                return comment;
+            });
+
+            await updateDoc(productRef, {
+                commentList: updatedCommentList
+            });
+
+            setProductData((prevData) => ({
+                ...prevData,
+                commentList: updatedCommentList,
+            }));
+
+            setSuccessMessage('Your review has been updated!');
+            setUserComment('');
+            setUserCommentTitle('');
+            setUserRatings({});
+            setUserProductRating(0);
+            setSelectedReview(null);
+        } catch (error) {
+            setErrorMessage('Failed to update your review. Please try again.');
+            console.error('Error updating review:', error);
         }
     };
 
@@ -395,13 +486,14 @@ const ProductEntry = () => {
                             ))}
                         </div>
                         <p className="review-content">{selectedReview.content}</p>
+                        <button className="edit-review-button" onClick={handleEditReview}><FaEdit /> Edit</button>
                         <button className="close-modal-button" onClick={closeModal}>Close</button>
                     </Modal>
                 )}
 
                 <div className="write-review-section">
                     <h2 className="review-heading">Judge It Yourself!</h2>
-                    <form className="review-form" onSubmit={handleSubmit}>
+                    <form className="review-form" onSubmit={selectedReview ? handleUpdateReview : handleSubmit}>
                         <div className="review-title">
                             <input type="text" value={userCommentTitle} onChange={handleCommentTitleChange} placeholder="Type Your Title Here" />
                             <div className="title-stars">

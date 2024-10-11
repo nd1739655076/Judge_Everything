@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import React, { useState, useEffect } from 'react';
 import './ProductEntry.css';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
@@ -374,24 +373,6 @@ const ProductEntry = () => {
         setIsFavorite(!isFavorite);
     };
 
-    const handleLikeClick = async (review) => {
-        const productRef = doc(db, 'ProductEntry', productId);
-        const updatedCommentList = productData.commentList.map((comment) => {
-            if (comment.timestamp.seconds === review.timestamp.seconds && comment.content === review.content) {
-                return { ...comment, likes: comment.likes + 1 };
-            }
-            return comment;
-        });
-        await updateDoc(productRef, {
-            commentList: updatedCommentList
-        });
-        setProductData((prevData) => ({
-            ...prevData,
-            commentList: updatedCommentList,
-        }));
-        setLikedComments((prevLikedComments) => [...prevLikedComments, review]);
-    };
-
 
     const handleLikeClick = async (review) => {
         const productRef = doc(db, 'ProductEntry', productId);
@@ -502,7 +483,6 @@ const ProductEntry = () => {
                     </div>
                     <div className="product-details">
                         <h1>{productData.productName}
-                        <h1>{productData.productName}
                             <FaStar
                                 className={`favorite-icon ${isFavorite ? 'favorite-active' : ''}`}
                                 onClick={handleFavoriteClick}
@@ -528,14 +508,6 @@ const ProductEntry = () => {
                                         ))}
                                     </li>
                                 ))}
-                                {parameters.map((param, index) => (
-                                    <li key={index}>
-                                        <span>{param.paramName}: ({param.averageScore.average.toFixed(1)}/5)</span>
-                                        {[...Array(5)].map((_, starIndex) => (
-                                            <FaStar key={starIndex} className={starIndex < Math.round(param.averageScore.average) ? 'filled-star' : ''} />
-                                        ))}
-                                    </li>
-                                ))}
                             </ul>
                         </div>
                         <div className="creator-info">
@@ -550,12 +522,7 @@ const ProductEntry = () => {
                     <Slider {...sliderSettings}>
                         {(productData.commentList || []).map((review, index) => (
                             <div key={index} className="review-card" onClick={() => openModal(review)}>
-                        {(productData.commentList || []).map((review, index) => (
-                            <div key={index} className="review-card" onClick={() => openModal(review)}>
                                 <div className="review-stars">
-                                    {[...Array(5)].map((_, starIndex) => (
-                                        <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
-                                    ))}
                                     {[...Array(5)].map((_, starIndex) => (
                                         <FaStar key={starIndex} className={starIndex < review.rating ? 'filled-star' : ''} />
                                     ))}
@@ -564,8 +531,6 @@ const ProductEntry = () => {
                                 <p>{review.content.substring(0, 40)}...</p>
                                 <p>Posted on: {review.timestamp && review.timestamp.seconds ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">
-                                    <div className="review-likes" onClick={() => handleLikeClick(review)}>
-                                        <FaThumbsUp className={`thumbs-up-icon ${likedComments.includes(review) ? 'liked' : ''}`} /> {review.likes}
                                     <div className="review-likes" onClick={() => handleLikeClick(review)}>
                                         <FaThumbsUp className={`thumbs-up-icon ${likedComments.includes(review) ? 'liked' : ''}`} /> {review.likes}
                                     </div>

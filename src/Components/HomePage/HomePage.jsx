@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
 import './HomePage.css';
 
 import { Link } from 'react-router-dom';
@@ -11,9 +10,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import Joyride from "react-joyride";
 import Modal from 'react-modal';
 import logoImage from "../HomePageAssets/404.jpg";
-import Modal from 'react-modal';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
+
 
 Modal.setAppElement('#root');
 
@@ -29,6 +27,7 @@ const Homepage = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedProductData, setSelectedProductData] = useState(null);
   const [ratingDistribution, setRatingDistribution] = useState([]); 
+  const [ratingFilter, setRatingFilter] = useState(0);
   const db = getFirestore();
 
   const toggleDropdown = () => {
@@ -185,12 +184,9 @@ const Homepage = () => {
 
     checkLoginStatus();
     setTimeGreeting();
-    fetchProducts();
   }, []);
 
-  const toggleDropdown = () => {
-    setDropdownVisible(!isDropdownVisible);
-  };
+
   const handleLogout = async () => {
     const localStatusToken = localStorage.getItem('authToken');
     if (localStatusToken) {
@@ -324,6 +320,23 @@ const Homepage = () => {
       </section>
 
       {/* Create Most Popular Entries Section */}
+      
+      <section className="filter-section step-3">
+  <label htmlFor="rating-filter">
+    Filter by Minimum Average Rating:
+  </label>
+  <select
+    id="rating-filter"
+    value={ratingFilter}
+    onChange={(e) => setRatingFilter(parseInt(e.target.value))}
+  >
+    <option value={0}>All Ratings</option>
+    <option value={1}>1 and above</option>
+    <option value={2}>2 and above</option>
+    <option value={3}>3 and above</option>
+    <option value={4}>4 and above</option>
+  </select>
+</section>
       <section className="mostPopularEntries step-4">
         <div className="mostPopularEntriesHeader">
           <h1>Ranking</h1>
@@ -331,24 +344,32 @@ const Homepage = () => {
           <p>will update every Thursday 11:59 p.m. EST</p>
         </div>
         <div className="mostPopularEntriesGrid">
-          <div className="product-list">
-            {products.length > 0 ? (
-              products.map(product => (
-                <div key={product.id} className="product-item">
-                  <Link to={`/product/${product.id}`}>
-                    <h3>{product.productName}</h3>
-                  </Link>
-                  <p>{product.description || "No description available"}</p>
-                  <p>Tags: {product.tagList?.join(", ") || "No tags"}</p>
-                  <p onClick={() => handleViewRatingDistribution(product.id)} style={{ cursor: 'pointer' }}>
-                    Average Rating: {product.averageScore?.average || "No ratings yet"}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p>No products available</p>
-            )}
+        <div className="product-list">
+  {loading ? (
+    <p>Loading products...</p>
+  ) : (
+    products.length > 0 ? (
+      products
+        .filter((product) => product.averageScore?.average >= ratingFilter)
+        .map(product => (
+          <div key={product.id} className="product-item">
+            <Link to={`/product/${product.id}`}>
+              <img src={product.productImage || "https://via.placeholder.com/150"} alt={product.productName} />
+              <h3>{product.productName}</h3>
+            </Link>
+            <p>{product.description || "No description available"}</p>
+            <p>Tags: {product.tagList?.join(", ") || "No tags"}</p>
+            <p onClick={() => handleViewRatingDistribution(product.id)} style={{ cursor: 'pointer' }}>
+              Average Rating: {product.averageScore?.average || "No ratings yet"}
+            </p>
           </div>
+        ))
+    ) : (
+      <p>No products available</p>
+    )
+  )}
+</div>
+
         </div>
         <div className="mostPopularLoadMore">
           <button>LOAD MORE ENTRIES</button>

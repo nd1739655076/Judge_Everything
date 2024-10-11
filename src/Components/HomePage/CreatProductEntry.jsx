@@ -14,7 +14,9 @@ const CreateProductEntry = () => {
   const [error, setError] = useState(''); // For showing error messages
   const [success, setSuccess] = useState(''); // For showing success messages
   const [description, setDescription] = useState('');
+  const [imageFile, setImageFile] = useState(null);
 
+  
   useEffect(() => {
     // Fetch current logged in user's UID
     const fetchUser = async () => {
@@ -26,6 +28,11 @@ const CreateProductEntry = () => {
     fetchUser();
   }, []);
 
+  const handleImageChange = (e) => {
+    if (e.target.files.length > 0) {
+      setImageFile(e.target.files[0]);
+    }
+  };
   // Handle changes to the tags array
   const handleTagChange = (index, value) => {
     const updatedTags = [...tags];
@@ -84,6 +91,21 @@ const CreateProductEntry = () => {
       // Initialize Firebase Cloud Functions
       const functions = getFunctions();
       const generateProductEntry = httpsCallable(functions, 'handleProductEntryRequest');
+      let base64Image = '';
+      let imageName = '';
+      if (imageFile) {
+        const reader = new FileReader();
+        const base64Promise = new Promise((resolve, reject) => {
+          reader.onloadend = () => {
+            const result = reader.result.split(',')[1]; // Get base64 part only
+            resolve(result);
+          };
+          reader.onerror = () => reject(new Error('Error reading image file.'));
+        });
+        reader.readAsDataURL(imageFile);
+        base64Image = await base64Promise;
+        imageName = imageFile.name;
+      }
 
       // Call the Cloud Function to create a product entry
       const resultEntry = await generateProductEntry({
@@ -92,17 +114,24 @@ const CreateProductEntry = () => {
         uidNum: creatorId,
         tags: tags.filter(Boolean), 
         paramList: parameters.filter(Boolean),
-        description: description  
+        description: description,
+        imageBase64: base64Image,
+        imageName: imageName,  
       });
-
-      console.log('Product entry created:', resultEntry);
-
-      setSuccess('Product entry created successfully!');
-
-      setProductName('');
-      setTags(new Array(5).fill(''));
-      setParameters(new Array(10).fill(''));
-      setDescription('');
+      if (resultEntry.data.success) {
+        console.log('Product entry created:', resultEntry);
+        setSuccess('Product entry created successfully!');
+  
+        // Reset form fields after successful submission
+        setProductName('');
+        setTags(new Array(5).fill(''));
+        setParameters(new Array(10).fill(''));
+        setDescription('');
+        setImageFile(null); // Reset the image file state
+      } else {
+        console.error('Failed to create product entry:', resultEntry.data.message);
+        setError('Failed to create product entry. Please try again.');
+      }
     } catch (err) {
       console.error('Error creating product entry:', err);
       setError('Failed to create product entry. Please try again.');
@@ -176,6 +205,11 @@ const CreateProductEntry = () => {
           />
         </label>
         <br /> 
+        <label>
+          Upload Image:
+          <input type="file" accept="image/jpeg, image/png" onChange={handleImageChange} />
+        </label>
+        <br />
         <button type="submit" disabled={loading}>
           {loading ? 'Creating Product Entry...' : 'Create Product Entry'}
         </button>

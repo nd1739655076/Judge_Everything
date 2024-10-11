@@ -10,6 +10,7 @@ import logoImage from "../HomePageAssets/404.jpg";
 import Modal from 'react-modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
+import Joyride from "react-joyride";
 
 Modal.setAppElement('#root');
 
@@ -24,7 +25,44 @@ const Homepage = () => {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedProductData, setSelectedProductData] = useState(null);
   const [ratingDistribution, setRatingDistribution] = useState([]); 
+  const [run, setRun] = useState(false);
+  const [showTourAgain, setShowTourAgain] = useState(true);
   const db = getFirestore();
+
+  const steps = [
+    {
+      target: ".step-1",
+      content: "Use this menu bar to access your notifications, history, and accout settings"
+    },
+    {
+      target: ".step-2",
+      content: "Create new product entries here"
+    },
+    {
+      target: ".step-3",
+      content: "Have any doubts or want to give feedback? Click here!"
+    },
+    {
+      target: ".step-4",
+      content: "Brows Most Popular Entries Every Week"
+    },
+    {
+      target: ".step-5",
+      content: "Personalized recommendations, Just for YOU!"
+    },
+    {
+      target: ".step-6",
+      content: "You can always click here to revisit this tutorial."
+    }
+  ];
+  useEffect(() => {
+    const shouldRunTourAgain = localStorage.getItem("showTourAgain");
+    setShowTourAgain(shouldRunTourAgain !== "false");
+  }, []);
+  const handleTourFinish = () => {
+    localStorage.setItem("showTourAgain", "false");
+    setShowTourAgain(false);
+  }
 
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
@@ -188,7 +226,8 @@ const Homepage = () => {
         <div className="navlinks">
           <a href="/">Home</a>
           <a href="#">About</a>
-          <a href="/contact">Support</a>
+          <a href="/contact" className="step-3">Support</a>
+          <a onClick={() => setRun(true)} className="step-6" style={{ cursor: 'pointer' }}>Tutorial</a>
         </div>
         <div className="searchbar">
           <FaSearch />
@@ -211,7 +250,7 @@ const Homepage = () => {
           </div>
         )}
         <div className="menuContainer">
-          <FaBars className="menuicon" onClick={toggleDropdown} />
+          <FaBars className="menuicon step-1" onClick={toggleDropdown} />
           {isDropdownVisible && (
             <div className="dropdownMenu">
               <ul>
@@ -253,7 +292,7 @@ const Homepage = () => {
           <p className="p1">Found in 2024</p>
           <p className="p2">Bought/Used something? Share it!</p>
           <Link to="/creatProductEntry">
-            <button>Create a New Entry</button>
+            <button className="step-2">Create a New Entry</button>
           </Link>
         </div>
         <div className="createNewEntryImage">
@@ -262,7 +301,7 @@ const Homepage = () => {
       </section>
 
       {/* Create Most Popular Entries Section */}
-      <section className="mostPopularEntries">
+      <section className="mostPopularEntries step-4">
         <div className="mostPopularEntriesHeader">
           <h1>Ranking</h1>
           <h2>Most Popular Entries This Week</h2>
@@ -314,7 +353,7 @@ const Homepage = () => {
       </Modal>
 
       {/* Create Recommendation Entries Section */}
-      <section className="recommendationEntries">
+      <section className="recommendationEntries step-5">
         <div className="recommendationEntriesHeader">
           <h1>Recommendations</h1>
           <h2>The Products You May Like...</h2>
@@ -333,7 +372,34 @@ const Homepage = () => {
         </div>
         
       </section>
-
+      <Joyride steps={steps}
+      run={run}
+      continuous
+      scrollToFirstStep
+      showProgress
+      showSkipButton
+      disableScrolling
+      callback={data => {
+        const { action } = data;
+        if (
+          action === "close" ||
+          action === "skip" ||
+          action === "finished"
+        ) {
+          setRun(false);
+        }
+      }}
+      styles={{
+        tooltip: {
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          color: "#fff"
+        },
+        buttonNext: {
+          backgroundColor: "#007bff"
+        }
+      }}
+      onFinish={handleTourFinish}
+      />
     </div>
 
   );

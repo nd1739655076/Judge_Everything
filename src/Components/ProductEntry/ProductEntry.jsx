@@ -162,6 +162,32 @@ const ProductEntry = () => {
                 const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
                 const newAverageScore = newTotalScore / newTotalRaters;
 
+                const currentDistribution = productData.ratingDistribution || {
+                    'fiveStars': 0,
+                    'fourStars': 0,
+                    'threeStars': 0,
+                    'twoStars': 0,
+                    'oneStar': 0,
+                };
+                switch (userProductRating) {
+                    case 5:
+                        currentDistribution['fiveStars'] += 1;
+                        break;
+                    case 4:
+                        currentDistribution['fourStars'] += 1;
+                        break;
+                    case 3:
+                        currentDistribution['threeStars'] += 1;
+                        break;
+                    case 2:
+                        currentDistribution['twoStars'] += 1;
+                        break;
+                    case 1:
+                        currentDistribution['oneStar'] += 1;
+                        break;
+                    default:
+                        console.error('Invalid rating input');
+                }
                 const newComment = {
                     title: userCommentTitle,
                     content: userComment,
@@ -179,6 +205,7 @@ const ProductEntry = () => {
                         totalScore: newTotalScore,
                         totalRater: newTotalRaters,
                     },
+                    ratingDistribution: currentDistribution,
                     commentList: arrayUnion(newComment)
                 });
 
@@ -189,6 +216,7 @@ const ProductEntry = () => {
                         totalScore: newTotalScore,
                         totalRater: newTotalRaters,
                     },
+                    ratingDistribution: currentDistribution,
                     commentList: [...(prevData.commentList || []), newComment],
                 }));
 

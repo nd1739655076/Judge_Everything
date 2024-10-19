@@ -89,15 +89,16 @@ const LoginSignup = () => {
           setErrorMessage("");
           setSuccessMessage(checkFirstLoginResponse.data.message);
           setTimeout(() => {
-            // 这边改preferenceSurvey
             navigate("/preferenceSurvey");
           }, 1000);
         }
-        setErrorMessage("");
-        setSuccessMessage("Login successful! Redirecting...");
-        setTimeout(() => {
-          navigate("/");
-        }, 1000);
+        else {
+          setErrorMessage("");
+          setSuccessMessage("Login successful! Redirecting...");
+          setTimeout(() => {
+            navigate("/");
+          }, 1000);
+        }
       } else {
         setErrorMessage(response.data.message);
       }

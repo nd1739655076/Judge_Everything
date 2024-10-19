@@ -14,6 +14,8 @@ class User {
     this.password = password;
     this.email = email;
     this.nickname = '';
+    this.age = '';
+    this.gender = '';
     this.preferences = [null, null, null, null, null];
     this.productProfileCreateHistory = [];
     this.followingList = [];
@@ -41,6 +43,8 @@ class User {
       password: this.password,
       email: this.email,
       nickname: null,
+      age: null,
+      gender: null,
       preferences: null,
       productProfileCreateHistory: null,
       followingList: null,
@@ -165,6 +169,30 @@ class User {
     const userDoc = userDocRefSnapshot.docs[0];
     await userDoc.ref.update({ firstLogin: false });
     return { status: 'success', message: 'First login status updated to false.' };
+  }
+
+  // action == 'updatePreferences'
+  static async updatePreferences(username, gender, ageRange, selectedTags) {
+    const userDocRef = db.collection('User').where('username', '==', username);
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not found' };
+    }
+    const userDoc = userDocRefSnapshot.docs[0];
+    let updateData = {};
+    if (gender === 'male') {
+      updateData.gender = 'male';
+    } else if (gender === 'female') {
+      updateData.gender = 'female';
+    } else if (gender === 'other') {
+      updateData.gender = 'other';
+    } else if (gender === 'preferNotToSay') {
+      updateData.gender = '';
+    }
+    updateData.ageRange = ageRange;
+    updateData.preferences = selectedTags || [null, null, null, null, null];
+    await userDoc.ref.update(updateData);
+    return { status: 'success', message: 'Preferences updated successfully.' };
   }
 
   // helper

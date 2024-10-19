@@ -1,12 +1,12 @@
 const {onRequest} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const cors = require('cors')({ origin: true });
 
 admin.initializeApp();
 const db = admin.firestore();
-const bucket = admin.storage().bucket();
+const bucket = admin.storage().bucket('judge-everything.appspot.com');
 
 const TagLibrary = require('./TagLibrary');
 const Id = require('./Id');
@@ -63,7 +63,8 @@ exports.handleIdRequest = functions.https.onCall(async (data, context) => {
 // User Handle
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, username, password, email, statusToken, uidNum, nickname, preferences } = data;
+    const { action, username, password, email, gender, ageRange, selectedTags,
+      statusToken, uidNum, nickname, preferences } = data;
 
     if (action === 'generate') {
       // username, password, email
@@ -118,6 +119,16 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: true, message: setFirstLoginFalseResponse.message };
       } else {
         return { success: false, message: setFirstLoginFalseResponse.message };
+      }
+    }
+
+    else if (action === 'updatePreferences') {
+      // username, gender, ageRange, selectedTags
+      const preferencesResponse = await User.updatePreferences(username, gender, ageRange, selectedTags);
+      if (preferencesResponse.status === 'success') {
+        return { success: true, message: preferencesResponse.message };
+      } else {
+        return { success: false, message: preferencesResponse.message };
       }
     }
 
@@ -202,28 +213,26 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
         }
       }
 
-      // Handle image upload
+      // Handle image upload directly here
       let productImageUrl = '';
       if (imageBase64 && imageName) {
-        // Call handleImageRequest directly
-        const imageResult = await exports.handleImageRequest({
-          action: 'upload',
-          base64: imageBase64,
-          filename: imageName,
-          productId: prodidNum,
-        }, context);
+        const buffer = Buffer.from(imageBase64, 'base64');
+        const productImageFilePath = `productImage/${prodidNum}/${imageName}`;
+        const productImageFile = bucket.file(productImageFilePath);
 
-        if (imageResult.success) {
-          productImageUrl = imageResult.imageUrl;
-        } else {
-          console.error('Image upload failed:', imageResult.message);
-        }
+        await productImageFile.save(buffer, {
+          contentType: 'image/jpeg',
+          public: true,
+        });
+        productImageUrl = productImageFile.publicUrl();
+
+        // Update product entry with the image URL
+        newProductEntry.productImage = productImageUrl;
       }
 
       newProductEntry.parametorList = parameterIds;
       newProductEntry.tagList = tags;
-      newProductEntry.productImage = productImageUrl;
-
+      
       await newProductEntry.generateProductEntry();
       console.log('Product entry successfully created.');
       

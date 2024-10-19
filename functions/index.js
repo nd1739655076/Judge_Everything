@@ -318,3 +318,19 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('internal', 'Failed to handle comment request');
   }
 });
+
+//This function is used for the preference survey's writing
+exports.handleUserPreferences = functions.https.onCall(async (data, context) => {
+  try {
+    const { username, gender, ageRange, selectedTags } = data;
+    const preferencesResponse = await User.updatePreferences(username, gender, ageRange, selectedTags);
+    if (preferencesResponse.status === 'success') {
+      return { success: true, message: preferencesResponse.message };
+    } else {
+      return { success: false, message: preferencesResponse.message };
+    }
+  } catch (error) {
+    console.error('Error handling user preferences request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle user preferences request.');
+  }
+});

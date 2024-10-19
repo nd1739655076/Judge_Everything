@@ -1,0 +1,58 @@
+.preference-survey-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75); /* 半透明背景 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  
+  .preference-survey-modal {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    z-index: 10000; /* 确保弹窗位于最前 */
+  }
+  
+  .survey-page h2 {
+    margin-bottom: 20px;
+  }
+  
+  .survey-button {
+    margin: 5px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .selected {
+    background-color: #0056b3;
+  }
+  
+  .checkbox-container {
+    margin: 20px 0;
+  }
+  
+  .age-buttons, .gender-buttons, .tag-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .tag-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  

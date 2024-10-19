@@ -133,14 +133,27 @@ const Homepage = () => {
     }
   ];
   useEffect(() => {
-    const firstLogin = localStorage.getItem("firstLogin");
-    if ((firstLogin === null || firstLogin === "true") && isLoggedIn) {
-      localStorage.setItem("firstLogin", "true");
-      setRun(true);
-    } 
+    const checkFirstLoginStatus = async () => {
+      if (isLoggedIn) {
+        const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+        const firstLoginResponse = await handleUserRequest({
+          action: 'checkFirstLogin',
+          username: username,
+        });
+        if (firstLoginResponse.data.success) {
+          setRun(true);
+        }
+      }
+    }
+    
+    checkFirstLoginStatus();
   }, [isLoggedIn]);
-  const handleTourFinish = () => {
-    localStorage.setItem("firstLogin", "false");
+  const handleTourFinish = async () => {
+    const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+    await handleUserRequest({
+      action: 'setFirstLoginFalse',
+      username: username
+    });
   }
   // intro done
 

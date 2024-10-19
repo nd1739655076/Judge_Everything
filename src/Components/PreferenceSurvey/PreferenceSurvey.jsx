@@ -89,6 +89,7 @@ const PreferenceSurvey = ({ isOpen, onRequestClose, onSubmitSurvey }) => {
   
       if (response.data.success) {
         console.log('Preferences saved successfully:', response.data.message);
+        localStorage.setItem('firstLogin', 'true');
         navigate('/');
       } else {
         console.error('Error saving preferences:', response.data.message);

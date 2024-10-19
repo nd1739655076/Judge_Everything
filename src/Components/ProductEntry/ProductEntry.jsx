@@ -489,7 +489,10 @@ const ProductEntry = () => {
             <div className="product-entry-container">
                 <div className="product-info">
                     <div className="product-image">
-                        <img src="https://via.placeholder.com/400" alt="Product" />
+                    <img 
+                        src={productData.productImage || "https://via.placeholder.com/400"} 
+                        alt={productData.productName || "Product"} 
+                    />
                     </div>
                     <div className="product-details">
                         <h1>{productData.productName}
@@ -506,7 +509,6 @@ const ProductEntry = () => {
                                 </button>
                             )}
                         </h1>
-                        <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
                         <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
                         <div className="rating-categories">
                             <ul>
@@ -611,19 +613,7 @@ const ProductEntry = () => {
                             placeholder="Write your comment here..."
                         ></textarea>
                         <div className="rating-section">
-                            {parameters.map((param, index) => (
-                                <div key={index} className="rating-item">
-                                    <FaLightbulb />
-                                    <span>{param.paramName}</span>
-                                    {[...Array(5)].map((_, starIndex) => (
-                                        <FaStar
-                                            key={starIndex}
-                                            className={userRatings[param.paramId] >= starIndex + 1 ? 'filled-star' : ''}
-                                            onClick={() => handleRatingChange(param.paramId, starIndex + 1)}
-                                        />
-                                    ))}
-                                </div>
-                            ))}
+                            
                             {parameters.map((param, index) => (
                                 <div key={index} className="rating-item">
                                     <FaLightbulb />
@@ -639,12 +629,11 @@ const ProductEntry = () => {
                             ))}
                         </div>
                         <button type="submit" className="submit-button">Submit</button>
-                        <button type="submit" className="submit-button">Submit</button>
+                        
                     </form>
                     {successMessage && <p className="success-message">{successMessage}</p>}
                     {errorMessage && <p className="error-message">{errorMessage}</p>}
-                    {successMessage && <p className="success-message">{successMessage}</p>}
-                    {errorMessage && <p className="error-message">{errorMessage}</p>}
+                    
                 </div>
             </div>
         </div>

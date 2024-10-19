@@ -79,6 +79,12 @@ const Homepage = () => {
     checkLoginStatus();
     setTimeGreeting();
     fetchProducts();
+
+    const intervalId = setInterval(() => {
+      checkLoginStatus();
+      setTimeGreeting();
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
@@ -133,7 +139,7 @@ const Homepage = () => {
     }
   ];
   useEffect(() => {
-    const checkFirstLoginStatus = async () => {
+    const checkFirstLogin = async () => {
       if (isLoggedIn) {
         const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
         const firstLoginResponse = await handleUserRequest({
@@ -146,7 +152,7 @@ const Homepage = () => {
       }
     }
     
-    checkFirstLoginStatus();
+    checkFirstLogin();
   }, [isLoggedIn]);
   const handleTourFinish = async () => {
     const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
@@ -387,9 +393,9 @@ const Homepage = () => {
         </div>
         <div className="recommendationEntriesGrid">
           {products.length > 0 ? (
-            products.slice(0, 5).map(product => ( // Get the first 5 products
+            products.slice(0, 10).map(product => ( // Get the first 5 products
               <div key={product.id} className="recommendationEntryCard">
-                <img src={product.imageUrl || "placeholder.jpg"} alt={product.productName} />
+                <img src={product.productImage || "placeholder.jpg"} alt={product.productName} />
                 <h1>
                   <Link to={`/product/${product.id}`}>
                     {product.productName}

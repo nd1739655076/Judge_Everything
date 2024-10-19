@@ -76,12 +76,14 @@ const Homepage = () => {
     };
 
     //initializeTagLibrary();
+    checkLoginStatus();
+    setTimeGreeting();
+    fetchProducts();
+
     const intervalId = setInterval(() => {
       checkLoginStatus();
       setTimeGreeting();
     }, 5000);
-    fetchProducts();
-
     return () => clearInterval(intervalId);
   }, []);
   const toggleDropdown = () => {

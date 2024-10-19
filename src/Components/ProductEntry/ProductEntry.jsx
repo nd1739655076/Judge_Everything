@@ -510,7 +510,6 @@ const ProductEntry = () => {
                             )}
                         </h1>
                         <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
-                        <p className="average-rating">Average: {productData.averageScore.average.toFixed(1)} / 5.0</p>
                         <div className="rating-categories">
                             <ul>
                                 {parameters.map((param, index) => (
@@ -614,19 +613,7 @@ const ProductEntry = () => {
                             placeholder="Write your comment here..."
                         ></textarea>
                         <div className="rating-section">
-                            {parameters.map((param, index) => (
-                                <div key={index} className="rating-item">
-                                    <FaLightbulb />
-                                    <span>{param.paramName}</span>
-                                    {[...Array(5)].map((_, starIndex) => (
-                                        <FaStar
-                                            key={starIndex}
-                                            className={userRatings[param.paramId] >= starIndex + 1 ? 'filled-star' : ''}
-                                            onClick={() => handleRatingChange(param.paramId, starIndex + 1)}
-                                        />
-                                    ))}
-                                </div>
-                            ))}
+                            
                             {parameters.map((param, index) => (
                                 <div key={index} className="rating-item">
                                     <FaLightbulb />
@@ -642,12 +629,11 @@ const ProductEntry = () => {
                             ))}
                         </div>
                         <button type="submit" className="submit-button">Submit</button>
-                        <button type="submit" className="submit-button">Submit</button>
+                        
                     </form>
                     {successMessage && <p className="success-message">{successMessage}</p>}
                     {errorMessage && <p className="error-message">{errorMessage}</p>}
-                    {successMessage && <p className="success-message">{successMessage}</p>}
-                    {errorMessage && <p className="error-message">{errorMessage}</p>}
+                    
                 </div>
             </div>
         </div>

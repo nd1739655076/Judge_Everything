@@ -14,6 +14,8 @@ class User {
     this.password = password;
     this.email = email;
     this.nickname = '';
+    this.age = '';
+    this.gender = '';
     this.preferences = [null, null, null, null, null];
     this.productProfileCreateHistory = [];
     this.followingList = [];
@@ -136,6 +138,37 @@ class User {
     return { status: 'success', statusToken: statusToken };
   }
 
+  // action == 'checkFirstLogin'
+  static async checkFirstLogin(username) {
+    const userDocRef = db.collection('User').where('username', '==', username);
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not found' };
+    }
+    const userDoc = userDocRefSnapshot.docs[0];
+    const userDocData = userDoc.data();
+    let isFirstLogin = userDocData.firstLogin;
+    if (isFirstLogin === undefined || isFirstLogin === true) {
+      await userDoc.ref.update({ firstLogin: true });
+      return { status: 'success', message: 'Hello, new user! It will help if you accomplish a preference survey first.' };
+    }
+    else {
+      return { status: 'error', message: 'This user has already logged in before.' };
+    }
+  }
+
+  // action == 'setFirstLoginFalse'
+  static async setFirstLoginFalse(username) {
+    const userDocRef = db.collection('User').where('username', '==', username);
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not found' };
+    }
+    const userDoc = userDocRefSnapshot.docs[0];
+    await userDoc.ref.update({ firstLogin: false });
+    return { status: 'success', message: 'First login status updated to false.' };
+  }
+
   // helper
   static verifyToken(token) {
     try {
@@ -243,6 +276,40 @@ class User {
     await userDocRef.delete();
     return { status: 'success', message: 'User account deleted successfully' }
   }
+
+  //Used for preference surveys, including age, gender, preference, and nickname
+    static async updatePreferences(username, gender, ageRange, selectedTags) {
+      try {
+        const userDocRef = db.collection('User').where('username', '==', username);
+        const userDocRefSnapshot = await userDocRef.get();
+  
+        if (userDocRefSnapshot.empty) {
+          return { status: 'error', message: 'User not found' };
+        }
+
+        const userDoc = userDocRefSnapshot.docs[0];
+        const userDocData = userDoc.data();
+        let updateData = {};
+        if (gender === 'male') {
+          updateData.gender = 'male';
+        } else if (gender === 'female') {
+          updateData.gender = 'female';
+        } else if (gender === 'other') {
+          updateData.gender = 'other';
+        } else if (gender === 'preferNotToSay') {
+          updateData.gender = '';
+        }
+        updateData.ageRange = ageRange;
+        // preferences
+        updateData.preferences = selectedTags || [null, null, null, null, null];
+        await userDoc.ref.update(updateData);
+  
+        return { status: 'success', message: 'Preferences updated successfully.' };
+      } catch (error) {
+        console.error('Error updating user preferences:', error);
+        return { status: 'error', message: 'Failed to update preferences.' };
+      }
+    }
 
 }
 

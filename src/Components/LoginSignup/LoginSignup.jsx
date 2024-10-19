@@ -79,19 +79,25 @@ const LoginSignup = () => {
         password: password,
       });
       setLoading(false);
+  
       if (response.data.success) {
         localStorage.setItem('authToken', response.data.statusToken);
+  
+        // use message check whether first login
         const checkFirstLoginResponse = await handleUserRequest({
           action: 'checkFirstLogin',
           username: username
         });
-        if (checkFirstLoginResponse.data.success) {
+  
+        // check returned message
+        if (checkFirstLoginResponse.data.success &&
+            checkFirstLoginResponse.data.message.includes('Hello, new user')) {
           setErrorMessage("");
-          setSuccessMessage(checkFirstLoginResponse.data.message);
+          setSuccessMessage("Login successful! Redirecting to the preference survey...");
           setTimeout(() => {
-            // 这边改preferenceSurvey
             navigate("/preferenceSurvey");
           }, 1000);
+          return; 
         }
         setErrorMessage("");
         setSuccessMessage("Login successful! Redirecting...");
@@ -107,6 +113,7 @@ const LoginSignup = () => {
       setErrorMessage("Incorrect username or password.");
     }
   };
+  
 
   return (
     <div className="container">

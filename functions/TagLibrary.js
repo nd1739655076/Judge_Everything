@@ -149,7 +149,7 @@ class TagLibrary {
     const querySnapshot = await tagLibraryRef.get();
     const tagList = [];
     querySnapshot.forEach(doc => {
-      tags.push({ ...doc.data() });
+      tagList.push({ ...doc.data() });
     });
     return { status: 'success', tagList };
   }

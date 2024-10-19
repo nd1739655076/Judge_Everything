@@ -101,6 +101,26 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       }
     }
 
+    else if (action === 'checkFirstLogin') {
+      // username
+      const checkFirstLoginResponse = await User.checkFirstLogin(username);
+      if (checkFirstLoginResponse.status === 'success') {
+        return { success: true, message: checkFirstLoginResponse.message };
+      } else {
+        return { success: false, message: checkFirstLoginResponse.message };
+      }
+    }
+
+    else if (action === 'setFirstLoginFalse') {
+      // username
+      const setFirstLoginFalseResponse = await User.setFirstLoginFalse(username);
+      if (setFirstLoginFalseResponse.status === 'success') {
+        return { success: true, message: setFirstLoginFalseResponse.message };
+      } else {
+        return { success: false, message: setFirstLoginFalseResponse.message };
+      }
+    }
+
     else if (action === 'checkLoginStatus') {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);
@@ -297,5 +317,21 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
   } catch (error) {
     console.error('Error handling comment request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle comment request');
+  }
+});
+
+//This function is used for the preference survey's writing
+exports.handleUserPreferences = functions.https.onCall(async (data, context) => {
+  try {
+    const { username, gender, ageRange, selectedTags } = data;
+    const preferencesResponse = await User.updatePreferences(username, gender, ageRange, selectedTags);
+    if (preferencesResponse.status === 'success') {
+      return { success: true, message: preferencesResponse.message };
+    } else {
+      return { success: false, message: preferencesResponse.message };
+    }
+  } catch (error) {
+    console.error('Error handling user preferences request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle user preferences request.');
   }
 });

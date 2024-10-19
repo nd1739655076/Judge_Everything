@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; //change later
 import './HomePage.css';
 
 import { Link } from 'react-router-dom';
+// icon import
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+// intro import
 import Joyride from "react-joyride";
+// chart import
 import Modal from 'react-modal';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+// image import
 import logoImage from "../HomePageAssets/404.jpg";
 
 Modal.setAppElement('#root');
@@ -20,59 +24,6 @@ const Homepage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
-
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [selectedProductData, setSelectedProductData] = useState(null);
-  const [ratingDistribution, setRatingDistribution] = useState([]); 
-  const db = getFirestore();
-
-  // intro
-  const [run, setRun] = useState(false);
-  const [showTourAgain, setShowTourAgain] = useState(true);
-  const steps = [
-    {
-      target: ".step-1",
-      content: "Use this menu bar to access your notifications, history, and accout settings"
-    },
-    {
-      target: ".step-2",
-      content: "Create new product entries here"
-    },
-    {
-      target: ".step-3",
-      content: "Have any doubts or want to give feedback? Click here!"
-    },
-    {
-      target: ".step-4",
-      content: "Brows Most Popular Entries Every Week"
-    },
-    {
-      target: ".step-5",
-      content: "Personalized recommendations, Just for YOU!"
-    },
-    {
-      target: ".step-6",
-      content: "You can always click here to revisit this tutorial."
-    }
-  ];
-  useEffect(() => {
-    const shouldRunTourAgain = localStorage.getItem("showTourAgain");
-    const firstLogin = localStorage.getItem("firstLogin");
-    if (firstLogin === null) {
-      localStorage.setItem("firstLogin", "false");
-      setRun(true);
-    } else {
-      localStorage.setItem("showTourAgain", "false");
-      setRun(shouldRunTourAgain !== "false");
-    }
-  }, []);
-  const handleTourFinish = () => {
-    localStorage.setItem("showTourAgain", "false");
-    setShowTourAgain(false);
-  }
-  // intro  done
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -114,12 +65,21 @@ const Homepage = () => {
       }
       setGreeting(currentGreeting);
     };
+    const initializeTagLibrary = async () => {
+      const handleTagLibraryRequest = httpsCallable(functions, 'handleTagLibraryRequest');
+      const response = await handleTagLibraryRequest({ action: 'initializeTagLibrary' });
+      if (response.data.success) {
+        console.log('TagLibrary initialized successfully:', response.data.message);
+      } else {
+        console.error('Failed to initialize TagLibrary:', response.data.message);
+      }
+    };
 
+    initializeTagLibrary();
     checkLoginStatus();
     setTimeGreeting();
     fetchProducts();
   }, []);
-
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
@@ -143,6 +103,54 @@ const Homepage = () => {
       }
     }
   };
+
+  // intro
+  const [run, setRun] = useState(false);
+  const steps = [
+    {
+      target: ".step-1",
+      content: "Use this menu bar to access your notifications, history, and accout settings"
+    },
+    {
+      target: ".step-2",
+      content: "Create new product entries here"
+    },
+    {
+      target: ".step-3",
+      content: "Have any doubts or want to give feedback? Click here!"
+    },
+    {
+      target: ".step-4",
+      content: "Brows Most Popular Entries Every Week"
+    },
+    {
+      target: ".step-5",
+      content: "Personalized recommendations, Just for YOU!"
+    },
+    {
+      target: ".step-6",
+      content: "You can always click here to revisit this tutorial."
+    }
+  ];
+  useEffect(() => {
+    const firstLogin = localStorage.getItem("firstLogin");
+    if ((firstLogin === null || firstLogin === "true") && isLoggedIn) {
+      localStorage.setItem("firstLogin", "true");
+      setRun(true);
+    } 
+  }, [isLoggedIn]);
+  const handleTourFinish = () => {
+    localStorage.setItem("firstLogin", "false");
+  }
+  // intro done
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedProductData, setSelectedProductData] = useState(null);
+  const [ratingDistribution, setRatingDistribution] = useState([]); 
+  const db = getFirestore();
+
   const fetchProducts = async () => {
     try {
       const productEntriesRef = collection(db, 'ProductEntry');
@@ -197,10 +205,43 @@ const Homepage = () => {
     setModalIsOpen(false);
   };
   
+
+
+
   return (
 
     <div className="homepage">
     
+      {/* Intro */}
+      <Joyride steps={steps}
+        run={run}
+        continuous
+        scrollToFirstStep
+        showProgress
+        showSkipButton
+        disableScrolling
+        callback={data => {
+          const { action } = data;
+          if (
+            action === "close" ||
+            action === "skip" ||
+            action === "finished"
+          ) {
+            setRun(false);
+            handleTourFinish();
+          }
+        }}
+        styles={{
+          tooltip: {
+            backgroundColor: "rgba(0, 0, 0, 0.8)",
+            color: "#fff"
+          },
+          buttonNext: {
+            backgroundColor: "#007bff"
+          }
+        }}
+      />
+
       {/* Top Bar */}
       <div className="topbar">
         <div className="contactinfo">
@@ -386,34 +427,7 @@ const Homepage = () => {
         <button onClick={closeModal}>Close</button>
       </Modal>
 
-      <Joyride steps={steps}
-      run={run}
-      continuous
-      scrollToFirstStep
-      showProgress
-      showSkipButton
-      disableScrolling
-      callback={data => {
-        const { action } = data;
-        if (
-          action === "close" ||
-          action === "skip" ||
-          action === "finished"
-        ) {
-          setRun(false);
-        }
-      }}
-      styles={{
-        tooltip: {
-          backgroundColor: "rgba(0, 0, 0, 0.8)",
-          color: "#fff"
-        },
-        buttonNext: {
-          backgroundColor: "#007bff"
-        }
-      }}
-      onFinish={handleTourFinish}
-      />
+      
 
     </div>
 

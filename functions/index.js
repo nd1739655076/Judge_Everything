@@ -3,23 +3,52 @@ const logger = require("firebase-functions/logger");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require('cors')({ origin: true });
-admin.initializeApp();
 
+admin.initializeApp();
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
 
+const TagLibrary = require('./TagLibrary');
 const Id = require('./Id');
 const User = require('./User');
 const Parameter = require('./Parameter');
 const Comment = require('./Comment');
 const ProductEntry = require('./ProductEntry');
 
+// TagLibrary Handle
+exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const { action } = data;
+    
+    if (action === 'initializeTagLibrary') {
+      // action
+      const initializeResponse = await TagLibrary.initializeTagLibrary();
+      if (initializeResponse.status === 'success') {
+        return { success: true, message: initializeResponse.message };
+      }
+    } 
+    
+    else if (action === 'getTagLibrary') {
+      // action
+      const getTagLibraryResponse = await TagLibrary.getTagLibrary();
+      if (getTagLibraryResponse.status === 'success') {
+        return { success: true, tagList: getTagLibraryResponse.tagList };
+      }
+    } 
+
+  } catch (error) {
+    console.error('Error handling TagLibrary request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle TagLibrary request.');
+  }
+});
+
 // Id Handle
 exports.handleIdRequest = functions.https.onCall(async (data, context) => {
   try {
     const {action, type, name} = data;
-    // type, name
+
     if (action === 'generate') {
+      // type, name
       const newId = new Id();
       const idResponse = await newId.generateId(type, name);
       return idResponse;
@@ -35,6 +64,7 @@ exports.handleIdRequest = functions.https.onCall(async (data, context) => {
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action, username, password, email, statusToken, uidNum, nickname, preferences } = data;
+
     if (action === 'generate') {
       // username, password, email
       const userDocRef = db.collection('User').where('username', '==', username);

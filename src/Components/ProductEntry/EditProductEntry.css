@@ -1,0 +1,91 @@
+/* Main container */
+.edit-product-entry-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Title */
+.edit-product-entry-container h1 {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Form styles */
+.edit-product-entry-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.edit-product-entry-form label {
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.edit-product-entry-form input[type="text"] {
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+.edit-product-entry-form p {
+    font-size: 1.2rem;
+    color: #666;
+}
+
+/* Buttons */
+.update-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    align-self: center;
+    margin: 10px;
+}
+.cancel-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    align-self: center;
+    margin: 10px;
+}
+.update-button:hover {
+    background-color: #0056b3;
+}
+
+.cancel-button:hover {
+    background-color: #0056b3;
+}
+
+/* Error and Success Messages */
+.error-message {
+    color: #d9534f;
+    font-size: 1.2rem;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.success-message {
+    color: #28a745;
+    font-size: 1.2rem;
+    text-align: center;
+    margin-top: 10px;
+}

@@ -113,9 +113,12 @@ body {
 .currentUserStatus .currentUserStatusInfo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
   font-size: 1rem;
-  color: #333333;
+  color: #007bff;
+}
+.currentUserStatus .currentUserStatusInfo .username {
+  font-weight: bold;
 }
 .currentUserStatus .currentUserStatusInfo svg {
   font-size: 1.2rem;
@@ -263,12 +266,13 @@ body {
 
 .mostPopularEntriesGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 30px;
   padding: 30px 50px;
 }
 .mostPopularEntryCard {
-  grid-column: 1 / 2;
+  flex: 0 1 calc(20% - 20px);
+  box-sizing: border-box;
   background-color: #f9f9f9;
   padding: 15px;
   border-radius: 10px;
@@ -344,12 +348,13 @@ body {
 
 .recommendationEntriesGrid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 30px;
   padding: 30px 50px;
 }
 .recommendationEntryCard {
-  grid-column: 1 / 2;
+  flex: 0 1 calc(20% - 20px);
+  box-sizing: border-box;
   background-color: #f9f9f9;
   padding: 15px;
   border-radius: 10px;
@@ -372,12 +377,18 @@ body {
   font-size: 1rem;
   color: #757575;
 }
-.recommendationEntryCard a {
+.recommendationEntryCard button {
   font-size: 1rem;
-  color: #007bff;
+  color: #757575;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
   text-decoration: none;
+  padding: 0;
+  transition: color 0.3s;
 }
-.recommendationEntryCard a:hover {
+.recommendationEntryCard button:hover {
+  color: #007bff;
   text-decoration: underline;
 }
 
@@ -398,4 +409,4 @@ body {
   background-color: #007bff;
   color: white;
 }
-/* Most Popular Entries Section Done */
+/* Recommendation Entries Section Done */

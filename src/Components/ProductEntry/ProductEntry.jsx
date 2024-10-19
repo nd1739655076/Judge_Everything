@@ -489,7 +489,10 @@ const ProductEntry = () => {
             <div className="product-entry-container">
                 <div className="product-info">
                     <div className="product-image">
-                        <img src="https://via.placeholder.com/400" alt="Product" />
+                    <img 
+                        src={productData.productImage || "https://via.placeholder.com/400"} 
+                        alt={productData.productName || "Product"} 
+                    />
                     </div>
                     <div className="product-details">
                         <h1>{productData.productName}

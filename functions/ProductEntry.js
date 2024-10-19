@@ -7,7 +7,7 @@ class ProductEntry {
     this.productName = productName;
     this.creator = uidNum;
     this.description = description;
-    this.productImage = productImageUrl; 
+    this.productImage = ""; 
     this.tagList = new Array(5).fill(null);
     this.averageScore = {
       average: 0,

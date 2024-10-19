@@ -80,16 +80,17 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       return { success: true, message: "Sign up successful! You can now log in." };
     }
 
-  //   else if (action === 'reset') {
-  //     console.log("call to index.js");
-  //     const resetResponse = await User.resetPassword(email, uidNum);
-  //     console.log("call complete");
-  //     if (resetResponse.status === 'success') {
-  //       return { success: true, message: resetResponse.message };
-  //     } else {
-  //       return { success: false, message: resetResponse.message };
-  //     }
-  //  }
+    else if (action === 'retrieve') {
+      console.log("call to index.js");
+      console.log("username:", username, "email:", email);
+      const retrieveResponse = await User.retrievePassword(username, email);
+      console.log("call complete");
+      if (retrieveResponse.status === 'success') {
+        return { success: true, password: retrieveResponse.password };
+      } else {
+        return { success: false, message: retrieveResponse.message };
+      }
+   }
 
     else if (action == 'login') {
       // username, password

@@ -52,51 +52,21 @@ class User {
     });
   }
 
-  // action == 'resetPassword'
-  static async resetPassword(uid, email) {
-    const userDocRef = db.collection('User').where('email', '==', email);
+  // action == 'retrievePassword'
+  static async retrievePassword(username, email) {
+    console.log('call to retireve in user.js');
+    console.log("username:", username, "email:", email);
+    const userDocRef = db.collection('User').where('username', '==', username);
     const userDocRefSnapshot = await userDocRef.get();
     if (userDocRefSnapshot.empty) {
-      return { status: 'error', message: 'User not exist' };
+      return { status: 'error', message: 'User doesn\'t exist' };
     }
-    // generate random number
-    // const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-    // let randomPassword = '';
-    
-    // for (let i = 0; i < 10; i++) {
-    //   const randomIndex = Math.floor(Math.random() * characters.length);
-    //   randomPassword += characters.charAt(randomIndex);
-    // }
-    // console.log(randomPassword);
-    // update password
-    // await userDocRef.update({password: newPassword});
-    // send email here
-    
-    
-    // var transporter = nodemailer.createTransport({
-    //   service: 'gmail',
-    //   auth: {
-    //     user: 'judge.everything404@gmail.com',
-    //     pass: 'zfqw jgrr kkuq mrnh'
-    //     }
-    // });
-        
-    // var mailOptions = {
-    //   from: 'judge.everything404@gmail.com',
-    //   to: {email},
-    //   subject: 'Password Reset',
-    //   text: `Your password was seccessfully reset! \nYour temporary new password is: ${randomPassword}`
-    // };
-        
-    // transporter.sendMail(mailOptions, function(error, info){
-    //   if (error) {
-    //     console.log(error);
-    //   } else {
-    //     console.log('Email sent: ' + info.response);
-    //   }
-    // });
-    
-    // return { status: 'success', message: 'Password reset successfully' };
+    const userDoc = userDocRefSnapshot.docs[0];
+    const userDocData = userDoc.data();
+    if (email !== userDocData.email) {
+      return { status: 'error', message: 'Username and email don\'t match' };
+    }
+    return { status: 'success', password: userDocData.password };
   }
 
   // helper

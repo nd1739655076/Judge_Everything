@@ -181,6 +181,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action, productName, uidNum, tags, paramList, description, imageBase64, imageName } = data;
+    
     if (action === 'generate') {
       const generateId = new Id();
       const productIdResult = await generateId.generateId('productEntry', productName);
@@ -188,51 +189,50 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
       const newProductEntry = new ProductEntry(prodidNum, productName, uidNum, description);
       const parameterIds = [];
 
+      // Handle parameter list generation
       if (paramList && paramList.length > 0) {
         for (let i = 0; i < paramList.length; i++) {
-          // Generate parameter ID using the custom ID generation function
           const paramIdResult = await generateId.generateId('parameter', paramList[i]);
-          const paramId = paramIdResult.idNum; // Extract the generated parameter ID
-          const paramName = paramList[i]; // Parameter name
+          const paramId = paramIdResult.idNum;
+          const paramName = paramList[i];
 
-          console.log(`Creating parameter ${i + 1}: ID ${paramId}, Name: ${paramName}`);
-
-          const parameter = new Parameter(paramId, prodidNum, paramName); // Create new parameter
-
-          // Save the parameter to Firestore
-          await parameter.save(); // Save parameter to Firestore
-          
-          parameterIds.push(paramId); // Add the parameter ID to the list
-
-          console.log(`Parameter ${i + 1} saved: ID ${paramId}`);
+          const parameter = new Parameter(paramId, prodidNum, paramName);
+          await parameter.save();
+          parameterIds.push(paramId);
         }
       }
+
+      // Handle image upload
       let productImageUrl = '';
       if (imageBase64 && imageName) {
-        const handleImageUpload = httpsCallable(functions, 'handleImageRequest');
-        const imageResult = await handleImageUpload({
+        // Call handleImageRequest directly
+        const imageResult = await exports.handleImageRequest({
           action: 'upload',
           base64: imageBase64,
           filename: imageName,
           productId: prodidNum,
-        });
+        }, context);
 
-        if (imageResult.data.success) {
-          productImageUrl = imageResult.data.imageUrl;
+        if (imageResult.success) {
+          productImageUrl = imageResult.imageUrl;
         } else {
-          console.error('Image upload failed:', imageResult.data.message);
+          console.error('Image upload failed:', imageResult.message);
         }
       }
+
       newProductEntry.parametorList = parameterIds;
-      newProductEntry.tagList = tags; 
+      newProductEntry.tagList = tags;
+      newProductEntry.productImage = productImageUrl;
+
       await newProductEntry.generateProductEntry();
       console.log('Product entry successfully created.');
+      
       return {
         success: true,
-        idNum: prodidNum,  // Make sure to include the product ID in the response
-        message: 'Product entry created successfully!'
+        idNum: prodidNum,
+        message: 'Product entry created successfully!',
       };
-    } 
+    }
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');

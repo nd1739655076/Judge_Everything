@@ -3,23 +3,52 @@ const logger = require("firebase-functions/logger");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const cors = require('cors')({ origin: true });
-admin.initializeApp();
 
+admin.initializeApp();
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
 
+const TagLibrary = require('./TagLibrary');
 const Id = require('./Id');
 const User = require('./User');
 const Parameter = require('./Parameter');
 const Comment = require('./Comment');
 const ProductEntry = require('./ProductEntry');
 
+// TagLibrary Handle
+exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const { action } = data;
+    
+    if (action === 'initializeTagLibrary') {
+      // action
+      const initializeResponse = await TagLibrary.initializeTagLibrary();
+      if (initializeResponse.status === 'success') {
+        return { success: true, message: initializeResponse.message };
+      }
+    } 
+    
+    else if (action === 'getTagLibrary') {
+      // action
+      const getTagLibraryResponse = await TagLibrary.getTagLibrary();
+      if (getTagLibraryResponse.status === 'success') {
+        return { success: true, tagList: getTagLibraryResponse.tagList };
+      }
+    } 
+
+  } catch (error) {
+    console.error('Error handling TagLibrary request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle TagLibrary request.');
+  }
+});
+
 // Id Handle
 exports.handleIdRequest = functions.https.onCall(async (data, context) => {
   try {
     const {action, type, name} = data;
-    // type, name
+
     if (action === 'generate') {
+      // type, name
       const newId = new Id();
       const idResponse = await newId.generateId(type, name);
       return idResponse;
@@ -34,7 +63,8 @@ exports.handleIdRequest = functions.https.onCall(async (data, context) => {
 // User Handle
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, username, password, email, statusToken, uidNum, nickname } = data;
+    const { action, username, password, email, statusToken, uidNum, nickname, preferences } = data;
+
     if (action === 'generate') {
       // username, password, email
       const userDocRef = db.collection('User').where('username', '==', username);
@@ -50,6 +80,17 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       return { success: true, message: "Sign up successful! You can now log in." };
     }
 
+  //   else if (action === 'reset') {
+  //     console.log("call to index.js");
+  //     const resetResponse = await User.resetPassword(email, uidNum);
+  //     console.log("call complete");
+  //     if (resetResponse.status === 'success') {
+  //       return { success: true, message: resetResponse.message };
+  //     } else {
+  //       return { success: false, message: resetResponse.message };
+  //     }
+  //  }
+
     else if (action == 'login') {
       // username, password
       const loginResponse = await User.login(username, password);
@@ -57,6 +98,26 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: true, statusToken: loginResponse.statusToken };
       } else {
         return { success: false, message: loginResponse.message };
+      }
+    }
+
+    else if (action === 'checkFirstLogin') {
+      // username
+      const checkFirstLoginResponse = await User.checkFirstLogin(username);
+      if (checkFirstLoginResponse.status === 'success') {
+        return { success: true, message: checkFirstLoginResponse.message };
+      } else {
+        return { success: false, message: checkFirstLoginResponse.message };
+      }
+    }
+
+    else if (action === 'setFirstLoginFalse') {
+      // username
+      const setFirstLoginFalseResponse = await User.setFirstLoginFalse(username);
+      if (setFirstLoginFalseResponse.status === 'success') {
+        return { success: true, message: setFirstLoginFalseResponse.message };
+      } else {
+        return { success: false, message: setFirstLoginFalseResponse.message };
       }
     }
 
@@ -91,8 +152,8 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
     }
 
     else if (action === 'accountSetting') {
-      // username, password, email, nickname, uidNum, nickname
-      const accountUpdateResponse = await User.accountSetting(uidNum, username, password, email, nickname);
+      // username, password, email, nickname, uidNum, nickname, preferences
+      const accountUpdateResponse = await User.accountSetting(uidNum, username, password, email, nickname, preferences);
       if (accountUpdateResponse.status === 'success') {
         return { success: true, message: accountUpdateResponse.message };
       } else {
@@ -109,16 +170,6 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: deleteResponse.message };
       }
     }
-    else if (action === 'reset') {
-      console.log("call to index.js");
-      const resetResponse = await User.reset(email);
-      console.log("call complete");
-      if (resetResponse.status === 'success') {
-          return { success: true, statusToken: resetResponse.statusToken };
-      } else {
-          return { success: false, message: resetResponse.message };
-      }
-  }
 
   } catch (error) {
     console.error('Error handling User request:', error);
@@ -129,39 +180,59 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 // ProductEntry Handle
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, productName, uidNum, tags, paramList } = data;
+    const { action, productName, uidNum, tags, paramList, description, imageBase64, imageName } = data;
+    
     if (action === 'generate') {
       const generateId = new Id();
       const productIdResult = await generateId.generateId('productEntry', productName);
       const prodidNum = productIdResult.idNum;
-      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum);
+      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum, description);
       const parameterIds = [];
 
+      // Handle parameter list generation
       if (paramList && paramList.length > 0) {
         for (let i = 0; i < paramList.length; i++) {
-          // Generate parameter ID using the custom ID generation function
           const paramIdResult = await generateId.generateId('parameter', paramList[i]);
-          const paramId = paramIdResult.idNum; // Extract the generated parameter ID
-          const paramName = paramList[i]; // Parameter name
+          const paramId = paramIdResult.idNum;
+          const paramName = paramList[i];
 
-          console.log(`Creating parameter ${i + 1}: ID ${paramId}, Name: ${paramName}`);
-
-          const parameter = new Parameter(paramId, prodidNum, paramName); // Create new parameter
-
-          // Save the parameter to Firestore
-          await parameter.save(); // Save parameter to Firestore
-          
-          parameterIds.push(paramId); // Add the parameter ID to the list
-
-          console.log(`Parameter ${i + 1} saved: ID ${paramId}`);
+          const parameter = new Parameter(paramId, prodidNum, paramName);
+          await parameter.save();
+          parameterIds.push(paramId);
         }
       }
+
+      // Handle image upload
+      let productImageUrl = '';
+      if (imageBase64 && imageName) {
+        // Call handleImageRequest directly
+        const imageResult = await exports.handleImageRequest({
+          action: 'upload',
+          base64: imageBase64,
+          filename: imageName,
+          productId: prodidNum,
+        }, context);
+
+        if (imageResult.success) {
+          productImageUrl = imageResult.imageUrl;
+        } else {
+          console.error('Image upload failed:', imageResult.message);
+        }
+      }
+
       newProductEntry.parametorList = parameterIds;
-      newProductEntry.tags = tags; 
+      newProductEntry.tagList = tags;
+      newProductEntry.productImage = productImageUrl;
+
       await newProductEntry.generateProductEntry();
       console.log('Product entry successfully created.');
-      return { message: 'Product entry created successfully!' };
-    } 
+      
+      return {
+        success: true,
+        idNum: prodidNum,
+        message: 'Product entry created successfully!',
+      };
+    }
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');

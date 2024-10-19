@@ -57,7 +57,6 @@ const LoginSignup = () => {
       });
       setLoading(false);
       if (response.data.success) {
-        console.log("Sign up successful");
         setErrorMessage("");
         setSuccessMessage(response.data.message);
       } else {
@@ -81,8 +80,19 @@ const LoginSignup = () => {
       });
       setLoading(false);
       if (response.data.success) {
-        console.log("Login successful");
         localStorage.setItem('authToken', response.data.statusToken);
+        const checkFirstLoginResponse = await handleUserRequest({
+          action: 'checkFirstLogin',
+          username: username
+        });
+        if (checkFirstLoginResponse.data.success) {
+          setErrorMessage("");
+          setSuccessMessage(checkFirstLoginResponse.data.message);
+          setTimeout(() => {
+            // 这边改preferenceSurvey
+            navigate("/preferenceSurvey");
+          }, 1000);
+        }
         setErrorMessage("");
         setSuccessMessage("Login successful! Redirecting...");
         setTimeout(() => {

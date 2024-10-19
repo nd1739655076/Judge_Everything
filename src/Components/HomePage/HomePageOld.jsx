@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
 import './HomePage.css';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import Joyride from "react-joyride";
+import Modal from 'react-modal';
 import logoImage from "../HomePageAssets/404.jpg";
 
-// add
-import Modal from 'react-modal';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 Modal.setAppElement('#root');
 
 const Homepage = () => {
@@ -20,13 +21,58 @@ const Homepage = () => {
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
 
-  // add
-  const [products, setProducts] = useState([]); // To store the list of products
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedProductData, setSelectedProductData] = useState(null);
   const [ratingDistribution, setRatingDistribution] = useState([]); 
   const db = getFirestore();
+
+  // intro
+  const [run, setRun] = useState(false);
+  const [showTourAgain, setShowTourAgain] = useState(true);
+  const steps = [
+    {
+      target: ".step-1",
+      content: "Use this menu bar to access your notifications, history, and accout settings"
+    },
+    {
+      target: ".step-2",
+      content: "Create new product entries here"
+    },
+    {
+      target: ".step-3",
+      content: "Have any doubts or want to give feedback? Click here!"
+    },
+    {
+      target: ".step-4",
+      content: "Brows Most Popular Entries Every Week"
+    },
+    {
+      target: ".step-5",
+      content: "Personalized recommendations, Just for YOU!"
+    },
+    {
+      target: ".step-6",
+      content: "You can always click here to revisit this tutorial."
+    }
+  ];
+  useEffect(() => {
+    const shouldRunTourAgain = localStorage.getItem("showTourAgain");
+    const firstLogin = localStorage.getItem("firstLogin");
+    if (firstLogin === null) {
+      localStorage.setItem("firstLogin", "false");
+      setRun(true);
+    } else {
+      localStorage.setItem("showTourAgain", "false");
+      setRun(shouldRunTourAgain !== "false");
+    }
+  }, []);
+  const handleTourFinish = () => {
+    localStorage.setItem("showTourAgain", "false");
+    setShowTourAgain(false);
+  }
+  // intro  done
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -71,6 +117,7 @@ const Homepage = () => {
 
     checkLoginStatus();
     setTimeGreeting();
+    fetchProducts();
   }, []);
 
   const toggleDropdown = () => {
@@ -95,6 +142,59 @@ const Homepage = () => {
         console.error("Error logging out:", error);
       }
     }
+  };
+  const fetchProducts = async () => {
+    try {
+      const productEntriesRef = collection(db, 'ProductEntry');
+      const productSnapshot = await getDocs(productEntriesRef);
+      const productList = productSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setProducts(productList); // Update the product list state
+    } catch (error) {
+      console.error("Error fetching product list:", error);
+    } finally {
+      setLoading(false); // Stop loading once the data is fetched
+    }
+  };
+  const handleViewRatingDistribution = async (productId) => {
+    try {
+      const productRef = doc(db, 'ProductEntry', productId);
+      const productSnap = await getDoc(productRef);
+
+      if (productSnap.exists()) {
+        const productData = productSnap.data();
+        setSelectedProductData(productData);
+
+        // Assuming the rating distribution is stored in the product document (as an example)
+        const distribution = productData.ratingDistribution || {
+          'fiveStars': 0,
+          'fourStars': 0,
+          'threeStars': 0,
+          'twoStars': 0,
+          'oneStars': 0,
+        };
+
+        // Convert distribution object into an array format for the graph
+        const distributionArray = Object.entries(distribution).map(([rating, count]) => ({
+          rating,
+          count,
+        }));
+
+        setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
+        console.log('Rating distribution:', distributionArray); 
+        setModalIsOpen(true); // Open the modal
+        console.log('Modal is open:', modalIsOpen); 
+      } else {
+        console.log("Product not found");
+      }
+    } catch (error) {
+      console.error("Error fetching product rating distribution:", error);
+    }
+  };
+  const closeModal = () => {
+    setModalIsOpen(false);
   };
   
   return (
@@ -125,7 +225,13 @@ const Homepage = () => {
         <div className="navlinks">
           <a href="/">Home</a>
           <a href="#">About</a>
-          <a href="/contact">Support</a>
+          <a href="/contact" className="step-3">Support</a>
+          <a onClick={() => setRun(true)}
+            className="step-6"
+            style={{ cursor: 'pointer' }}
+          >
+            Tutorial
+          </a>
         </div>
         <div className="searchbar">
           <FaSearch />
@@ -148,7 +254,7 @@ const Homepage = () => {
           </div>
         )}
         <div className="menuContainer">
-          <FaBars className="menuicon" onClick={toggleDropdown} />
+          <FaBars className="menuicon step-1" onClick={toggleDropdown} />
           {isDropdownVisible && (
             <div className="dropdownMenu">
               <ul>
@@ -189,8 +295,8 @@ const Homepage = () => {
           <h1>Judge Everything</h1>
           <p className="p1">Found in 2024</p>
           <p className="p2">Bought/Used something? Share it!</p>
-          <Link to="/creatProductEntry">
-            <button>Create a New Entry</button>
+          <Link to="/createProductEntry">
+            <button className="step-2">Create a New Entry</button>
           </Link>
         </div>
         <div className="createNewEntryImage">
@@ -199,7 +305,7 @@ const Homepage = () => {
       </section>
 
       {/* Create Most Popular Entries Section */}
-      <section className="mostPopularEntries">
+      <section className="mostPopularEntries step-4">
         <div className="mostPopularEntriesHeader">
           <h1>Ranking</h1>
           <h2>Most Popular Entries This Week</h2>
@@ -219,24 +325,95 @@ const Homepage = () => {
       </section>
 
       {/* Create Recommendation Entries Section */}
-      <section className="recommendationEntries">
+      <section className="recommendationEntries step-5">
         <div className="recommendationEntriesHeader">
           <h1>Recommendations</h1>
           <h2>The Products You May Like...</h2>
           <p>Change your preference in your account setting anytime!</p>
         </div>
         <div className="recommendationEntriesGrid">
-          <div className="recommendationEntryCard">
-            <img src="???.jpg" alt="???" />
-            <h1>???</h1>
-            <p>???</p>
-            <a href="#">View</a>
-          </div>
+          {products.length > 0 ? (
+            products.slice(0, 5).map(product => ( // Get the first 5 products
+              <div key={product.id} className="recommendationEntryCard">
+                <img src={product.imageUrl || "placeholder.jpg"} alt={product.productName} />
+                <h1>
+                  <Link to={`/product/${product.id}`}>
+                    {product.productName}
+                  </Link>
+                </h1>
+                <p style={{ whiteSpace: 'pre-line' }}>
+                  Average Rating:{"\n"}
+                  {product.averageScore?.average || "No ratings yet"}
+                </p>
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleViewRatingDistribution(product.id);
+                  }}
+                >
+                  View
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No products available</p>
+          )}
         </div>
         <div className="recommendationLoadMore">
           <button>LOAD MORE ENTRIES</button>
         </div>
       </section>
+
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel="Rating Distribution Modal"
+        className="rating-distribution-modal"
+        overlayClassName="rating-distribution-overlay"
+      >
+        <h2>Rating Distribution for {selectedProductData?.productName}</h2>
+        <ResponsiveContainer width={500} height={300}>
+  <BarChart
+    data={ratingDistribution}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="rating" />
+    <YAxis />
+    <Tooltip />
+    <Legend />
+    <Bar dataKey="count" fill="#8884d8" />
+  </BarChart>
+</ResponsiveContainer>
+        <button onClick={closeModal}>Close</button>
+      </Modal>
+
+      <Joyride steps={steps}
+      run={run}
+      continuous
+      scrollToFirstStep
+      showProgress
+      showSkipButton
+      disableScrolling
+      callback={data => {
+        const { action } = data;
+        if (
+          action === "close" ||
+          action === "skip" ||
+          action === "finished"
+        ) {
+          setRun(false);
+        }
+      }}
+      styles={{
+        tooltip: {
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          color: "#fff"
+        },
+        buttonNext: {
+          backgroundColor: "#007bff"
+        }
+      }}
+      onFinish={handleTourFinish}
+      />
 
     </div>
 

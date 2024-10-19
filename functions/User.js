@@ -136,6 +136,37 @@ class User {
     return { status: 'success', statusToken: statusToken };
   }
 
+  // action == 'checkFirstLogin'
+  static async checkFirstLogin(username) {
+    const userDocRef = db.collection('User').where('username', '==', username);
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not found' };
+    }
+    const userDoc = userDocRefSnapshot.docs[0];
+    const userDocData = userDoc.data();
+    let isFirstLogin = userDocData.firstLogin;
+    if (isFirstLogin === undefined || isFirstLogin === true) {
+      await userDoc.ref.update({ firstLogin: true });
+      return { status: 'success', message: 'Hello, new user! It will help if you accomplish a preference survey first.' };
+    }
+    else {
+      return { status: 'error', message: 'This user has already logged in before.' };
+    }
+  }
+
+  // action == 'setFirstLoginFalse'
+  static async setFirstLoginFalse(username) {
+    const userDocRef = db.collection('User').where('username', '==', username);
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not found' };
+    }
+    const userDoc = userDocRefSnapshot.docs[0];
+    await userDoc.ref.update({ firstLogin: false });
+    return { status: 'success', message: 'First login status updated to false.' };
+  }
+
   // helper
   static verifyToken(token) {
     try {

@@ -101,6 +101,26 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       }
     }
 
+    else if (action === 'checkFirstLogin') {
+      // username
+      const checkFirstLoginResponse = await User.checkFirstLogin(username);
+      if (checkFirstLoginResponse.status === 'success') {
+        return { success: true, message: checkFirstLoginResponse.message };
+      } else {
+        return { success: false, message: checkFirstLoginResponse.message };
+      }
+    }
+
+    else if (action === 'setFirstLoginFalse') {
+      // username
+      const setFirstLoginFalseResponse = await User.setFirstLoginFalse(username);
+      if (setFirstLoginFalseResponse.status === 'success') {
+        return { success: true, message: setFirstLoginFalseResponse.message };
+      } else {
+        return { success: false, message: setFirstLoginFalseResponse.message };
+      }
+    }
+
     else if (action === 'checkLoginStatus') {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);

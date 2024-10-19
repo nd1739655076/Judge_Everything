@@ -75,7 +75,7 @@ const Homepage = () => {
       }
     };
 
-    initializeTagLibrary();
+    //initializeTagLibrary();
     checkLoginStatus();
     setTimeGreeting();
     fetchProducts();

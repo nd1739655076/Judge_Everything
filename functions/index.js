@@ -1,12 +1,12 @@
 const {onRequest} = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const cors = require('cors')({ origin: true });
 
 admin.initializeApp();
 const db = admin.firestore();
-const bucket = admin.storage().bucket();
+const bucket = admin.storage().bucket('judge-everything.appspot.com');
 
 const TagLibrary = require('./TagLibrary');
 const Id = require('./Id');
@@ -202,28 +202,26 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
         }
       }
 
-      // Handle image upload
+      // Handle image upload directly here
       let productImageUrl = '';
       if (imageBase64 && imageName) {
-        // Call handleImageRequest directly
-        const imageResult = await exports.handleImageRequest({
-          action: 'upload',
-          base64: imageBase64,
-          filename: imageName,
-          productId: prodidNum,
-        }, context);
+        const buffer = Buffer.from(imageBase64, 'base64');
+        const productImageFilePath = `productImage/${prodidNum}/${imageName}`;
+        const productImageFile = bucket.file(productImageFilePath);
 
-        if (imageResult.success) {
-          productImageUrl = imageResult.imageUrl;
-        } else {
-          console.error('Image upload failed:', imageResult.message);
-        }
+        await productImageFile.save(buffer, {
+          contentType: 'image/jpeg',
+          public: true,
+        });
+        productImageUrl = productImageFile.publicUrl();
+
+        // Update product entry with the image URL
+        newProductEntry.productImage = productImageUrl;
       }
 
       newProductEntry.parametorList = parameterIds;
       newProductEntry.tagList = tags;
-      newProductEntry.productImage = productImageUrl;
-
+      
       await newProductEntry.generateProductEntry();
       console.log('Product entry successfully created.');
       
@@ -238,6 +236,7 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
   }
 });
+
 
 // Image Handle
 exports.handleImageRequest = functions.https.onCall(async (data, context) => {

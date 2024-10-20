@@ -63,7 +63,8 @@ exports.handleIdRequest = functions.https.onCall(async (data, context) => {
 // User Handle
 exports.handleUserRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, username, password, email, statusToken, uidNum, nickname, preferences } = data;
+    const { action, username, password, email, gender, ageRange, selectedTags,
+      statusToken, uidNum, nickname, preferences } = data;
 
     if (action === 'generate') {
       // username, password, email
@@ -80,16 +81,15 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       return { success: true, message: "Sign up successful! You can now log in." };
     }
 
-  //   else if (action === 'reset') {
-  //     console.log("call to index.js");
-  //     const resetResponse = await User.resetPassword(email, uidNum);
-  //     console.log("call complete");
-  //     if (resetResponse.status === 'success') {
-  //       return { success: true, message: resetResponse.message };
-  //     } else {
-  //       return { success: false, message: resetResponse.message };
-  //     }
-  //  }
+    else if (action === 'retrievePassword') {
+      // username, email
+      const retrieveResponse = await User.retrievePassword(username, email);
+      if (retrieveResponse.status === 'success') {
+        return { success: true, password: retrieveResponse.password };
+      } else {
+        return { success: false, message: retrieveResponse.message };
+      }
+    }
 
     else if (action == 'login') {
       // username, password
@@ -118,6 +118,16 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: true, message: setFirstLoginFalseResponse.message };
       } else {
         return { success: false, message: setFirstLoginFalseResponse.message };
+      }
+    }
+
+    else if (action === 'updatePreferences') {
+      // username, gender, ageRange, selectedTags
+      const preferencesResponse = await User.updatePreferences(username, gender, ageRange, selectedTags);
+      if (preferencesResponse.status === 'success') {
+        return { success: true, message: preferencesResponse.message };
+      } else {
+        return { success: false, message: preferencesResponse.message };
       }
     }
 

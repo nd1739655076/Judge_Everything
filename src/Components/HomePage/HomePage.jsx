@@ -79,6 +79,12 @@ const Homepage = () => {
     checkLoginStatus();
     setTimeGreeting();
     fetchProducts();
+
+    const intervalId = setInterval(() => {
+      checkLoginStatus();
+      setTimeGreeting();
+    }, 5000);
+    return () => clearInterval(intervalId);
   }, []);
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
@@ -133,7 +139,7 @@ const Homepage = () => {
     }
   ];
   useEffect(() => {
-    const checkFirstLoginStatus = async () => {
+    const checkFirstLogin = async () => {
       if (isLoggedIn) {
         const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
         const firstLoginResponse = await handleUserRequest({
@@ -146,7 +152,7 @@ const Homepage = () => {
       }
     }
     
-    checkFirstLoginStatus();
+    checkFirstLogin();
   }, [isLoggedIn]);
   const handleTourFinish = async () => {
     const handleUserRequest = httpsCallable(functions, 'handleUserRequest');

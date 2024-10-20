@@ -43,6 +43,8 @@ class User {
       password: this.password,
       email: this.email,
       nickname: null,
+      age: null,
+      gender: null,
       preferences: null,
       productProfileCreateHistory: null,
       followingList: null,
@@ -54,51 +56,19 @@ class User {
     });
   }
 
-  // action == 'resetPassword'
-  static async resetPassword(uid, email) {
-    const userDocRef = db.collection('User').where('email', '==', email);
+  // action == 'retrievePassword'
+  static async retrievePassword(username, email) {
+    const userDocRef = db.collection('User').where('username', '==', username);
     const userDocRefSnapshot = await userDocRef.get();
     if (userDocRefSnapshot.empty) {
       return { status: 'error', message: 'User not exist' };
     }
-    // generate random number
-    // const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-    // let randomPassword = '';
-    
-    // for (let i = 0; i < 10; i++) {
-    //   const randomIndex = Math.floor(Math.random() * characters.length);
-    //   randomPassword += characters.charAt(randomIndex);
-    // }
-    // console.log(randomPassword);
-    // update password
-    // await userDocRef.update({password: newPassword});
-    // send email here
-    
-    
-    // var transporter = nodemailer.createTransport({
-    //   service: 'gmail',
-    //   auth: {
-    //     user: 'judge.everything404@gmail.com',
-    //     pass: 'zfqw jgrr kkuq mrnh'
-    //     }
-    // });
-        
-    // var mailOptions = {
-    //   from: 'judge.everything404@gmail.com',
-    //   to: {email},
-    //   subject: 'Password Reset',
-    //   text: `Your password was seccessfully reset! \nYour temporary new password is: ${randomPassword}`
-    // };
-        
-    // transporter.sendMail(mailOptions, function(error, info){
-    //   if (error) {
-    //     console.log(error);
-    //   } else {
-    //     console.log('Email sent: ' + info.response);
-    //   }
-    // });
-    
-    // return { status: 'success', message: 'Password reset successfully' };
+    const userDoc = userDocRefSnapshot.docs[0];
+    const userDocData = userDoc.data();
+    if (email !== userDocData.email) {
+      return { status: 'error', message: 'Username and email not match' };
+    }
+    return { status: 'success', password: userDocData.password };
   }
 
   // helper
@@ -167,6 +137,30 @@ class User {
     const userDoc = userDocRefSnapshot.docs[0];
     await userDoc.ref.update({ firstLogin: false });
     return { status: 'success', message: 'First login status updated to false.' };
+  }
+
+  // action == 'updatePreferences'
+  static async updatePreferences(username, gender, ageRange, selectedTags) {
+    const userDocRef = db.collection('User').where('username', '==', username);
+    const userDocRefSnapshot = await userDocRef.get();
+    if (userDocRefSnapshot.empty) {
+      return { status: 'error', message: 'User not found' };
+    }
+    const userDoc = userDocRefSnapshot.docs[0];
+    let updateData = {};
+    if (gender === 'male') {
+      updateData.gender = 'male';
+    } else if (gender === 'female') {
+      updateData.gender = 'female';
+    } else if (gender === 'other') {
+      updateData.gender = 'other';
+    } else if (gender === 'preferNotToSay') {
+      updateData.gender = '';
+    }
+    updateData.ageRange = ageRange;
+    updateData.preferences = selectedTags || [null, null, null, null, null];
+    await userDoc.ref.update(updateData);
+    return { status: 'success', message: 'Preferences updated successfully.' };
   }
 
   // helper

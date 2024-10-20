@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import HomePage from './Components/HomePage/HomePage';
 import ContactPage from './Components/ContactPage/ContactPage';
 import LoginSignup from './Components/LoginSignup/LoginSignup';
+import PreferenceSurvey from './Components/PreferenceSurvey/PreferenceSurvey'
 import ForgotPassword from './Components/LoginSignup/ForgotPassword';
 import AccountSettings from './Components/HomePage/AccountSettings';
 import CreateProductEntry from './Components/HomePage/CreateProductEntry';
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/loginSignup" element={<LoginSignup />} />
+        <Route path="/preferenceSurvey" element={<PreferenceSurvey />} />
         <Route path="/forgotPassword" element={<ForgotPassword />} />
         <Route path="/accountSettings" element={<AccountSettings />} />
         <Route path="/createProductEntry" element={<CreateProductEntry />} />

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import './LoginSignup.css'
-
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import logo from '../LoginSignupAssets/logo.jpg';
 import user_icon from '../LoginSignupAssets/user_icon.png';
@@ -96,14 +96,16 @@ const LoginSignup = () => {
           setSuccessMessage("Login successful! Redirecting to the preference survey...");
           setTimeout(() => {
             navigate("/preferenceSurvey");
+          }, 3000);
+        }
+        else {
+          setErrorMessage("");
+          setSuccessMessage("Login successful! Redirecting...");
+          setTimeout(() => {
+            navigate("/");
           }, 1000);
           return; 
         }
-        setErrorMessage("");
-        setSuccessMessage("Login successful! Redirecting...");
-        setTimeout(() => {
-          navigate("/");
-        }, 1000);
       } else {
         setErrorMessage(response.data.message);
       }
@@ -180,9 +182,12 @@ const LoginSignup = () => {
         {action === "Login" && (
             <div className="form-actions">
                 <label>
-                    <input type="checkbox" className="checkbox" />
-                    Remember Me
+                  <input type="checkbox" className="checkbox" />
+                  Remember Me
                 </label>
+                <span className="forgot-password">
+                  <Link to="/forgotPassword">Forgot Password</Link>
+                </span>
             </div>
         )}
         <div className="message">

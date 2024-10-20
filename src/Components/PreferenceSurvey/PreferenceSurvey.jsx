@@ -78,10 +78,11 @@ const PreferenceSurvey = ({ isOpen, onRequestClose, onSubmitSurvey }) => {
   };
   
   const handleFinish = async () => {
-    const handleUserPreferences = httpsCallable(functions, 'handleUserPreferences');
+    const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
     try {
-      const response = await handleUserPreferences({
-        username: currentUsername,  // Use the fetched username here
+      const response = await handleUserRequest({
+        action: 'updatePreferences',
+        username: currentUsername,
         gender, 
         ageRange, 
         selectedTags

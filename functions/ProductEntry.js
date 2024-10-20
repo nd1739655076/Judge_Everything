@@ -48,12 +48,12 @@ class ProductEntry {
     });
   }
   static async saveProductEntry(productData) {
-    const { productName, uidNum, tags, paramList, description, imageBase64, imageName } = productData;
+    const { action, productName, uidNum, tag, subtags, paramList, description, imageBase64, imageName } = productData;
 
     const generateId = new Id();
     const productIdResult = await generateId.generateId('productEntry', productName);
     const prodidNum = productIdResult.idNum;
-    const newProductEntry = new ProductEntry(prodidNum, productName, uidNum, description);
+    const newProductEntry = new ProductEntry(prodidNum, productName, uidNum, description, tag, subtags);
     const parameterIds = [];
 
     // Handle parameter list generation

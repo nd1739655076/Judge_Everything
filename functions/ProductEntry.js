@@ -19,7 +19,7 @@ class ProductEntry {
       fourStars : 0,
       threeStars : 0,
       twoStars : 0,
-      oneStars : 0
+      oneStar : 0
     }
     this.parametorList = new Array(10).fill(null);
     this.commentList = [];

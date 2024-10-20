@@ -182,7 +182,7 @@ const ProductEntry = () => {
                     'fourStars': 0,
                     'threeStars': 0,
                     'twoStars': 0,
-                    'oneStar': 0,
+                    'oneStars': 0,
                 };
                 switch (userProductRating) {
                     case 5:
@@ -198,7 +198,7 @@ const ProductEntry = () => {
                         currentDistribution['twoStars'] += 1;
                         break;
                     case 1:
-                        currentDistribution['oneStar'] += 1;
+                        currentDistribution['oneStars'] += 1;
                         break;
                     default:
                         console.error('Invalid rating input');

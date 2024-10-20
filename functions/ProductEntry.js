@@ -2,7 +2,8 @@ const admin = require('firebase-admin');
 const db = admin.firestore();
 const Id = require('./Id');
 const Parameter = require('./Parameter');
-
+const bucket = admin.storage().bucket('judge-everything.appspot.com');
+const TagLibrary = require('./TagLibrary');
 
 class ProductEntry {
   constructor(prodidNum, productName, uidNum, description, tags, subtags) {
@@ -76,7 +77,7 @@ class ProductEntry {
     }
 
     newProductEntry.parametorList = parameterIds;
-    newProductEntry.tagList = tags;
+    newProductEntry.tagList = tag;
 
     // Save product entry
     await newProductEntry.generateProductEntry();

@@ -11,7 +11,7 @@ import AccountSettings from './Components/HomePage/AccountSettings';
 import CreateProductEntry from './Components/HomePage/CreateProductEntry';
 import ProductEntry from './Components/ProductEntry/ProductEntry';
 import EditProduct from './Components/ProductEntry/EditProductEntry'
-import PreferenceSurvey from './Components/PreferenceSurvey/PreferenceSurvey'
+
 
 function App() {
   return (
@@ -26,7 +26,7 @@ function App() {
         <Route path="/createProductEntry" element={<CreateProductEntry />} />
         <Route path="/product/:productId" element={<ProductEntry />} /> {/* Dynamic route for product details */}
         <Route path="/editproduct" element={<EditProduct />} />
-        <Route path="/preferenceSurvey" element={<PreferenceSurvey />} />
+
       </Routes>
     </Router>
   );

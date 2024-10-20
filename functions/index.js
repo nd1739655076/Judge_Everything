@@ -190,56 +190,11 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 // ProductEntry Handle
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, productName, uidNum, tags, paramList, description, imageBase64, imageName } = data;
-    
+    const { action } = data;
+
     if (action === 'generate') {
-      const generateId = new Id();
-      const productIdResult = await generateId.generateId('productEntry', productName);
-      const prodidNum = productIdResult.idNum;
-      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum, description);
-      const parameterIds = [];
-
-      // Handle parameter list generation
-      if (paramList && paramList.length > 0) {
-        for (let i = 0; i < paramList.length; i++) {
-          const paramIdResult = await generateId.generateId('parameter', paramList[i]);
-          const paramId = paramIdResult.idNum;
-          const paramName = paramList[i];
-
-          const parameter = new Parameter(paramId, prodidNum, paramName);
-          await parameter.save();
-          parameterIds.push(paramId);
-        }
-      }
-
-      // Handle image upload directly here
-      let productImageUrl = '';
-      if (imageBase64 && imageName) {
-        const buffer = Buffer.from(imageBase64, 'base64');
-        const productImageFilePath = `productImage/${prodidNum}/${imageName}`;
-        const productImageFile = bucket.file(productImageFilePath);
-
-        await productImageFile.save(buffer, {
-          contentType: 'image/jpeg',
-          public: true,
-        });
-        productImageUrl = productImageFile.publicUrl();
-
-        // Update product entry with the image URL
-        newProductEntry.productImage = productImageUrl;
-      }
-
-      newProductEntry.parametorList = parameterIds;
-      newProductEntry.tagList = tags;
-      
-      await newProductEntry.generateProductEntry();
-      console.log('Product entry successfully created.');
-      
-      return {
-        success: true,
-        idNum: prodidNum,
-        message: 'Product entry created successfully!',
-      };
+      const productEntryResponse = await ProductEntry.saveProductEntry(data);
+      return productEntryResponse;
     }
   } catch (error) {
     console.error('Error handling product entry request:', error);

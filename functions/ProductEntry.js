@@ -2,13 +2,14 @@ const admin = require('firebase-admin');
 const db = admin.firestore();
 
 class ProductEntry {
-  constructor(prodidNum, productName, uidNum, description) {
+  constructor(prodidNum, productName, uidNum, description, tags, subtags) {
     this.id = prodidNum;
     this.productName = productName;
     this.creator = uidNum;
     this.description = description;
     this.productImage = ""; 
-    this.tagList = new Array(5).fill(null);
+    this.tagList = tags; // Storing the selected tags
+    this.subtagList = subtags; // Storing the selected subtags
     this.averageScore = {
       average: 0,
       totalScore: 0,
@@ -20,7 +21,7 @@ class ProductEntry {
       threeStars : 0,
       twoStars : 0,
       oneStars : 0
-    }
+    };
     this.parametorList = new Array(10).fill(null);
     this.commentList = [];
     this.reportList = new Map();
@@ -32,12 +33,11 @@ class ProductEntry {
       id: this.id,
       productName: this.productName,
       creator: this.creator,
-      tagList: this.tagList,
+      tagList: this.tagList, // Save the tags
+      subtagList: this.subtagList, // Save the subtags
       description: this.description,
       productImage: this.productImage,
       parametorList: this.parametorList,
-      averageScore: this.averageScore,
-      ratingDistribution: this.ratingDistribution,
       averageScore: this.averageScore,
       ratingDistribution: this.ratingDistribution,
       commentList: this.commentList,

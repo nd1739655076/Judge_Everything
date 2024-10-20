@@ -16,6 +16,7 @@ const EditProductEntry = () => {
   const [parameterList, setParameterList] = useState(
     parameters ? [...parameters.map(param => param.paramName), ...new Array(10 - parameters.length).fill('')] : new Array(10).fill('')
   );
+  const [selectedImage, setSelectedImage] = useState(null);
   const [loading, setLoading] = useState(false); // For showing loading state during submission
   const [error, setError] = useState(''); // For showing error messages
   const [success, setSuccess] = useState(''); // For showing success messages
@@ -73,6 +74,14 @@ const EditProductEntry = () => {
     setParameterList(updatedParameters);
   };
 
+   // New function to handle image selection
+   const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
   // Handle form submission to update the product entry
   const handleUpdateProductEntry = async (e) => {
     e.preventDefault();
@@ -128,6 +137,28 @@ const EditProductEntry = () => {
           const paramId = parameters[i].paramId;
           await deleteDoc(doc(db, 'Parameters', paramId));
         }
+      }
+      
+      if (selectedImage) {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64Image = reader.result.split(',')[1]; // Get base64 part
+          const functions = getFunctions();
+          const handleImageRequest = httpsCallable(functions, 'handleImageRequest');
+          try {
+            const imageResponse = await handleImageRequest({
+              action: 'upload',
+              base64: base64Image,
+              filename: selectedImage.name,
+              productId: productId
+            });
+            console.log('Image uploaded:', imageResponse);
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            setError('Failed to upload image.');
+          }
+        };
+        reader.readAsDataURL(selectedImage);
       }
 
       setSuccess('Product entry updated successfully!');
@@ -202,6 +233,11 @@ const EditProductEntry = () => {
               placeholder={`Parameter ${index + 1}`}
             />
           ))}
+        </label>
+        <br />
+        <label>
+          Upload New Image:
+          <input type="file" accept="image/*" onChange={handleImageChange} />
         </label>
         <br />
 

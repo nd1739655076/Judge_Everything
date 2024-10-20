@@ -190,18 +190,64 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 // ProductEntry Handle
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action } = data;
+    const { action, productName, uidNum, tag, subtags, paramList, description, imageBase64, imageName } = data;
 
     if (action === 'generate') {
-      const productEntryResponse = await ProductEntry.saveProductEntry(data);
-      return productEntryResponse;
+      const generateId = new Id();
+      const productIdResult = await generateId.generateId('productEntry', productName);
+      const prodidNum = productIdResult.idNum;
+
+      // Create the new product entry with tags and subtags
+      const newProductEntry = new ProductEntry(prodidNum, productName, uidNum, description, tag, subtags);
+      const parameterIds = [];
+
+      // Handle parameter list generation
+      if (paramList && paramList.length > 0) {
+        for (let i = 0; i < paramList.length; i++) {
+          const paramIdResult = await generateId.generateId('parameter', paramList[i]);
+          const paramId = paramIdResult.idNum;
+          const paramName = paramList[i];
+
+          const parameter = new Parameter(paramId, prodidNum, paramName);
+          await parameter.save();
+          parameterIds.push(paramId);
+        }
+      }
+
+      // Handle image upload directly here
+      let productImageUrl = '';
+      if (imageBase64 && imageName) {
+        const buffer = Buffer.from(imageBase64, 'base64');
+        const productImageFilePath = `productImage/${prodidNum}/${imageName}`;
+        const productImageFile = bucket.file(productImageFilePath);
+
+        await productImageFile.save(buffer, {
+          contentType: 'image/jpeg',
+          public: true,
+        });
+        productImageUrl = productImageFile.publicUrl();
+
+        // Update product entry with the image URL
+        newProductEntry.productImage = productImageUrl;
+      }
+
+      newProductEntry.parametorList = parameterIds;
+
+      // Generate the product entry in Firestore
+      await newProductEntry.generateProductEntry();
+      console.log('Product entry successfully created.');
+
+      return {
+        success: true,
+        idNum: prodidNum,
+        message: 'Product entry created successfully!',
+      };
     }
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
   }
 });
-
 
 // Image Handle
 exports.handleImageRequest = functions.https.onCall(async (data, context) => {
@@ -281,21 +327,5 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
   } catch (error) {
     console.error('Error handling comment request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle comment request');
-  }
-});
-
-//This function is used for the preference survey's writing
-exports.handleUserPreferences = functions.https.onCall(async (data, context) => {
-  try {
-    const { username, gender, ageRange, selectedTags } = data;
-    const preferencesResponse = await User.updatePreferences(username, gender, ageRange, selectedTags);
-    if (preferencesResponse.status === 'success') {
-      return { success: true, message: preferencesResponse.message };
-    } else {
-      return { success: false, message: preferencesResponse.message };
-    }
-  } catch (error) {
-    console.error('Error handling user preferences request:', error);
-    throw new functions.https.HttpsError('internal', 'Failed to handle user preferences request.');
   }
 });

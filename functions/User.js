@@ -271,40 +271,6 @@ class User {
     return { status: 'success', message: 'User account deleted successfully' }
   }
 
-  //Used for preference surveys, including age, gender, preference, and nickname
-    static async updatePreferences(username, gender, ageRange, selectedTags) {
-      try {
-        const userDocRef = db.collection('User').where('username', '==', username);
-        const userDocRefSnapshot = await userDocRef.get();
-  
-        if (userDocRefSnapshot.empty) {
-          return { status: 'error', message: 'User not found' };
-        }
-
-        const userDoc = userDocRefSnapshot.docs[0];
-        const userDocData = userDoc.data();
-        let updateData = {};
-        if (gender === 'male') {
-          updateData.gender = 'male';
-        } else if (gender === 'female') {
-          updateData.gender = 'female';
-        } else if (gender === 'other') {
-          updateData.gender = 'other';
-        } else if (gender === 'preferNotToSay') {
-          updateData.gender = '';
-        }
-        updateData.ageRange = ageRange;
-        // preferences
-        updateData.preferences = selectedTags || [null, null, null, null, null];
-        await userDoc.ref.update(updateData);
-  
-        return { status: 'success', message: 'Preferences updated successfully.' };
-      } catch (error) {
-        console.error('Error updating user preferences:', error);
-        return { status: 'error', message: 'Failed to update preferences.' };
-      }
-    }
-
 }
 
 module.exports = User;

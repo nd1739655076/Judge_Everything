@@ -100,7 +100,7 @@ const ForgotPassword = () => {
 
         {message && <p className="message">{message}</p>}
         {error && <p className="error">{error}</p>}
-        {display && <p className="password">Your password is: {password}</p>}
+        {display && <p className="retrieve-password">Your password is: {password}</p>}
       </div>
     </div>
   );

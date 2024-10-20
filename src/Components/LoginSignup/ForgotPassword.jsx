@@ -36,7 +36,7 @@ const ForgotPassword = () => {
       const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
       console.log(username, email);
       const response = await handleUserRequest({
-        action: 'retrieve',
+        action: 'retrievePassword',
         username: username,
         email: email, 
       });

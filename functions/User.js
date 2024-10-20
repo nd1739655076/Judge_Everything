@@ -61,12 +61,12 @@ class User {
     const userDocRef = db.collection('User').where('username', '==', username);
     const userDocRefSnapshot = await userDocRef.get();
     if (userDocRefSnapshot.empty) {
-      return { status: 'error', message: 'User doesn\'t exist' };
+      return { status: 'error', message: 'User not exist' };
     }
     const userDoc = userDocRefSnapshot.docs[0];
     const userDocData = userDoc.data();
     if (email !== userDocData.email) {
-      return { status: 'error', message: 'Username and email don\'t match' };
+      return { status: 'error', message: 'Username and email not match' };
     }
     return { status: 'success', password: userDocData.password };
   }

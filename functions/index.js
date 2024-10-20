@@ -81,14 +81,15 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       return { success: true, message: "Sign up successful! You can now log in." };
     }
 
-    else if (action === 'retrieve') {
+    else if (action === 'retrievePassword') {
+      // username, email
       const retrieveResponse = await User.retrievePassword(username, email);
       if (retrieveResponse.status === 'success') {
         return { success: true, password: retrieveResponse.password };
       } else {
         return { success: false, message: retrieveResponse.message };
       }
-   }
+    }
 
     else if (action == 'login') {
       // username, password

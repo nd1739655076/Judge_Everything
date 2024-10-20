@@ -90,7 +90,7 @@ const LoginSignup = () => {
           setSuccessMessage(checkFirstLoginResponse.data.message);
           setTimeout(() => {
             navigate("/preferenceSurvey");
-          }, 1000);
+          }, 3000);
         }
         else {
           setErrorMessage("");

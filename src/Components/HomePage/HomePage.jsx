@@ -387,7 +387,7 @@ const Homepage = () => {
         </div>
         <div className="recommendationEntriesGrid">
           {products.length > 0 ? (
-            products.slice(0, 10).map(product => ( // Get the first 5 products
+            products.slice(0, 50).map(product => ( // Get the first 5 products
               <div key={product.id} className="recommendationEntryCard">
                 <img src={product.productImage || "placeholder.jpg"} alt={product.productName} />
                 <h1>

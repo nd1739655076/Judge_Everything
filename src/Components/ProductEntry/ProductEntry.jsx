@@ -52,22 +52,27 @@ const ProductEntry = () => {
         try {
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
-
+    
             if (productSnap.exists()) {
-                setProductData(productSnap.data());
+                const product = productSnap.data();
+                setProductData(product);
+                
+                // Fetch parameters related to the product
                 const paramsQuery = query(collection(db, 'Parameters'), where('productId', '==', productId));
                 const paramsSnapshot = await getDocs(paramsQuery);
                 const paramList = paramsSnapshot.docs.map(doc => ({ ...doc.data(), paramId: doc.id }));
-                const userId = productData.creator;
-                 const userRef = doc(db, 'User', userId);
-                 const userSnap = await getDoc(userRef);
-
-                if (userSnap.exists()) {
-                    setProductCreatorExists(true);  // User exists
-                } else {
-                    setProductCreatorExists(false); // User does not exist
-                }
                 setParameters(paramList);
+    
+                // Fetch creator information if product exists
+                if (product.creator) {
+                    const userRef = doc(db, 'User', product.creator);
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                        setProductCreatorExists(true);
+                    } else {
+                        setProductCreatorExists(false);
+                    }
+                }
             } else {
                 console.error("No product found for the given productId:", productId);
             }
@@ -77,7 +82,7 @@ const ProductEntry = () => {
             setLoading(false);
         }
     };
-
+    
     useEffect(() => {
         fetchProductData();
         const fetchUserStatus = async () => {

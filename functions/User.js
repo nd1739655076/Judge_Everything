@@ -58,8 +58,6 @@ class User {
 
   // action == 'retrievePassword'
   static async retrievePassword(username, email) {
-    console.log('call to retireve in user.js');
-    console.log("username:", username, "email:", email);
     const userDocRef = db.collection('User').where('username', '==', username);
     const userDocRefSnapshot = await userDocRef.get();
     if (userDocRefSnapshot.empty) {

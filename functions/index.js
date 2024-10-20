@@ -82,10 +82,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
     }
 
     else if (action === 'retrieve') {
-      console.log("call to index.js");
-      console.log("username:", username, "email:", email);
       const retrieveResponse = await User.retrievePassword(username, email);
-      console.log("call complete");
       if (retrieveResponse.status === 'success') {
         return { success: true, password: retrieveResponse.password };
       } else {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import '../LoginSignup/ForgotPassword.css';
+import './ForgotPassword.css';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 // import { httpsCallable } from 'firebase/functions';
@@ -17,11 +17,19 @@ const ForgotPassword = () => {
   const navigate = useNavigate();
 
   const handleForgotPassword = async () => {
-    // e.preventDefault();
+    setDisplay(false);
     setError('');
     setPassword('');
-    setMessage('');
-    setDisplay(false)
+    setMessage(''); // clear current message
+    if (!username.trim()) {
+      setError("Please enter your username.");
+      return;
+    }
+    if (!email.trim()) {
+      setError("Please enter your email.");
+      return;
+    }
+    setMessage('Verifying you credentials...');
 
     try {
 
@@ -29,7 +37,7 @@ const ForgotPassword = () => {
       console.log(username, email);
       const response = await handleUserRequest({
         action: 'retrieve',
-        usename: username,
+        username: username,
         email: email, 
       });
       console.log("response:", response.data);
@@ -40,12 +48,13 @@ const ForgotPassword = () => {
         setPassword(response.data.password);
         setDisplay(true);
       } else {
+        setMessage('');
         setError(response.data.message);
       }
 
     } catch (err) {
+      setMessage('');
       setError(`Error: ${err.message}`);
-      setMessage('');  // Clear the success message
     }
   };
 
@@ -89,9 +98,9 @@ const ForgotPassword = () => {
           </button>
         </div>
 
-        {message && <p className="success-message">{message}</p>}
-        {error && <p className="error-message">{error}</p>}
-        <div className="success-message">Your password is: {password}</div>
+        {message && <p className="message">{message}</p>}
+        {error && <p className="error">{error}</p>}
+        {display && <p className="password">Your password is: {password}</p>}
       </div>
     </div>
   );

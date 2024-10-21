@@ -401,6 +401,9 @@ const Homepage = () => {
                     {product.productName}
                   </Link>
                 </h1>
+                <p>
+                {product.description || "No description available"} {/* Display product description */}
+                </p>
                 <p style={{ whiteSpace: 'pre-line' }}>
                   Average Rating:{"\n"}
                   {product.averageScore?.average || "No ratings yet"}

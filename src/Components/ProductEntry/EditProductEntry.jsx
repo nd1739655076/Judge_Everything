@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { db } from '../../firebase'; // Firebase Firestore instance
-import { doc, updateDoc, setDoc, deleteDoc, collection, addDoc } from "firebase/firestore"; // Firestore methods
+import { doc, updateDoc } from "firebase/firestore"; // Firestore methods
 import { getFunctions, httpsCallable } from "firebase/functions"; // Firebase Cloud Functions
+import { db } from '../../firebase'; // Firebase Firestore instance
 import './EditProductEntry.css'; // Import your custom CSS for styling
 
 const EditProductEntry = () => {
@@ -10,9 +10,15 @@ const EditProductEntry = () => {
   const navigate = useNavigate();
   const { productId, productData, parameters } = location.state || {}; // 获取 productId
   
+  // 初始状态设置，保留现有tagList和subtagList
   const [productName, setProductName] = useState(productData?.productName || '');
   const [creatorId, setCreatorId] = useState(productData?.creator || '');
-  const [tags, setTags] = useState(productData?.tags || new Array(5).fill(''));
+  const [tagList, setTagList] = useState(productData?.tagList || ''); // 这里使用 tagList 而不是 tags
+  const [selectedSubtags, setSelectedSubtags] = useState(productData?.subtagList || []); // 这里使用 subtagList 而不是 subtags
+  const [description, setDescription] = useState(productData?.description || ''); // Edit description
+  const [imageFile, setImageFile] = useState(null); // Store new image file
+  const [currentImage, setCurrentImage] = useState(productData?.productImage || ''); // Store current image
+  const [tagLibrary, setTagLibrary] = useState([]); // Store the fetched tags and subtags
   const [parameterList, setParameterList] = useState(
     parameters ? [...parameters.map(param => param.paramName), ...new Array(10 - parameters.length).fill('')] : new Array(10).fill('')
   );
@@ -20,8 +26,8 @@ const EditProductEntry = () => {
   const [error, setError] = useState(''); // For showing error messages
   const [success, setSuccess] = useState(''); // For showing success messages
 
+  // 获取用户信息并确保当前用户是creator
   useEffect(() => {
-    // Fetch current logged in user's UID
     const fetchUser = async () => {
       const user = await getCurrentLoggedInUser();
       if (user && user.uid !== creatorId) {
@@ -29,7 +35,24 @@ const EditProductEntry = () => {
         navigate('/');
       }
     };
+
+    const fetchTagLibrary = async () => {
+      try {
+        const functions = getFunctions();
+        const handleTagLibraryRequest = httpsCallable(functions, 'handleTagLibraryRequest');
+        const response = await handleTagLibraryRequest({ action: 'getTagLibrary' });
+        if (response.data.success) {
+          setTagLibrary(response.data.tagList); // Store the fetched tags and subtags
+        } else {
+          console.error('Failed to fetch tags');
+        }
+      } catch (error) {
+        console.error('Error fetching tag library:', error);
+      }
+    };
+
     fetchUser();
+    fetchTagLibrary();
   }, [creatorId, navigate]);
 
   const getCurrentLoggedInUser = async () => {
@@ -59,21 +82,45 @@ const EditProductEntry = () => {
     }
   };
 
-  // Handle changes to the tags array
-  const handleTagChange = (index, value) => {
-    const updatedTags = [...tags];
-    updatedTags[index] = value;
-    setTags(updatedTags);
+  // 修改主标签
+  const handleTagChange = (e) => {
+    setTagList(e.target.value);
+    // 当选择新的主标签时，清空之前的 subtag 选择
+    setSelectedSubtags([]);
   };
 
-  // Handle changes to the parameters array
+  // 修改子标签
+  const handleSubtagChange = (subtag) => {
+    if (selectedSubtags.includes(subtag)) {
+      setSelectedSubtags(selectedSubtags.filter(st => st !== subtag)); // Remove if already selected
+    } else if (selectedSubtags.length < 3) {
+      setSelectedSubtags([...selectedSubtags, subtag]); // Add new subtag if less than 3 selected
+    }
+  };
+
   const handleParameterChange = (index, value) => {
     const updatedParameters = [...parameterList];
     updatedParameters[index] = value;
     setParameterList(updatedParameters);
   };
 
-  // Handle form submission to update the product entry
+  const handleImageChange = (e) => {
+    if (e.target.files.length > 0) {
+      setImageFile(e.target.files[0]);
+    }
+  };
+
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = () => {
+        resolve(reader.result.split(',')[1]); // Only return base64 part
+      };
+      reader.onerror = () => reject(new Error('Error reading image file.'));
+    });
+  };
+
   const handleUpdateProductEntry = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -87,54 +134,31 @@ const EditProductEntry = () => {
     }
 
     try {
-      // Update product entry in Firestore
-      const productRef = doc(db, 'ProductEntry', productId);
+      let base64Image = currentImage; // Keep the current image by default
+      let imageName = '';
 
+      // 如果上传了新图片，将其转换为base64
+      if (imageFile) {
+        base64Image = await convertToBase64(imageFile);
+        imageName = imageFile.name;
+      }
+
+      // 更新产品信息，包含tagList和subtagList
+      const productRef = doc(db, 'ProductEntry', productId);
       await updateDoc(productRef, {
         productName: productName,
-        tags: tags.filter(Boolean),
+        tagList: tagList, // 更新tagList
+        subtagList: selectedSubtags, // 更新subtagList
+        description: description, // Update the description
+        productImage: base64Image, // Update image if changed
         parameters: parameterList.filter(Boolean).map(param => ({ paramName: param })),
         lastUpdated: new Date(),
       });
 
-      // Update Parameters collection
-            const existingParameters = parameters.map(param => param.paramName);
-      for (let i = 0; i < parameterList.length; i++) {
-        const paramName = parameterList[i];
-        if (paramName) {
-          if (i < existingParameters.length) {
-            // Update existing parameter
-            const paramId = parameters[i].paramId;
-            const paramRef = doc(db, 'Parameters', paramId);
-            await updateDoc(paramRef, { paramName });
-          } else {
-            // Add new parameter with generated ID
-            const functions = getFunctions();
-            const handleIdRequest = httpsCallable(functions, 'handleIdRequest');
-            const idResponse = await handleIdRequest({ action: 'generate', type: 'parameter', name: paramName });
-            const newParamId = idResponse.data.idNum;
-            await setDoc(doc(db, 'Parameters', newParamId), {
-              productId,
-              paramName,
-              averageScore: {
-                average: 0,
-                totalScore: 0,
-                totalRater: 0,
-              },
-            });
-          }
-        } else if (i < existingParameters.length) {
-          // Delete parameter if removed
-          const paramId = parameters[i].paramId;
-          await deleteDoc(doc(db, 'Parameters', paramId));
-        }
-      }
-
       setSuccess('Product entry updated successfully!');
-
       setTimeout(() => {
-        navigate(`/product/${productId}`, { replace: true }); // 使用 replace 参数来触发数据重新获取
-        window.location.reload(); // 强制刷新页面
+        navigate(`/product/${productId}`, { replace: true }); // Trigger data re-fetch
+        window.location.reload(); // Force page refresh
       }, 2000);
     } catch (err) {
       console.error('Error updating product entry:', err);
@@ -144,7 +168,6 @@ const EditProductEntry = () => {
     }
   };
 
-  // Handle cancel update
   const handleCancelUpdate = () => {
     navigate(`/product/${productId}`);
   };
@@ -153,10 +176,7 @@ const EditProductEntry = () => {
     <div className="edit-product-entry-container">
       <h1>Edit Product Entry</h1>
 
-      {/* Display Error Message */}
       {error && <p className="error-message">{error}</p>}
-
-      {/* Display Success Message */}
       {success && <p className="success-message">{success}</p>}
 
       <form onSubmit={handleUpdateProductEntry} className="edit-product-entry-form">
@@ -178,16 +198,53 @@ const EditProductEntry = () => {
         <br />
 
         <label>
-          Tags (up to 5):
-          {tags.map((tag, index) => (
-            <input
-              key={index}
-              type="text"
-              value={tag}
-              onChange={(e) => handleTagChange(index, e.target.value)}
-              placeholder={`Tag ${index + 1}`}
-            />
-          ))}
+          Tag:
+          <select value={tagList} onChange={handleTagChange}>
+            <option value="">Select a Tag</option>
+            {tagLibrary.map((tag) => (
+              <option key={tag.tagName} value={tag.tagName}>
+                {tag.tagName}
+              </option>
+            ))}
+          </select>
+        </label>
+        <br />
+
+        {tagList && (
+          <div className="subtag-container">
+            <p>Select 1-3 Subtags:</p>
+            {(() => {
+              const tagData = tagLibrary.find((tag) => tag.tagName === tagList);
+              return tagData && Object.values(tagData.subTag).map((subtag, index) => (
+                <label key={index}>
+                  <input
+                    type="checkbox"
+                    value={subtag}
+                    checked={selectedSubtags.includes(subtag)}
+                    onChange={() => handleSubtagChange(subtag)}
+                  />
+                  {subtag}
+                </label>
+              ));
+            })()}
+          </div>
+        )}
+        <br />
+
+        <label>
+          Description:
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter product description"
+            rows="4"
+          />
+        </label>
+        <br />
+
+        <label>
+          Upload Image:
+          <input type="file" accept="image/jpeg, image/png" onChange={handleImageChange} />
         </label>
         <br />
 

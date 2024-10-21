@@ -333,3 +333,22 @@ button[type="submit"]:hover {
 .filled-star:hover {
     color: #ffcc00;
 }
+
+/* Tag container */
+.tag-container {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Individual tag style */
+.tag {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    border: 1px solid #ccc;
+    white-space: nowrap;
+}

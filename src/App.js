@@ -10,7 +10,8 @@ import ForgotPassword from './Components/LoginSignup/ForgotPassword';
 import AccountSettings from './Components/HomePage/AccountSettings';
 import CreateProductEntry from './Components/HomePage/CreateProductEntry';
 import ProductEntry from './Components/ProductEntry/ProductEntry';
-import EditProduct from './Components/ProductEntry/EditProductEntry'
+import EditProduct from './Components/ProductEntry/EditProductEntry';
+import History from './Components/HistoryPage/History';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/createProductEntry" element={<CreateProductEntry />} />
         <Route path="/product/:productId" element={<ProductEntry />} /> {/* Dynamic route for product details */}
         <Route path="/editproduct" element={<EditProduct />} />
+        <Route path="/history" element={<History />} />
       </Routes>
     </Router>
   );

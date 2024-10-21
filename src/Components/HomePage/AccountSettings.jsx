@@ -11,7 +11,7 @@ const AccountSettings = () => {
 
   const [availableTags, setAvailableTags] = useState([]);
   const [uid, setUid] = useState('');
-  const [profileImage, setProfileImage] = useState(Logo);
+  const [profileImage, setProfileImage] = useState('');
   const [profileImageInput, setProfileImageInput] = useState('');
   const [account, setAccount] = useState('');
   const [usernameInput, setUsernameInput] = useState('');
@@ -68,10 +68,12 @@ const AccountSettings = () => {
             action: 'getUserData',
             uidNum: uidNum,
           });
+          console.log('User data:', userDataResponse);
           if (userDataResponse.data.success) {
             const { profileImage, username, email, nickname,
               password, preferences } = userDataResponse.data.data;
             setProfileImage(profileImage || Logo);
+            console.log('Profile image from database:', profileImage);
             setAccount(username);
             setPassword(password || '');
             setEmail(email || '');
@@ -119,6 +121,16 @@ const AccountSettings = () => {
     setErrorMessage('');
     setSuccessMessage('');
   };
+  const handleProfileImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImageInput(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   const handleTagSelection = (tagName) => {
     if (preferencesInput.includes(tagName)) {
       setPreferencesInput(preferencesInput.filter((tag) => tag !== tagName));
@@ -129,6 +141,14 @@ const AccountSettings = () => {
   const handleSave = (field) => {
     setErrorMessage('');
     setSuccessMessage('');
+    if (field === 'profileImage') {
+      if (!profileImageInput) {
+        setErrorMessage('No image selected.');
+        return;
+      } else {
+        setProfileImage(profileImageInput);
+      }
+    }
     if (field === 'account') {
       if (usernameInput.trim() === '') {
         setErrorMessage('Username cannot be empty.');
@@ -196,7 +216,9 @@ const AccountSettings = () => {
     setIfChange(false);
     setErrorMessage('');
     setSuccessMessage('');
-    if (changeField === 'account') {
+    if (changeField === 'profileImage') {
+      setProfileImageInput('');
+    } else if (changeField === 'account') {
       setUsernameInput('');
     } else if (changeField === 'password') {
       setPasswordInput('');
@@ -218,15 +240,22 @@ const AccountSettings = () => {
       return;
     }
     setLoading(true);
+    const handleImageRequest = httpsCallable(functions, 'handleImageRequest');
+    await handleImageRequest({
+      action: 'upload',
+      base64: profileImage.split(',')[1],
+      filename: `profile_${uid}.jpg`,
+      userId: uid,
+    });
     const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
     const response = await handleUserRequest({
       action: 'accountSetting',
       uidNum: uid,
-      username: usernameInput || account,
-      password: passwordInput || password,
-      email: emailInput || email,
-      nickname: nickNameInput || nickName,
-      preferences: preferencesInput || preferences,
+      username: account,
+      password: password,
+      email: email,
+      nickname: nickName,
+      preferences: preferences,
     });
     setLoading(false);
     if (response.data.success) {
@@ -304,8 +333,40 @@ const AccountSettings = () => {
       </header>
 
       <form>
-        <div className={styles.accountSettingsFormGroup}>
-          {/* Add image here with same style */}
+        <div className={`${styles.accountSettingsFormGroup} ${!isEditing ? styles.centeredImage : ''}`}>
+          <div className={styles.profileImageContainer}>
+            <label htmlFor="profileImage">
+              <FaImage /> Profile Image
+            </label>
+            <img src={profileImage} alt="Profile" className={styles.profileImagePreview} />
+          </div>
+          {isEditing && (
+            <>
+              <input
+                type="file"
+                id="profileImage"
+                accept="image/*"
+                onChange={(e) => handleProfileImageUpload(e)}
+                disabled={!isEditing || changeField !== 'profileImage'}
+                className={changeField === 'profileImage' ? styles.placeholderEditable : styles.placeholderLocked}
+              />
+              {changeField === 'profileImage' ? (
+                <>
+                  <button type="button" onClick={() => handleSave('profileImage')}>Save</button>
+                  <button type="button" onClick={handleCancel}>Cancel</button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleChangeClick('profileImage')}
+                  disabled={changeField !== null}
+                  className={changeField !== null ? styles.disabledButton : ''}
+                >
+                  Change
+                </button>
+              )}
+            </>
+          )}
         </div>
 
         <div className={styles.accountSettingsFormGroup}>
@@ -451,14 +512,6 @@ const AccountSettings = () => {
               <span className={styles.noPreferences}>The user is so lazy and leaves nothing here</span>
             )}
           </div>
-          {/* <input
-            type="text"
-            id="preferences"
-            value={preferencesInput.join(', ')}
-            placeholder={preferences.join(', ') || 'The user is so lazy and leaves nothing here'}
-            disabled={!isEditing || changeField !== 'preferences'}
-            className={changeField === 'preferences' ? styles.placeholderEditable : styles.placeholderLocked}
-          /> */}
           {isEditing && (
             changeField === 'preferences' ? (
               <>
@@ -485,7 +538,7 @@ const AccountSettings = () => {
         {successMessage && <p className={styles.successMessage}>{successMessage}</p>}
       </div>
 
-      <div className={styles.buttonContainer} style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}> {/* 使用 styles 对象 */}
+      <div className={styles.buttonContainer} style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
         {isEditing ? (
           <>
             <button onClick={handleUpdateAll}>Update</button>

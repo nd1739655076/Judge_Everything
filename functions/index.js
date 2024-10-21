@@ -206,6 +206,7 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
 exports.handleImageRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action, base64, filename, userId, productId } = data;
+
     if (action === 'upload') {
       if (!base64 || !filename || (!userId && !productId)) {
         return { success: false, message: 'Invalid input parameters' };
@@ -213,41 +214,64 @@ exports.handleImageRequest = functions.https.onCall(async (data, context) => {
       const buffer = Buffer.from(base64, 'base64');
       let imageUrl = '';
       let docRef = null;
+      let oldImageUrl = '';
       if (userId) {
+        docRef = db.collection('User').doc(userId);
+        const userDoc = await docRef.get();
+        if (userDoc.exists && userDoc.data().profileImage) {
+          oldImageUrl = userDoc.data().profileImage;
+        }
         const userImageFilePath = `userImage/${userId}/${filename}`;
         const userImageFile = bucket.file(userImageFilePath);
+        if (oldImageUrl) {
+          const oldImagePath = oldImageUrl.split('/').slice(-2).join('/');
+          const oldFile = bucket.file(oldImagePath);
+          await oldFile.delete().catch((error) => {
+            console.error('Error deleting old image:', error);
+          });
+        }
         await userImageFile.save(buffer, {
           contentType: 'image/jpeg',
           public: true,
         });
         imageUrl = userImageFile.publicUrl();
-        docRef = db.collection('User').doc(userId);
         await docRef.update({
-          profileImage: imageUrl
+          profileImage: imageUrl,
         });
       }
       else if (productId) {
+        docRef = db.collection('ProductEntry').doc(productId);
+        const productDoc = await docRef.get();
+        if (productDoc.exists && productDoc.data().productImage) {
+          oldImageUrl = productDoc.data().productImage;
+        }
         const productImageFilePath = `productImage/${productId}/${filename}`;
         const productImageFile = bucket.file(productImageFilePath);
+        if (oldImageUrl) {
+          const oldImagePath = oldImageUrl.split('/').slice(-2).join('/');
+          const oldFile = bucket.file(oldImagePath);
+          await oldFile.delete().catch((error) => {
+            console.error('Error deleting old image:', error);
+          });
+        }
         await productImageFile.save(buffer, {
           contentType: 'image/jpeg',
           public: true,
         });
         imageUrl = productImageFile.publicUrl();
-        docRef = db.collection('ProductEntry').doc(productId);
         await docRef.update({
-          productImage: imageUrl
+          productImage: imageUrl,
         });
       }
       return {
         success: true,
-        message: 'Image uploaded and metadata stored successfully.',
-        imageUrl: imageUrl
+        message: 'Image uploaded, old image deleted, and metadata updated successfully.',
+        imageUrl: imageUrl,
       };
     }
     
   } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error('Error uploading image and deleting old image:', error);
       throw new functions.https.HttpsError('internal', 'Failed to upload image and store metadata');
   }
 });

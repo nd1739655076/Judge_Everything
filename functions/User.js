@@ -228,6 +228,7 @@ class User {
         searchHistory: userDocData.searchHistory,
         browseHistory: userDocData.browseHistory,
         rateCommentHistory: userDocData.rateCommentHistory,
+        profileImage: userDocData.profileImage || '',
       },
     };
   }

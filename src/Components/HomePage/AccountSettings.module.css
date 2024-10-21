@@ -2,10 +2,11 @@ body {
   min-width: 1000px;
   margin: 0;
   padding: 0;
-  height: 100vh;
+  min-height: 100vh;
   background: linear-gradient(#aacbd3, #29a3f5);
   justify-content: center;
   align-items: center;
+  padding-bottom: 200px;
 }
 .accountSettings {
   width: 70%;
@@ -106,6 +107,27 @@ body {
 }
 .accountSettingsFormGroup button:hover {
   background-color: #0056b3;
+}
+/* ProfileImage Preview */
+.centeredImage {
+  justify-content: center;
+  text-align: center;
+}
+.centeredImage img {
+  margin-left: auto;
+  margin-right: auto;
+}
+.profileImageContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.profileImagePreview {
+  max-width: 150px;
+  max-height: 150px;
+  display: block;
+  margin-top: 20px;
+  object-fit: contain;
 }
 /* Preferences Tags */
 .selectedTagsContainer {

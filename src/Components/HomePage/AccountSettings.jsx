@@ -68,12 +68,12 @@ const AccountSettings = () => {
             action: 'getUserData',
             uidNum: uidNum,
           });
-          console.log('User data:', userDataResponse);
           if (userDataResponse.data.success) {
             const { profileImage, username, email, nickname,
               password, preferences } = userDataResponse.data.data;
-            setProfileImage(profileImage || Logo);
-            console.log('Profile image from database:', profileImage);
+            const timestamp = new Date().getTime();
+            const profileImageUrlWithTimestamp = profileImage ? `${profileImage}?t=${timestamp}` : Logo;
+            setProfileImage(profileImageUrlWithTimestamp);
             setAccount(username);
             setPassword(password || '');
             setEmail(email || '');
@@ -243,7 +243,7 @@ const AccountSettings = () => {
     const handleImageRequest = httpsCallable(functions, 'handleImageRequest');
     await handleImageRequest({
       action: 'upload',
-      base64: profileImage.split(',')[1],
+      base64: profileImageInput.split(',')[1],
       filename: `profile_${uid}.jpg`,
       userId: uid,
     });

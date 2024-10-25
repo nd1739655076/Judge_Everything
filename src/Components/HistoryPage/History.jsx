@@ -5,16 +5,24 @@ import './History.css';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory} from 'react-icons/fa';
-
+import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog} from 'react-icons/fa';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../firebase'; // Firebase Firestore instance
+import { LiaChessPawnSolid } from "react-icons/lia";
 
 const History = () => {
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [username, setUsername] = useState("");
     const [greeting, setGreeting] = useState("");
+    const [uid, setUid] = useState("");
+    const [createProductRefs, setCreateProductRefs] = useState([]);
+    const [createHistoryIndex, setCreateHistoryIndex] = useState(0);
+    const [rateProductRefs, setRateProductRefs] = useState([]);
+    const [rateHistoryIndex, setRateHistoryIndex] = useState(0);
+    const [browseProductRefs, setBrowseProductRefs] = useState([]);
+    const [browseHistoryIndex, setBrowseHistoryIndex] = useState(0);
 
-    const [modalIsOpen, setModalIsOpen] = useState(false);
 
 
     useEffect(() => {
@@ -28,8 +36,10 @@ const History = () => {
                 statusToken: localStatusToken,
               });
               if (response.data.success) {
+                console.log("set logged in")
                 setIsLoggedIn(true);
                 setUsername(response.data.username);
+                await setUid(response.data.uid);
               } else {
                 setIsLoggedIn(false);
                 localStorage.removeItem('authToken');
@@ -57,10 +67,48 @@ const History = () => {
           }
           setGreeting(currentGreeting);
         };
-    
+        console.log("use effect is running");
         checkLoginStatus();
         setTimeGreeting();
-      }, []);
+
+        const intervalId = setInterval(() => {
+            checkLoginStatus();
+            setTimeGreeting();
+          }, 5000);
+        return () => clearInterval(intervalId);
+    }, []);
+    const fetchProducts = async () => {
+        console.log("get history, uid:", uid);
+        const userRef = doc(db, 'User', uid);
+        console.log(userRef);
+        const userSnap = await getDoc(userRef);
+        const userData = userSnap.data();
+        console.log(userData);
+        const productArray = userData.productProfileCreateHistory;
+        console.log(productArray);
+        if (productArray.length==0) {
+            console.log("product array is empty");
+        }
+        const newRefs = Array(productArray.length).fill(null);
+        for (let i=0; i<productArray.length; i++) {
+            const productRef = doc(db, 'ProductEntry', productArray[i]);
+            const productSnap = await getDoc(productRef);
+            const productData = productSnap.data();
+            newRefs[i] = productData;
+            console.log(i, ": ", newRefs[i]);
+        }
+        console.log(newRefs);
+        await setCreateProductRefs(newRefs);
+        console.log(createProductRefs);
+        console.log("create history:", createProductRefs);
+        // setRateHistory(userData.rateCommentHistory);
+        // setBrowseHistory(userData.browseHistory);
+    };
+    useEffect(() => {
+        if (isLoggedIn) {
+            fetchProducts();
+        }
+    }, [isLoggedIn]);
     const toggleDropdown = () => {
         setDropdownVisible(!isDropdownVisible);
     };
@@ -82,48 +130,64 @@ const History = () => {
         </div>
         
         {/* Navigation Bar */}
-            <div className="navbar">
-                <div className="logoTitle">
-                    <h1>Judge Everything</h1>
-                </div>
-            <div className="navlinks">
-                    <Link to="/">Home</Link>
-                    <Link to="">About</Link>
-                    <Link to="/contact">Support</Link>
+        <div className="navbar">
+            <div className="logoTitle">
+                <h1>Judge Everything</h1>
             </div>
-            <div className="searchbar">
-                <FaSearch/>
-                <input type="text" placeholder="Search" />
+        <div className="navlinks">
+            <Link to="/">Home</Link>
+            <Link to="">About</Link>
+            <Link to="/contact">Support</Link>
+        </div>
+        <div className="searchbar">
+            <FaSearch/>
+            <input type="text" placeholder="Search" />
+        </div>
+        {isLoggedIn && (
+            <div className="currentUserStatus">
+                <div className="greeting">
+                {greeting} !
             </div>
-            <div className="menuContainer">
-                <FaBars className="menuicon" onClick={toggleDropdown} />
-                {isDropdownVisible && (
-                <div className="dropdownMenu">
-                    <ul>
-                        <li>
-                            <div className="userauth">
-                                <Link to="/loginSignup"><FaUser /> Login/Register</Link>
-                            </div>
-                        </li>
-                        <li>
-                            <div className="notifcations">
-                            <a href="#"><FaBell /> Notifaction</a>
-                            </div>
-                        </li>
-                        <li>
-                            <div className="historys">
-                            <a href="#"><FaHistory /> History</a>
-                            </div>
-                        </li>
-                        <li>
-                            <div className="settings">
-                            <Link to="/accountSetting"><FaUser /> Your Account</Link>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
+            <div className="currentUserStatusInfo">
+                <FaUser />
+                <span className="username">{username}</span>
+            </div>
+        </div>
+        )}
+        <div className="menuContainer">
+          <FaBars className="menuicon" onClick={toggleDropdown} />
+          {isDropdownVisible && (
+            <div className="dropdownMenu">
+              <ul>
+                {!isLoggedIn ? (
+                  <li>
+                    <div className="userauth">
+                      <Link to="/loginSignup"><FaUser /> Login/Register</Link>
+                    </div>
+                  </li>
+                ) : (
+                  <>
+                    <li>
+                      <div className="notifcations">
+                        <a href="#"><FaBell /> Notifaction</a>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="historys">
+                        <Link to="/history"><FaHistory /> History</Link>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="settings">
+                        <Link to="/accountSettings"><FaCog /> Your Account</Link>
+                      </div>
+                    </li>
+                  </>
                 )}
+              </ul>
             </div>
+          )}
+        </div>
         </div>
       {/* Product Entry Creation History */}
       <div className="product-history-container">
@@ -131,20 +195,33 @@ const History = () => {
           {/* List of Product Entry Cards */}
           <section className="product-history-content">
             <div className="product-cards">
-              {[1, 2, 3].map((item) => (
-                <div className="product-card" key={item}>
+              {createProductRefs.length > 0 ? (
+               createProductRefs.slice(createHistoryIndex, createHistoryIndex+3).map((product, index) => (
+                <div className="product-card" key={index}>
                   
-                    <div className="product-img">
-                      {/* Image Placeholder */}
-                    </div>
-                    <div>
-                      <h2>Product Name</h2>
-                      <p>Description of product. </p>
-                      <button>View</button>
-                    </div>
-                  
+                    {product ? (<div>
+                        <div className="product-img">
+                        
+                        {product.productImage == null ? (
+                            <div className="image-placeholder">No Image</div>
+                        ) : (
+                            /* Placeholder if no image */
+                            <img src={product.productImage} alt={product.productName} />
+                        )}
+                        </div>
+                        <div>
+                          <h2>{product.productName}</h2>
+                          <p>{product.description}</p>
+                          <Link to={`/product/${product.id}`}>
+                            <button>View</button>
+                          </Link>
+                        </div>
+                    </div>) : (<p>Product is null</p>)}
+                
                 </div>
-              ))}
+              ))) : (
+                <p>No product entry creation history available.</p>
+              )}
             </div>
             {/* Pagination */}
             <div className="paging">

@@ -333,7 +333,7 @@ const Homepage = () => {
                     </li>
                     <li>
                       <div className="historys">
-                        <a href="#"><FaHistory /> History</a>
+                        <Link to="/history"><FaHistory /> History</Link>
                       </div>
                     </li>
                     <li>

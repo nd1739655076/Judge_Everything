@@ -85,6 +85,7 @@ const History = () => {
         const userData = userSnap.data();
         console.log(userData);
         const productArray = userData.productProfileCreateHistory;
+        const browseHistory = userData.browseHistory;
         console.log(productArray);
         if (productArray.length==0) {
             console.log("product array is empty");
@@ -97,8 +98,17 @@ const History = () => {
             newRefs[i] = productData;
             console.log(i, ": ", newRefs[i]);
         }
+        const browseHistoryArray = Array(browseHistory.length).fill(null);
+        for (let i=0; i<browseHistory.length; i++) {
+            const productRef = doc(db, 'ProductEntry', browseHistory[i]);
+            const productSnap = await getDoc(productRef);
+            const productData = productSnap.data();
+            browseHistoryArray[i] = productData;
+            //console.log(i, ": ", newRefs[i]);
+        }
         console.log(newRefs);
         await setCreateProductRefs(newRefs);
+        await setBrowseProductRefs(browseHistoryArray);
         console.log(createProductRefs);
         console.log("create history:", createProductRefs);
         // setRateHistory(userData.rateCommentHistory);
@@ -260,6 +270,50 @@ const History = () => {
                   </div>
                 </div>
               ))}
+            </div>
+            {/* Pagination */}
+            <div className="paging">
+              <button>&larr; Prev</button>
+              <span>1</span>
+              <span>2</span>
+              <span>...</span>
+              <span>68</span>
+              <button>Next &rarr;</button>
+            </div>
+          </section>
+      </div>
+      {/* Product Browse History */}
+      <div className="browse-history-container">
+          <h1>Browse History</h1>
+          {/* List of Product Entry Cards */}
+          <section className="product-history-content">
+            <div className="product-cards">
+              {browseProductRefs.length > 0 ? (
+               browseProductRefs.slice(browseHistoryIndex, browseHistoryIndex+3).map((product, index) => (
+                <div className="product-card" key={index}>
+                  
+                    {product ? (<div>
+                        <div>
+                        {product.productImage == null ? (
+                            <div className="image-placeholder"></div>
+                        ) : (
+                            /* Placeholder if no image */
+                            <div className="product-img"><img src={product.productImage} alt={product.productName} /></div>
+                        )}
+                        </div>
+                        <div>
+                          <h2>{product.productName}</h2>
+                          <p>{product.description}</p>
+                          <Link to={`/product/${product.id}`}>
+                            <button>View</button>
+                          </Link>
+                        </div>
+                    </div>) : (<p>Product is null</p>)}
+                
+                </div>
+              ))) : (
+                <p>No product browse history available.</p>
+              )}
             </div>
             {/* Pagination */}
             <div className="paging">

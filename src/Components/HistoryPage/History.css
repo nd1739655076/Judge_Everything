@@ -29,6 +29,15 @@ html, body {
     background-color: white;
 }
 
+.browse-history-container {
+    max-width: 1900px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    gap: 30px;
+    background-color: white;
+}
+
 .product-history-content {
     margin-bottom: 40px;
 }

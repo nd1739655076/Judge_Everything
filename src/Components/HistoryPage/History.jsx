@@ -200,13 +200,12 @@ const History = () => {
                 <div className="product-card" key={index}>
                   
                     {product ? (<div>
-                        <div className="product-img">
-                        
+                        <div>
                         {product.productImage == null ? (
-                            <div className="image-placeholder">No Image</div>
+                            <div className="image-placeholder"></div>
                         ) : (
                             /* Placeholder if no image */
-                            <img src={product.productImage} alt={product.productName} />
+                            <div className="product-img"><img src={product.productImage} alt={product.productName} /></div>
                         )}
                         </div>
                         <div>

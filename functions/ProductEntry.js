@@ -31,6 +31,10 @@ class ProductEntry {
     this.reportList = new Map();
   }
 
+  static sanitizeData(data) {
+    return isNaN(data) ? 0 : data;
+  }
+
   async generateProductEntry() {
     const productDocRef = db.collection('ProductEntry').doc(this.id);
     await productDocRef.set({
@@ -42,8 +46,18 @@ class ProductEntry {
       description: this.description,
       productImage: this.productImage,
       parametorList: this.parametorList,
-      averageScore: this.averageScore,
-      ratingDistribution: this.ratingDistribution,
+      averageScore: {
+        average: ProductEntry.sanitizeData(this.averageScore.average),
+        totalScore: ProductEntry.sanitizeData(this.averageScore.totalScore),
+        totalRater: ProductEntry.sanitizeData(this.averageScore.totalRater),
+      },
+      ratingDistribution: {
+        fiveStars: ProductEntry.sanitizeData(this.ratingDistribution.fiveStars),
+        fourStars: ProductEntry.sanitizeData(this.ratingDistribution.fourStars),
+        threeStars: ProductEntry.sanitizeData(this.ratingDistribution.threeStars),
+        twoStars: ProductEntry.sanitizeData(this.ratingDistribution.twoStars),
+        oneStars: ProductEntry.sanitizeData(this.ratingDistribution.oneStars),
+      },
       commentList: this.commentList,
       reportList: Object.fromEntries(this.reportList)
     });
@@ -94,6 +108,25 @@ class ProductEntry {
       public: true,
     });
     return productImageFile.publicUrl();
+  }
+  static async fetchProducts() {
+    try {
+      const productEntriesRef = db.collection("ProductEntry");
+      const productSnapshot = await productEntriesRef.get();
+      
+      const productList = productSnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...JSON.parse(JSON.stringify(data)) // Ensure JSON-serializable data
+        };
+      });
+      
+      return { success: true, data: productList };
+    } catch (error) {
+      console.error("Error fetching product list:", error);
+      throw new Error("Failed to fetch product list");
+    }
   }
 }
 

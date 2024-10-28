@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { httpsCallable } from 'firebase/functions';
+import {getFunctions, httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; //change later
 import './HomePage.css';
@@ -172,52 +172,48 @@ const Homepage = () => {
 
   const fetchProducts = async () => {
     try {
-      const productEntriesRef = collection(db, 'ProductEntry');
-      const productSnapshot = await getDocs(productEntriesRef);
-      const productList = productSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setProducts(productList); // Update the product list state
-    } catch (error) {
-      console.error("Error fetching product list:", error);
-    } finally {
-      setLoading(false); // Stop loading once the data is fetched
-    }
-  };
-  const handleViewRatingDistribution = async (productId) => {
-    try {
-      const productRef = doc(db, 'ProductEntry', productId);
-      const productSnap = await getDoc(productRef);
-
-      if (productSnap.exists()) {
-        const productData = productSnap.data();
-        setSelectedProductData(productData);
-
-        // Assuming the rating distribution is stored in the product document (as an example)
-        const distribution = productData.ratingDistribution || {
-          'fiveStars': 0,
-          'fourStars': 0,
-          'threeStars': 0,
-          'twoStars': 0,
-          'oneStars': 0,
-        };
-
-        // Convert distribution object into an array format for the graph
-        const distributionArray = Object.entries(distribution).map(([rating, count]) => ({
-          rating,
-          count,
-        }));
-
-        setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
-        console.log('Rating distribution:', distributionArray); 
-        setModalIsOpen(true); // Open the modal
-        console.log('Modal is open:', modalIsOpen); 
+      const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
+      const response = await handleProductEntryRequest({ action: 'fetchProducts' });
+      if (response.data.success) {
+        setProducts(response.data.data); 
       } else {
-        console.log("Product not found");
+        console.error("Failed to fetch product list:", response.data.message);
       }
     } catch (error) {
-      console.error("Error fetching product rating distribution:", error);
+      console.error("Error fetching product list:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [functions]);
+  
+  const handleViewRatingDistribution = (productId) => {
+    // Find the selected product from the products array
+    const productData = products.find(product => product.id === productId);
+  
+    if (productData) {
+      setSelectedProductData(productData);
+  
+      // Use the rating distribution data from the product document
+      const distribution = productData.ratingDistribution || {
+        fiveStars: 0,
+        fourStars: 0,
+        threeStars: 0,
+        twoStars: 0,
+        oneStars: 0,
+      };
+  
+      // Convert distribution object into an array format for the graph
+      const distributionArray = Object.entries(distribution).map(([rating, count]) => ({
+        rating,
+        count,
+      }));
+  
+      setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
+      setModalIsOpen(true); // Open the modal
+    } else {
+      console.log("Product not found in state.");
     }
   };
   const closeModal = () => {

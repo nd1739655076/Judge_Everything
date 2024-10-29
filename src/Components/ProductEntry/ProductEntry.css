@@ -1,0 +1,338 @@
+/* Main container */
+@import "~slick-carousel/slick/slick.css"; 
+@import "~slick-carousel/slick/slick-theme.css";
+.product-entry-container {
+    max-width: 1900px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    gap: 30px;
+}
+
+/* Product Info */
+.product-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+}
+
+.favorite-icon {
+    font-size: 1.5rem;
+    color: #ccc;  /* Default color (not favorited) */
+    cursor: pointer;
+    transition: color 0.3s ease;
+    margin-left: 25px;
+}
+
+.favorite-active {
+    color: #f39c12; /* Favorite (gold star) color */
+}
+.report-button {
+    background-color: transparent;
+    border: 1px solid #d9534f;
+    color: #d9534f;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin-left: 45px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.report-button:hover {
+    background-color: #d9534f;
+    color: white;
+}
+.product-image img {
+    max-width: 400px;
+    border-radius: 10px;
+    margin-left: 400px;
+    margin-right: 40px;
+}
+
+.product-details {
+    max-width: 900px;
+    padding: 0 20px;
+}
+
+.product-details h1 {
+    font-size: 2.5rem;
+    color: #212744;
+    display: inline-block;
+    margin-right: 100px;
+}
+
+.average-rating {
+    font-size: 1.5rem;
+    margin-top: 10px;
+    color: #f39c12;
+}
+
+.rating-categories ul {
+    list-style: none;
+    padding: 0;
+}
+
+.rating-categories li {
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+.rating-categories span {
+    font-weight: bold;
+}
+
+.actions {
+    margin-top: 20px;
+}
+
+.like-button, .dislike-button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.dislike-button {
+    background-color: #d9534f;
+}
+
+.like-button:hover, .dislike-button:hover {
+    opacity: 0.9;
+}
+
+.creator-info {
+    margin-top: 20px;
+}
+
+.creator-info p {
+    display: inline-block;
+    margin-right: 15px;
+    color: #999;
+}
+
+.share-button {
+    background-color: transparent;
+    border: 1px solid #007bff;
+    color: #007bff;
+    padding: 5px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.share-button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Reviews Section */
+.reviews-section {
+    margin-bottom: 40px;
+}
+
+.reviews-section h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.reviews-grid {
+    display: flex;
+    justify-content: space-between;
+    gap: 400px;
+}
+
+.review-card {
+    background-color: #f9f9f9;
+    padding: 20px;
+    width: 220px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin-right: 100px;
+}
+
+.review-stars {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+.review-card p {
+    margin: 10px 0;
+}
+
+.review-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.review-likes {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.review-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    outline: none;
+    max-width: 600px;
+    width: 90%;
+}
+.review-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-stars, .rating-categories p {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.close-modal-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.close-modal-button:hover {
+    background-color: #0056b3;
+}
+
+.thumbs-up-icon {
+    margin-right: 5px;
+}
+
+.thumbs-down-icon.disliked {
+    color: #ff4500; /* Red for disliked */
+}
+
+/* Write Review Section */
+.write-review-section {
+    margin-bottom: 40px;
+    text-align: center;
+}
+
+.write-review-section h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.review-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.review-title {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.review-title input {
+    flex: 1;
+    padding: 10px;
+    font-size: 1.2rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.title-stars {
+    display: flex;
+    gap: 10px;
+    font-size: 1.8rem; /* Increased star size for better visibility */
+}
+
+textarea {
+    width: 100%;
+    max-width: 600px;
+    padding: 10px;
+    font-size: 1.2rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    height: 150px;
+}
+
+.rating-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    max-width: 600px;
+}
+
+.rating-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.rating-item .filled-star {
+    font-size: 1.5rem; /* Adjusted size for consistency */
+    margin-right: 5px;
+}
+
+.rating-item span {
+    font-weight: bold;
+}
+
+button[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.filled-star {
+    color: #f39c12;
+    cursor: pointer;
+}
+
+.filled-star:hover {
+    color: #ffcc00;
+}

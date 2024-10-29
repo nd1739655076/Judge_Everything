@@ -3,7 +3,7 @@ const admin = require('firebase-admin');
 const db = admin.firestore();
 
 class Id {
-
+  // helper
   async generateIdNum(type) {
     let prefix;
     switch (type.toLowerCase()) {
@@ -35,6 +35,7 @@ class Id {
     return generatedId;
   }
 
+  // action === 'generate'
   async generateId(type, name) {
     const idNum = await this.generateIdNum(type);
     const idDocRef = db.collection('Id').doc(idNum);
@@ -44,7 +45,6 @@ class Id {
     });
     return {idNum, name};
   }
-
 }
 
 module.exports = Id;

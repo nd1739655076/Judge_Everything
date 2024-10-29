@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import styles from './LoginSignup.module.css';
+import './LoginSignup.css'
 
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -111,17 +111,17 @@ const LoginSignup = () => {
   };
 
   return (
-    <div className={styles.container}>
-        <div className={styles.logo}><img src={logo} alt="Logo" /></div>
-        <div className={styles.header}>
-          <h5 className={styles.slogan}>Bought or used Something? Judge it right now!</h5>
-          <h3 className={styles.text}>{action === "Login" ? "Welcome Back!" : "Welcome, New User!"}</h3>
+    <div className="container">
+        <div className="logo"><img src={logo} alt="Logo" /></div>
+        <div className="header">
+          <h5 className="slogan">Bought or used Something? Judge it right now!</h5>
+          <h3 className="text">{action === "Login" ? "Welcome Back!" : "Welcome, New User!"}</h3>
         </div>
 
-        <div className={styles.inputs}>
-            <div className={styles.username}>
-                <div className={styles.label}>Username</div>
-                <div className={styles.input}>
+        <div className="inputs">        
+            <div className="username">
+                <div className="label">Username</div>
+                <div className="input">
                     <img src={user_icon} alt="User Icon" />
                     <input 
                         type="text" 
@@ -132,9 +132,9 @@ const LoginSignup = () => {
                 </div>
             </div>
             {action === "Sign Up" && (
-                <div className={styles.email}>
-                    <div className={styles.label}>Email</div>
-                    <div className={styles.input}>
+                <div className="email">
+                    <div className="label">Email</div>
+                    <div className="input">
                         <img src={email_icon} alt="Email Icon" />
                         <input 
                             type="email" 
@@ -145,9 +145,9 @@ const LoginSignup = () => {
                     </div>
                 </div>
             )}
-            <div className={styles.password}>
-                <div className={styles.label}>Password</div>
-                <div className={styles.input}>
+            <div className="password">
+                <div className="label">Password</div>
+                <div className="input">
                     <img src={password_icon} alt="Password Icon" />
                     <input 
                         type="password" 
@@ -158,9 +158,9 @@ const LoginSignup = () => {
                 </div>
             </div>
             {action === "Sign Up" && (
-                <div className={styles.password}>
-                    <div className={styles.label}>Re-enter Password</div>
-                    <div className={styles.input}>
+                <div className="password">
+                    <div className="label">Re-enter Password</div>
+                    <div className="input">
                         <img src={password_icon} alt="Password Icon" />
                         <input 
                             type="password" 
@@ -173,33 +173,33 @@ const LoginSignup = () => {
             )}
         </div>
         {action === "Login" && (
-            <div className={styles.formActions}>
+            <div className="form-actions">
                 <label>
-                    <input type="checkbox" className={styles.checkbox} />
+                    <input type="checkbox" className="checkbox" />
                     Remember Me
                 </label>
-                <span className={styles.forgotPassword}>
+                <span className="forgotPassword">
                   <Link to="/forgotPassword">Forgot Password</Link>
                 </span>
             </div>
         )}
-        <div className={styles.message}>
-            {loading && <div className={styles.loadingMessage}>Loading...</div>}
-            {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
-            {successMessage && <p className={styles.successMessage}>{successMessage}</p>}
+        <div className="message">
+            {loading && <div className="loading-message">Loading...</div>}
+            {errorMessage && <p className="error-message">{errorMessage}</p>}
+            {successMessage && <p className="success-message">{successMessage}</p>}
         </div>
-        <div className={styles.submitContainer}>
+        <div className="submit-container">
             {action === "Sign Up" ? (
-                <div className={styles.submit} onClick={handleSignup}>Sign Up</div>
+                <div className="submit" onClick={handleSignup}>Sign Up</div>
             ) : (
-                <div className={styles.submit} onClick={handleLogin}>Login</div>
+                <div className="submit" onClick={handleLogin}>Login</div>
             )}
-            <div className={`${styles.submit} ${styles.gray}`} onClick={handleModeSwitch}>
+            <div className="submit gray" onClick={handleModeSwitch}>
                 {action === "Login" ? "Sign Up" : "Login"}
             </div>
         </div>
     </div>
-  );
+);
 };
 
-export default LoginSignup;
+export default LoginSignup

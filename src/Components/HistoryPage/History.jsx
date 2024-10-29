@@ -17,11 +17,15 @@ const History = () => {
     const [greeting, setGreeting] = useState("");
     const [uid, setUid] = useState("");
     const [createProductRefs, setCreateProductRefs] = useState([]);
-    const [createHistoryIndex, setCreateHistoryIndex] = useState(0);
+    const [createHistoryPage, setCreateHistoryPage] = useState(1);
+    const [totalCreatePages, setTotalCreatePages] = useState(0);
     const [rateProductRefs, setRateProductRefs] = useState([]);
-    const [rateHistoryIndex, setRateHistoryIndex] = useState(0);
+    const [rateHistoryPage, setRateHistoryPage] = useState(1);
+    const [totalRatePages, setTotalRatePages] = useState(0);
     const [browseProductRefs, setBrowseProductRefs] = useState([]);
-    const [browseHistoryIndex, setBrowseHistoryIndex] = useState(0);
+    const [browseHistoryPage, setBrowseHistoryPage] = useState(1);
+    const [totalBrowsePages, setTotalBrowsePages] = useState(0);
+    const [loading, setLoading] = useState(true);
 
 
 
@@ -84,35 +88,38 @@ const History = () => {
         const userSnap = await getDoc(userRef);
         const userData = userSnap.data();
         console.log(userData);
-        const productArray = userData.productProfileCreateHistory;
+        const createProductHistory = userData.productProfileCreateHistory;
         const browseHistory = userData.browseHistory;
-        console.log(productArray);
-        if (productArray.length==0) {
+        console.log(createProductHistory);
+        if (createProductHistory.length==0) {
             console.log("product array is empty");
         }
-        const newRefs = Array(productArray.length).fill(null);
-        for (let i=0; i<productArray.length; i++) {
-            const productRef = doc(db, 'ProductEntry', productArray[i]);
+        const createProductHistoryArray = Array(createProductHistory.length).fill(null);
+        for (let i=0; i<createProductHistory.length; i++) {
+            const productRef = doc(db, 'ProductEntry', createProductHistory[i]);
             const productSnap = await getDoc(productRef);
             const productData = productSnap.data();
-            newRefs[i] = productData;
-            console.log(i, ": ", newRefs[i]);
+            createProductHistoryArray[i] = productData;
+            //console.log(i, ": ", createProductHistoryArray[i]);
         }
+        setTotalCreatePages(Math.ceil(createProductHistory.length / 3));
         const browseHistoryArray = Array(browseHistory.length).fill(null);
         for (let i=0; i<browseHistory.length; i++) {
             const productRef = doc(db, 'ProductEntry', browseHistory[i]);
             const productSnap = await getDoc(productRef);
             const productData = productSnap.data();
             browseHistoryArray[i] = productData;
-            //console.log(i, ": ", newRefs[i]);
+            //console.log(i, ": ", createProductHistoryArray[i]);
         }
-        console.log(newRefs);
-        await setCreateProductRefs(newRefs);
+        setTotalBrowsePages(Math.ceil(browseHistory.length / 3));
+        //console.log(createProductHistoryArray);
+        await setCreateProductRefs(createProductHistoryArray);
         await setBrowseProductRefs(browseHistoryArray);
         console.log(createProductRefs);
         console.log("create history:", createProductRefs);
         // setRateHistory(userData.rateCommentHistory);
         // setBrowseHistory(userData.browseHistory);
+        setLoading(false);
     };
     useEffect(() => {
         if (isLoggedIn) {
@@ -121,6 +128,16 @@ const History = () => {
     }, [isLoggedIn]);
     const toggleDropdown = () => {
         setDropdownVisible(!isDropdownVisible);
+    };
+
+    const handlePageClick = async () => {
+        return;
+    };
+    const handleBrowsePrev = async () => {
+        return;
+    };
+    const handleBrowseNext = async () => {
+        setBrowseHistoryPage(browseHistoryPage + 1);
     };
   return (
     <div className="history-page">
@@ -206,7 +223,7 @@ const History = () => {
           <section className="product-history-content">
             <div className="product-cards">
               {createProductRefs.length > 0 ? (
-               createProductRefs.slice(createHistoryIndex, createHistoryIndex+3).map((product, index) => (
+               createProductRefs.slice((createHistoryPage-1)*3, ((createHistoryPage-1)*3)+3).map((product, index) => (
                 <div className="product-card" key={index}>
                   
                     {product ? (<div>
@@ -289,7 +306,7 @@ const History = () => {
           <section className="product-history-content">
             <div className="product-cards">
               {browseProductRefs.length > 0 ? (
-               browseProductRefs.slice(browseHistoryIndex, browseHistoryIndex+3).map((product, index) => (
+               browseProductRefs.slice((browseHistoryPage-1)*3, ((browseHistoryPage-1)*3)+3).map((product, index) => (
                 <div className="product-card" key={index}>
                   
                     {product ? (<div>
@@ -317,12 +334,46 @@ const History = () => {
             </div>
             {/* Pagination */}
             <div className="paging">
-              <button>&larr; Prev</button>
-              <span>1</span>
-              <span>2</span>
-              <span>...</span>
-              <span>68</span>
-              <button>Next &rarr;</button>
+                <button disabled={browseHistoryPage === 1} onClick={() => setBrowseHistoryPage(browseHistoryPage - 1)}>
+                    &larr; Prev</button>
+                {/* Display all pages directly if there are less than 5 total pages */}
+                {totalBrowsePages < 5 ? (
+                    [...Array(totalBrowsePages)].map((_, index) => (
+                    <span
+                        key={index + 1}
+                        className={(browseHistoryPage === index + 1) ? "active" : ""}
+                        onClick={() => setBrowseHistoryPage(index + 1)}>
+                        {index + 1}
+                    </span>
+                    ))
+                ) : (
+                    <>
+                    {browseHistoryPage > 1 && <span onClick={() => setBrowseHistoryPage(1)}>1</span>}
+                    {browseHistoryPage > 3 && <span>...</span>}
+
+                    {/* Show current page and surrounding pages */}
+                    {browseHistoryPage > 1 && (
+                        <span onClick={() => setBrowseHistoryPage(browseHistoryPage - 1)}>
+                        {browseHistoryPage - 1}
+                        </span>
+                    )}
+                    <span className="active" onClick={() => setBrowseHistoryPage(browseHistoryPage)}>
+                        {browseHistoryPage}
+                        </span>
+                    {browseHistoryPage < totalBrowsePages && (
+                        <span onClick={() => setBrowseHistoryPage(browseHistoryPage + 1)}>
+                        {browseHistoryPage + 1}
+                        </span>
+                    )}
+
+                    {(browseHistoryPage < (totalBrowsePages - 2)) && <span>...</span>}
+                    {browseHistoryPage < totalBrowsePages && (
+                        <span onClick={() => setBrowseHistoryPage(totalBrowsePages)}>{totalBrowsePages}</span>
+                    )}
+                    </>
+                )}
+                <button disabled={browseHistoryPage === totalBrowsePages} onClick={() => setBrowseHistoryPage(browseHistoryPage + 1)}>
+                    Next &rarr;</button>
             </div>
           </section>
       </div>

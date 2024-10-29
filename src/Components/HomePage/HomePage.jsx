@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; //change later
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'; //change later
 import './HomePage.css';
 
 import { Link } from 'react-router-dom';
@@ -24,6 +24,7 @@ const Homepage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -38,6 +39,7 @@ const Homepage = () => {
           if (response.data.success) {
             setIsLoggedIn(true);
             setUsername(response.data.username);
+            setUserId(response.data.uid);
           } else {
             setIsLoggedIn(false);
             localStorage.removeItem('authToken');
@@ -102,6 +104,7 @@ const Homepage = () => {
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
           setUsername("");
+          setUserId("");
           window.location.reload();
         }
       } catch (error) {
@@ -223,7 +226,31 @@ const Homepage = () => {
   const closeModal = () => {
     setModalIsOpen(false);
   };
-  
+
+  const handleRecordBrowsing = async (productId) => {
+    if (isLoggedIn) {
+      try {
+        const userRef = doc(db, 'User', userId);
+        const userSnapshot = await getDoc(userRef);
+        const currentBrowseHistory = userSnapshot.data().browseHistory || [];
+        let updatedHistory;
+        if (!currentBrowseHistory.includes(productId)) {
+          updatedHistory = [productId, ...currentBrowseHistory];
+        } else {
+          updatedHistory = [
+            productId,
+            ...currentBrowseHistory.filter((id) => id !== productId)
+          ];
+        }
+        await updateDoc(userRef, {
+          browseHistory: updatedHistory,
+        });
+        console.log("Added ", productId, "to history");
+      } catch (error) {
+        console.error("Error recording browse history: ", error);
+      }
+    }   
+  }
 
 
 
@@ -397,7 +424,7 @@ const Homepage = () => {
               <div key={product.id} className="recommendationEntryCard">
                 <img src={product.productImage || "placeholder.jpg"} alt={product.productName} />
                 <h1>
-                  <Link to={`/product/${product.id}`}>
+                  <Link to={`/product/${product.id}`} onClick={() => handleRecordBrowsing(product.id)}>
                     {product.productName}
                   </Link>
                 </h1>

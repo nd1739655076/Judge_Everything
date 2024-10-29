@@ -6,9 +6,8 @@ import './History.css';
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog} from 'react-icons/fa';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc  } from 'firebase/firestore';
 import { db } from '../../firebase'; // Firebase Firestore instance
-import { LiaChessPawnSolid } from "react-icons/lia";
 
 const History = () => {
     const [isDropdownVisible, setDropdownVisible] = useState(false);
@@ -129,16 +128,30 @@ const History = () => {
     const toggleDropdown = () => {
         setDropdownVisible(!isDropdownVisible);
     };
-
-    const handlePageClick = async () => {
-        return;
-    };
-    const handleBrowsePrev = async () => {
-        return;
-    };
-    const handleBrowseNext = async () => {
-        setBrowseHistoryPage(browseHistoryPage + 1);
-    };
+    const handleRecordBrowsing = async (productId) => {
+        if (isLoggedIn) {
+          try {
+            const userRef = doc(db, 'User', uid);
+            const userSnapshot = await getDoc(userRef);
+            const currentBrowseHistory = userSnapshot.data().browseHistory || [];
+            let updatedHistory;
+            if (!currentBrowseHistory.includes(productId)) {
+              updatedHistory = [productId, ...currentBrowseHistory];
+            } else {
+              updatedHistory = [
+                productId,
+                ...currentBrowseHistory.filter((id) => id !== productId)
+              ];
+            }
+            await updateDoc(userRef, {
+              browseHistory: updatedHistory,
+            });
+            console.log("Added ", productId, "to history");
+          } catch (error) {
+            console.error("Error recording browse history: ", error);
+          }
+        }   
+    }
   return (
     <div className="history-page">
         <div className="topbar">
@@ -238,25 +251,59 @@ const History = () => {
                         <div>
                           <h2>{product.productName}</h2>
                           <p>{product.description}</p>
-                          <Link to={`/product/${product.id}`}>
+                          <Link to={`/product/${product.id}`} onClick={() => handleRecordBrowsing(product.id)}>
                             <button>View</button>
                           </Link>
                         </div>
                     </div>) : (<p>Product is null</p>)}
                 
                 </div>
-              ))) : (
+              ))) : (             
                 <p>No product entry creation history available.</p>
               )}
             </div>
             {/* Pagination */}
             <div className="paging">
-              <button>&larr; Prev</button>
-              <span>1</span>
-              <span>2</span>
-              <span>...</span>
-              <span>68</span>
-              <button>Next &rarr;</button>
+                <button disabled={createHistoryPage === 1} onClick={() => setCreateHistoryPage(createHistoryPage - 1)}>
+                    &larr; Prev</button>
+                {/* Display all pages directly if there are less than 5 total pages */}
+                {totalCreatePages < 5 ? (
+                    [...Array(totalCreatePages)].map((_, index) => (
+                    <span
+                        key={index + 1}
+                        className={(createHistoryPage === index + 1) ? "active" : ""}
+                        onClick={() => setCreateHistoryPage(index + 1)}>
+                        {index + 1}
+                    </span>
+                    ))
+                ) : (
+                    <>
+                    {createHistoryPage > 1 && <span onClick={() => setCreateHistoryPage(1)}>1</span>}
+                    {createHistoryPage > 3 && <span>...</span>}
+
+                    {/* Show current page and surrounding pages */}
+                    {createHistoryPage > 1 && (
+                        <span onClick={() => setCreateHistoryPage(createHistoryPage - 1)}>
+                        {createHistoryPage - 1}
+                        </span>
+                    )}
+                    <span className="active" onClick={() => setCreateHistoryPage(createHistoryPage)}>
+                        {createHistoryPage}
+                        </span>
+                    {createHistoryPage < totalCreatePages && (
+                        <span onClick={() => setCreateHistoryPage(createHistoryPage + 1)}>
+                        {createHistoryPage + 1}
+                        </span>
+                    )}
+
+                    {(createHistoryPage < (totalCreatePages - 2)) && <span>...</span>}
+                    {createHistoryPage < totalCreatePages && (
+                        <span onClick={() => setCreateHistoryPage(totalCreatePages)}>{totalCreatePages}</span>
+                    )}
+                    </>
+                )}
+                <button disabled={createHistoryPage === totalCreatePages} onClick={() => setCreateHistoryPage(createHistoryPage + 1)}>
+                    Next &rarr;</button>
             </div>
           </section>
       </div>

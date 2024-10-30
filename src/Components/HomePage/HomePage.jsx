@@ -376,7 +376,9 @@ const Homepage = () => {
           </div>
         </div>
         <div className="mostPopularLoadMore">
+          <Link to="/productListing">
           <button>LOAD MORE ENTRIES</button>
+          </Link>
         </div>
       </section>
 

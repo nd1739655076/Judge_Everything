@@ -1,95 +1,179 @@
+// productListing.jsx
 import React, { useState, useEffect } from 'react';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable } from "firebase/functions";
 import './productListing.css';
 
-const ProductsPage = () => {
+const ProductListing = () => {
   const [products, setProducts] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortOption, setSortOption] = useState(''); // For "Most Popular" or "Highest Rated"
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [tagLibrary, setTagLibrary] = useState([]);
+  const [selectedTag, setSelectedTag] = useState(''); // Main tag
+  const [selectedSubtag, setSelectedSubtag] = useState(''); // Subtag
+  const [searchQuery, setSearchQuery] = useState(''); // Search query
+  const [sortBy, setSortBy] = useState(''); // Sorting criteria
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch Products
+    const fetchProducts = async () => {
+      try {
+        const functions = getFunctions();
+        const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
+        const response = await handleProductEntryRequest({ action: 'fetchProducts' });
+
+        if (response.data.success) {
+          setProducts(response.data.data); // Store all products
+        } else {
+          console.error("Failed to fetch product list:", response.data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching product list:", error);
+      } finally {
+        setLoading(false); // Stop loading once the data is fetched
+      }
+    };
+
+    // Fetch Tag Library
+    const fetchTagLibrary = async () => {
+      try {
+        const functions = getFunctions();
+        const handleTagLibraryRequest = httpsCallable(functions, 'handleTagLibraryRequest');
+        const response = await handleTagLibraryRequest({ action: 'getTagLibrary' });
+
+        if (response.data.success) {
+          setTagLibrary(response.data.tagList || []); // Store the fetched tags and subtags
+        } else {
+          console.error('Failed to fetch tags');
+        }
+      } catch (error) {
+        console.error('Error fetching tag library:', error);
+      }
+    };
+
     fetchProducts();
+    fetchTagLibrary();
   }, []);
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const functions = getFunctions();
-      const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
-      const response = await handleProductEntryRequest({ action: 'fetchProducts' });
-
-      if (response.data.success) {
-        setProducts(response.data.data);
-      } else {
-        console.error("Failed to fetch products:", response.data.message);
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
+  // Update filtered products whenever tag or subtag changes
+  useEffect(() => {
+    let filtered = products;
+  
+    // Filter by selected tag and subtag
+    if (selectedTag) {
+      filtered = filtered.filter(product => product.tagList && product.tagList.includes(selectedTag));
     }
+    if (selectedSubtag) {
+      filtered = filtered.filter(product => product.subtagList && product.subtagList.includes(selectedSubtag));
+    }
+  
+    setFilteredProducts(filtered);
+  }, [products, selectedTag, selectedSubtag]);
+
+  // Filter and sort products based on the selected options and search query
+  const displayedProducts = filteredProducts
+    .filter(product => product.productName.toLowerCase().includes(searchQuery.toLowerCase())) // Search
+    .sort((a, b) => {
+      if (sortBy === 'mostPopular') {
+        return b.averageScore.totalRater - a.averageScore.totalRater; // Sort by number of ratings
+      }
+      if (sortBy === 'highestRated') {
+        return b.averageScore.average - a.averageScore.average; // Sort by average rating
+      }
+      return 0;
+    });
+
+  const handleSubtagChange = (subtag) => {
+    setSelectedSubtag(subtag);
   };
 
-  // Filter products based on search term
-  const filteredProducts = products.filter(product =>
-    product.productName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Sort products based on selected sort option
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sortOption === 'mostPopular') {
-      // Sort by totalRater in descending order
-      return (b.averageScore?.totalRater || 0) - (a.averageScore?.totalRater || 0);
-    } else if (sortOption === 'highestRated') {
-      // Sort by average score in descending order
-      return (b.averageScore?.average || 0) - (a.averageScore?.average || 0);
-    }
-    return 0; // No sorting if no sort option selected
-  });
-
   return (
-    <div className="products-page">
-      <h1>Products</h1>
+    <div className="product-listing">
+      <h1>Product Listings</h1>
+      
+      <div className="filter-container">
+        {/* Tag Dropdown */}
+        <label htmlFor="tag-dropdown">Filter by Tag:</label>
+        <select
+          id="tag-dropdown"
+          value={selectedTag}
+          onChange={(e) => {
+            setSelectedTag(e.target.value);
+            setSelectedSubtag(''); // Reset subtag when changing main tag
+          }}
+        >
+          <option value="">Select a Tag</option>
+          {tagLibrary.map((tag) => (
+            <option key={tag.tagName} value={tag.tagName}>
+              {tag.tagName}
+            </option>
+          ))}
+        </select>
 
-      <div className="search-sort-bar">
-        {/* Search Bar */}
+        {/* Subtag Dropdown */}
+        {selectedTag && (
+          <div className="subtag-container">
+            <label>Select a Subtag:</label>
+            <select
+              id="subtag-dropdown"
+              value={selectedSubtag}
+              onChange={(e) => handleSubtagChange(e.target.value)}
+            >
+              <option value="">Select a Subtag</option>
+              {tagLibrary.find(tag => tag.tagName === selectedTag)?.subTag &&
+                Object.entries(tagLibrary.find(tag => tag.tagName === selectedTag).subTag).map(([id, subtag]) => (
+                  <option key={id} value={subtag}>{subtag}</option>
+                ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      <div className="search-sort-container">
+        {/* Search Input */}
         <input
           type="text"
-          placeholder="Search for a product"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-bar"
+          placeholder="Search by product name"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
 
-        {/* Sorting Options */}
-        <select value={sortOption} onChange={(e) => setSortOption(e.target.value)} className="sort-dropdown">
+        {/* Sort Dropdown */}
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
           <option value="">Sort By</option>
           <option value="mostPopular">Most Popular</option>
           <option value="highestRated">Highest Rated</option>
         </select>
       </div>
 
-      {/* Display Products */}
-      {loading ? (
-        <p>Loading products...</p>
-      ) : sortedProducts.length > 0 ? (
-        <div className="product-list">
-          {sortedProducts.map(product => (
+      {/* Product List */}
+      <div className="product-list">
+        {loading ? (
+          <p>Loading products...</p>
+        ) : (
+          displayedProducts.map(product => (
             <div key={product.id} className="product-item">
               <h3>{product.productName}</h3>
               <p>{product.description || "No description available"}</p>
-              <p>Tags: {product.tagList?.join(", ") || "No tags"}</p>
+              <div className="tag-container">
+                <span className="tag">{product.tagList}</span>
+                {product.subtagList && product.subtagList.length > 0 && (
+                  product.subtagList.map((subtag, index) => (
+                    <span key={`product-subtag-${index}`} className="tag">{subtag}</span>
+                  ))
+                )}
+              </div>
               <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
               <p>Comments: {product.averageScore?.totalRater || 0}</p>
             </div>
-          ))}
-        </div>
-      ) : (
-        <p>No products found.</p>
-      )}
+          ))
+        )}
+      </div>
+
+      <div className="load-more">
+        <button onClick={() => { /* Add load more functionality */ }}>LOAD MORE ENTRIES</button>
+      </div>
     </div>
   );
 };
 
-export default ProductsPage;
+export default ProductListing;

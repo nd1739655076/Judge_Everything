@@ -49,6 +49,8 @@ const ProductEntry = () => {
     const [loggedInUser, setLoggedInUser] = useState(null);
     const db = getFirestore();
     const [productCreatorExists, setProductCreatorExists] = useState(true);
+    const [replyContent, setReplyContent] = useState('');
+    const [expandedComments, setExpandedComments] = useState({}); 
 
     const fetchProductData = async () => {
         try {
@@ -102,6 +104,25 @@ const ProductEntry = () => {
             console.error("Error fetching product data:", error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchTopReplies = async (commentId) => {
+        const functions = getFunctions();
+        const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
+
+        try {
+            const response = await handleCommentRequest({
+                action: 'getTopReplies',
+                commentId,
+                productId,
+                limit: 3  // 限制为点赞数最高的三条
+            });
+
+            return response.data.replies || [];
+        } catch (error) {
+            console.error("Error fetching top replies:", error);
+            return [];
         }
     };
 
@@ -210,6 +231,44 @@ const ProductEntry = () => {
             console.error('Error updating like/dislike:', error);
             setErrorMessage('An error occurred while updating like/dislike.');
         }
+    };
+
+    const handleAddReply = async (commentId) => {
+        if (!loggedInUser) {
+            setErrorMessage('You must be logged in to reply.');
+            return;
+        }
+
+        const functions = getFunctions();
+        const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
+
+        try {
+            const response = await handleCommentRequest({
+                action: 'addReply',
+                content: replyContent,
+                user: { uid: loggedInUser.uid, username: loggedInUser.username },
+                productId,
+                parentCommentId: commentId
+            });
+
+            if (response.data.success) {
+                setReplyContent('');
+                await fetchProductData(); // 刷新数据以显示新回复
+                setSuccessMessage('Reply added successfully.');
+            } else {
+                setErrorMessage('Failed to add reply.');
+            }
+        } catch (error) {
+            console.error('Error adding reply:', error);
+            setErrorMessage('An error occurred while adding reply.');
+        }
+    };
+
+    const toggleExpandReplies = (commentId) => {
+        setExpandedComments((prev) => ({
+            ...prev,
+            [commentId]: !prev[commentId]
+        }));
     };
 
     const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);

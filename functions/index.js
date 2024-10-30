@@ -279,13 +279,12 @@ exports.handleImageRequest = functions.https.onCall(async (data, context) => {
 //this function is used for write the comment to a product with its scores and id.
 exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, title, content, averageRating, parameterRatings, user, productId } = data;
+    const { action, title, content, averageRating, parameterRatings, user, productId, commentId, uid, isLike, parentCommentId } = data;
+
     if (action === 'generate') {
-      // Step 1: 生成评论ID
+      // Step 1: 生成评论 ID
       const generateId = new Id();
       const commentIdResult = await generateId.generateId('comment', title);
-      const commentId = commentIdResult.idNum;
-      // Step 2: 创建并存储评论至 `Comments` 集合
       const newComment = {
         commentId,
         title,
@@ -301,16 +300,33 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
         dislikeAmount: 0,
       };
       await db.collection('Comments').doc(commentId).set(newComment);
-      // Step 3: 更新 `ProductEntry` 的 `commentList`，仅添加 `commentId`
+
+      // Step 2: 存储新评论
+      //await newComment.generateComment();
+
+      // Step 3: 更新 ProductEntry 中的 commentList 字段
       const productRef = db.collection('ProductEntry').doc(productId);
       await productRef.update({
-        commentList: admin.firestore.FieldValue.arrayUnion(commentId)
+        commentList: admin.firestore.FieldValue.arrayUnion(newComment.commentId)
       });
-      console.log('Comment successfully created and added to product entry.');
+
       return { success: true, message: 'Comment created successfully!' };
-    }
-    
-    else if (action === 'likeDislike') {
+
+    } else if (action === 'addReply') {
+      // 添加回复
+      if (!parentCommentId) throw new Error("parentCommentId is required for replies");
+
+      await Comment.addReply({
+        commentId,
+        content,
+        user,
+        productId,
+        parentCommentId
+      });
+
+      return { success: true, message: 'Reply added successfully!' };
+
+    }   else if (action === 'likeDislike') {
       // Step 4: 处理点赞或反对逻辑
       const { commentId, uid, isLike } = data;
       const commentRef = db.collection('Comments').doc(commentId);
@@ -336,7 +352,6 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
           newLikes = newLikes.filter(id => id !== uid); // 移除点赞
         }
       }
-      // 更新评论的点赞和反对信息
       await commentRef.update({
         likes: newLikes,
         dislikes: newDislikes,
@@ -344,7 +359,16 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
         dislikeAmount: newDislikes.length,
       });
       return { success: true, message: 'Updated like/dislike successfully!' };
+     }
+      else if (action === 'getTopReplies') {
+      // 获取按点赞数排序的前几条回复
+      const topReplies = await Comment.getTopReplies({ commentId, productId, limit: data.limit || 3 });
+      return { success: true, replies: topReplies };
+
+    } else {
+      throw new Error("Invalid action specified");
     }
+
   } catch (error) {
     console.error('Error handling comment request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle comment request');

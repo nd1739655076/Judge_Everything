@@ -11,7 +11,10 @@ import AccountSettings from './Components/HomePage/AccountSettings';
 import CreateProductEntry from './Components/HomePage/CreateProductEntry';
 import ProductEntry from './Components/ProductEntry/ProductEntry';
 import EditProduct from './Components/ProductEntry/EditProductEntry';
-import History from './Components/HistoryPage/History';
+import History from './Components/HistoryPage/History-new';
+import ProductCreateHistory from './Components/HistoryPage/ProductCreateHistory';
+import ReviewHistory from './Components/HistoryPage/ReviewHistory';
+import BrowseHistory from './Components/HistoryPage/BrowseHistory';
 
 function App() {
   return (
@@ -27,6 +30,9 @@ function App() {
         <Route path="/product/:productId" element={<ProductEntry />} /> {/* Dynamic route for product details */}
         <Route path="/editproduct" element={<EditProduct />} />
         <Route path="/history" element={<History />} />
+        <Route path="/history/create" element={<ProductCreateHistory />} />
+        <Route path="/history/review" element={<ReviewHistory />} />
+        <Route path="/history/browse" element={<BrowseHistory />} />
       </Routes>
     </Router>
   );

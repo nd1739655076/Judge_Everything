@@ -154,3 +154,44 @@
     gap: 10%;
     justify-content: flex-start;
 }
+
+.history-buttons-container {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    align-items: center;
+    justify-content: center;
+    width: 400px;
+    height: 300px; /* Fixed height */
+    margin-top: 100px;
+    margin-left: 425px;
+    margin-right: 425px;
+    gap: 20%;
+    padding: 7%;
+    background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent */
+}
+
+  .history-button {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(135deg, #4f93e8, #357edd);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .history-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  }
+  
+  .history-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }

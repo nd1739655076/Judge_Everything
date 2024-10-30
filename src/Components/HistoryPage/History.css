@@ -1,5 +1,5 @@
-html, body {
-    height: 100%; /* Ensure the body extends to fill the viewport */
+.body {
+    height: 100%;
     margin: 0;
     padding: 0;
 }

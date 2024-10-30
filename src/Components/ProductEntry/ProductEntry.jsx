@@ -54,22 +54,28 @@ const ProductEntry = () => {
 
     const fetchProductData = async () => {
         try {
+            if (!productId) {
+                throw new Error("Invalid productId");
+            }
+    
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
-
+    
             if (productSnap.exists()) {
                 const product = productSnap.data();
                 const commentIds = product.commentList || [];
-
-                // 获取评论列表
+    
+                // 检查每个 commentId 是否是有效字符串
                 const commentPromises = commentIds.map(async (commentId) => {
+                    if (typeof commentId !== 'string' || commentId.trim() === '') {
+                        console.warn(`Invalid commentId found: ${commentId}`);
+                        return null;
+                    }
                     const commentRef = doc(db, 'Comments', commentId);
                     const commentSnap = await getDoc(commentRef);
-
+    
                     if (commentSnap.exists()) {
                         const commentData = commentSnap.data();
-
-                        // 检查当前用户是否已经点赞或点踩
                         if (loggedInUser) {
                             if (commentData.likes && commentData.likes.includes(loggedInUser.uid)) {
                                 setLikedComments((prev) => [...prev, commentId]);
@@ -78,16 +84,14 @@ const ProductEntry = () => {
                                 setDislikedComments((prev) => [...prev, commentId]);
                             }
                         }
-
                         return { ...commentData, commentId };
                     } else {
                         return null;
                     }
                 });
-
+    
                 const comments = (await Promise.all(commentPromises)).filter(Boolean);
-
-                // 获取参数信息
+    
                 const paramRefs = product.parametorList || [];
                 const paramPromises = paramRefs.map(async (paramId) => {
                     const paramRef = doc(db, 'Parameters', paramId);
@@ -95,10 +99,11 @@ const ProductEntry = () => {
                     return paramSnap.exists() ? { paramId, ...paramSnap.data() } : null;
                 });
                 const parametersData = (await Promise.all(paramPromises)).filter(Boolean);
-
-                // 设置 productData 和 parameters
+    
                 setProductData({ ...product, comments });
                 setParameters(parametersData);
+            } else {
+                console.error("Product not found for the given productId:", productId);
             }
         } catch (error) {
             console.error("Error fetching product data:", error);
@@ -106,6 +111,7 @@ const ProductEntry = () => {
             setLoading(false);
         }
     };
+    
 
     const fetchTopReplies = async (commentId) => {
         const functions = getFunctions();
@@ -440,88 +446,75 @@ const ProductEntry = () => {
         try {
             setSuccessMessage('');
             setErrorMessage('');
-
+    
+            console.log("Starting review update...");
+    
             if (!loggedInUser) {
                 setErrorMessage('You must be logged in to edit a comment.');
                 return;
             }
-
+    
             if (!userCommentTitle.trim()) {
                 setErrorMessage('Cannot submit a comment without a title.');
                 return;
             }
-
+    
             if (!userComment.trim()) {
                 setErrorMessage('Cannot submit an empty comment.');
                 return;
             }
-
+    
             if (userCommentTitle === selectedReview.title &&
                 userComment === selectedReview.content &&
-                userProductRating === selectedReview.rating &&
+                userProductRating === selectedReview.averageRating &&
                 JSON.stringify(userRatings) === JSON.stringify(selectedReview.parameterRatings)) {
                 setErrorMessage('Cannot submit a new comment without changing.');
                 return;
             }
-
-            const productRef = doc(db, 'ProductEntry', productId);
-            const updatedCommentList = productData.commentList.map((comment) => {
-                if (comment.timestamp.seconds === selectedReview.timestamp.seconds && comment.content === selectedReview.content) {
-                    return {
-                        ...comment,
-                        title: userCommentTitle,
-                        content: userComment,
-                        rating: userProductRating,
-                        parameterRatings: userRatings,
-                        timestamp: new Date(),
-                    };
-                }
-                return comment;
-            });
-
-            await updateDoc(productRef, {
-                commentList: updatedCommentList
-            });
-
-            // Update Parameters collection
-            for (const [paramId, rating] of Object.entries(userRatings)) {
-                const paramRef = doc(db, 'Parameters', paramId);
-                const paramSnap = await getDoc(paramRef);
-                if (paramSnap.exists()) {
-                    const paramData = paramSnap.data();
-                    const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
-                    const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
-                    const newParamAverage = newParamTotalScore / newParamTotalRaters;
-
-                    await updateDoc(paramRef, {
-                        averageScore: {
-                            average: newParamAverage,
-                            totalScore: newParamTotalScore,
-                            totalRater: newParamTotalRaters,
-                        }
-                    });
-                }
-            }
-
-            // Fetch updated product and parameter data to ensure UI reflects latest changes
-            await fetchProductData();
-
+    
+            // Prepare the updated comment data
+            const updatedCommentData = {
+                title: userCommentTitle,
+                content: userComment,
+                averageRating: userProductRating,
+                parameterRatings: userRatings,
+                timestamp: new Date() // 使用新的时间戳
+            };
+    
+            console.log("Updated Comment Data:", updatedCommentData);
+    
+            // Step: 更新评论内容到 Firestore 中的 Comments 集合
+            const commentRef = doc(db, 'Comments', selectedReview.commentId);
+            
+            console.log("Updating comment in Firestore...");
+            await updateDoc(commentRef, updatedCommentData);
+            console.log("Comment updated successfully in Firestore");
+    
+            // 更新本地状态
+            console.log("Updating local state...");
             setProductData((prevData) => ({
                 ...prevData,
-                commentList: updatedCommentList,
+                comments: prevData.comments.map((comment) =>
+                    comment.commentId === selectedReview.commentId ? { ...comment, ...updatedCommentData } : comment
+                ),
             }));
-
+            console.log("Local state updated with new comment data");
+    
             setSuccessMessage('Your review has been updated!');
             setUserComment('');
             setUserCommentTitle('');
             setUserRatings({});
             setUserProductRating(0);
             setSelectedReview(null);
+            console.log("Review update completed successfully.");
+    
         } catch (error) {
             setErrorMessage('Failed to update your review. Please try again.');
             console.error('Error updating review:', error);
         }
     };
+    
+    
 
 
 

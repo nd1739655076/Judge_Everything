@@ -152,7 +152,11 @@
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
-    margin-right: 100px;
+    margin: 0 15px; /* 增加卡片之间的间距 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%; /* 确保卡片撑满高度 */
 }
 
 .review-stars {
@@ -167,14 +171,15 @@
 
 .review-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around; /* 在水平方向上均匀分布 */
     align-items: center;
+    margin-top: 10px; /* 添加顶部间距 */
 }
 
-.review-likes {
+.review-likes, .review-dislikes {
     display: flex;
     align-items: center;
-    font-size: 1rem;
+    cursor: pointer;
 }
 
 .review-modal {

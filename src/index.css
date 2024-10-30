@@ -5,8 +5,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  height: 100vh;
-  background: linear-gradient(#aacbd3, #29a3f5);
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #aacbd3, #29a3f5);
   background-attachment: fixed;
   justify-content: center;
   align-items: center;

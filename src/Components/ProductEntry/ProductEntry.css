@@ -234,10 +234,27 @@
     animation: popScale 0.3s ease forwards;
 }
 
+.edit-review-button {
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+}
+
+.edit-review-button:hover {
+    background-color: #0056b3;
+}
+
 .modal-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
+    width: 100%;
+    padding: 10px;
 }
 
 .modal-like-dislike {

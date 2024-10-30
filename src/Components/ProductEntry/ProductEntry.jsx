@@ -24,7 +24,7 @@ import {
     FaEdit
 } from 'react-icons/fa';
 import Slider from "react-slick";
-import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, arrayRemove, collection, query, where, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
 
 Modal.setAppElement('#root');
 
@@ -63,8 +63,26 @@ const ProductEntry = () => {
                 const commentPromises = commentIds.map(async (commentId) => {
                     const commentRef = doc(db, 'Comments', commentId);
                     const commentSnap = await getDoc(commentRef);
-                    return commentSnap.exists() ? commentSnap.data() : null;
+
+                    if (commentSnap.exists()) {
+                        const commentData = commentSnap.data();
+
+                        // 检查当前用户是否已经点赞或点踩
+                        if (loggedInUser) {
+                            if (commentData.likes && commentData.likes.includes(loggedInUser.uid)) {
+                                setLikedComments((prev) => [...prev, commentId]);
+                            }
+                            if (commentData.dislikes && commentData.dislikes.includes(loggedInUser.uid)) {
+                                setDislikedComments((prev) => [...prev, commentId]);
+                            }
+                        }
+
+                        return { ...commentData, commentId };
+                    } else {
+                        return null;
+                    }
                 });
+
                 const comments = (await Promise.all(commentPromises)).filter(Boolean);
 
                 // 获取参数信息
@@ -131,6 +149,7 @@ const ProductEntry = () => {
             setErrorMessage('You must be logged in to like or dislike a comment.');
             return;
         }
+
         const functions = getFunctions();
         const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
 
@@ -143,19 +162,47 @@ const ProductEntry = () => {
             });
 
             if (response.data.success) {
-                // 更新本地状态以反映新的点赞或反对状态
+                const commentRef = doc(db, 'Comments', review.commentId);
+                if (isLike) {
+                    await updateDoc(commentRef, {
+                        likedBy: arrayUnion(loggedInUser.uid),
+                        dislikedBy: arrayRemove(loggedInUser.uid)
+                    });
+                } else {
+                    await updateDoc(commentRef, {
+                        dislikedBy: arrayUnion(loggedInUser.uid),
+                        likedBy: arrayRemove(loggedInUser.uid)
+                    });
+                }
+
+                // 更新本地 liked 和 disliked 状态
+                let updatedReview = { ...review };
+
                 if (isLike) {
                     setLikedComments((prev) =>
-                        prev.includes(review.commentId) ? prev.filter((id) => id !== review.commentId) : [...prev, review.commentId]
+                        prev.includes(review.commentId)
+                            ? prev.filter((id) => id !== review.commentId)
+                            : [...prev, review.commentId]
                     );
                     setDislikedComments((prev) => prev.filter((id) => id !== review.commentId));
+                    updatedReview.likeAmount = likedComments.includes(review.commentId)
+                        ? updatedReview.likeAmount - 1
+                        : updatedReview.likeAmount + 1;
                 } else {
                     setDislikedComments((prev) =>
-                        prev.includes(review.commentId) ? prev.filter((id) => id !== review.commentId) : [...prev, review.commentId]
+                        prev.includes(review.commentId)
+                            ? prev.filter((id) => id !== review.commentId)
+                            : [...prev, review.commentId]
                     );
                     setLikedComments((prev) => prev.filter((id) => id !== review.commentId));
+                    updatedReview.dislikeAmount = dislikedComments.includes(review.commentId)
+                        ? updatedReview.dislikeAmount - 1
+                        : updatedReview.dislikeAmount + 1;
                 }
-                await fetchProductData(); // Update product data to reflect new like/dislike counts
+
+                setSelectedReview(updatedReview);
+                await fetchProductData();
+                setSuccessMessage('Updated like/dislike successfully.');
             } else {
                 setErrorMessage('Failed to update like/dislike.');
             }
@@ -316,7 +363,7 @@ const ProductEntry = () => {
 
 
     const handleEditReview = () => {
-        if (selectedReview && loggedInUser && selectedReview.userId === loggedInUser.uid) {
+        if (selectedReview && loggedInUser && selectedReview.user.userId === loggedInUser.uid) {
             setUserCommentTitle(selectedReview.title);
             setUserComment(selectedReview.content);
             setUserProductRating(selectedReview.rating);
@@ -441,7 +488,6 @@ const ProductEntry = () => {
     const handleFavoriteClick = () => {
         setIsFavorite(!isFavorite);
     };
-
     const sliderSettings = {
         dots: true,
         infinite: false,
@@ -602,20 +648,26 @@ const ProductEntry = () => {
                                 <p>Posted on: {review.timestamp ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">
                                     <div
-                                        className="review-likes"
-                                        onClick={(e) => { e.stopPropagation(); handleLikeDislike(review, true); }}
+                                        className={`review-likes ${likedComments.includes(review.commentId) ? 'liked' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleLikeDislike(review, true);
+                                        }}
                                     >
                                         <FaThumbsUp
-                                            className={`thumbs-up-icon ${likedComments.includes(review.commentId) ? 'liked' : ''}`}
+                                            className={`thumbs-up-icon ${likedComments.includes(review.commentId) ? 'filled' : ''}`}
                                         />
                                         {review.likeAmount || 0}
                                     </div>
                                     <div
-                                        className="review-dislikes"
-                                        onClick={(e) => { e.stopPropagation(); handleLikeDislike(review, false); }}
+                                        className={`review-dislikes ${dislikedComments.includes(review.commentId) ? 'disliked' : ''}`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleLikeDislike(review, false);
+                                        }}
                                     >
                                         <FaThumbsDown
-                                            className={`thumbs-down-icon ${dislikedComments.includes(review.commentId) ? 'disliked' : ''}`}
+                                            className={`thumbs-down-icon ${dislikedComments.includes(review.commentId) ? 'filled' : ''}`}
                                         />
                                         {review.dislikeAmount || 0}
                                     </div>
@@ -625,59 +677,52 @@ const ProductEntry = () => {
                     </Slider>
                 </div>
 
-                <Modal
-                    isOpen={modalIsOpen}
-                    onRequestClose={closeModal}
-                    className="review-modal"
-                    overlayClassName="review-modal-overlay"
-                >
-                    <div className="modal-header">
+                {selectedReview && (
+                    <Modal
+                        isOpen={modalIsOpen}
+                        onRequestClose={closeModal}
+                        className="review-modal"
+                        overlayClassName="review-modal-overlay"
+                    >
                         <div className="modal-like-dislike">
-                            <div
-                                className="modal-like"
-                                onClick={() => handleLikeDislike(selectedReview, true)}
-                            >
-                                <FaThumbsUp
-                                    className={`thumbs-up-icon ${likedComments.includes(selectedReview.commentId) ? 'liked' : ''}`}
-                                />
-                                <span className="like-count">{selectedReview.likeAmount || 0}</span>
+                            <div className="modal-like" onClick={() => handleLikeDislike(selectedReview, true)}>
+                                <FaThumbsUp className={`thumbs-up-icon ${likedComments.includes(selectedReview.commentId) ? 'liked' : ''}`} />
+                                <span>{selectedReview.likeAmount || 0}</span>
                             </div>
-                            <div
-                                className="modal-dislike"
-                                onClick={() => handleLikeDislike(selectedReview, false)}
-                            >
-                                <FaThumbsDown
-                                    className={`thumbs-down-icon ${dislikedComments.includes(selectedReview.commentId) ? 'disliked' : ''}`}
-                                />
-                                <span className="dislike-count">{selectedReview.dislikeAmount || 0}</span>
+                            <div className="modal-dislike" onClick={() => handleLikeDislike(selectedReview, false)}>
+                                <FaThumbsDown className={`thumbs-down-icon ${dislikedComments.includes(selectedReview.commentId) ? 'disliked' : ''}`} />
+                                <span>{selectedReview.dislikeAmount || 0}</span>
                             </div>
                         </div>
-                        {loggedInUser && selectedReview.userId === loggedInUser.uid && (
-                            <button className="edit-review-button" onClick={handleEditReview}><FaEdit /> Edit</button>
-                        )}
-                    </div>
-                    <h2>{selectedReview.title}</h2>
-                    <p><strong>Posted:</strong> {new Date(new Date(selectedReview.timestamp.seconds * 1000)).toLocaleString()}</p>
-                    <div className="modal-stars">
-                        <span>Overall Rating: </span>
-                        {[...Array(5)].map((_, index) => (
-                            <FaStar key={index} className={index < selectedReview.averageRating ? 'filled-star' : ''} />
-                        ))}
-                    </div>
-                    <div className="rating-categories">
-                        <h3>Parameter Ratings:</h3>
-                        {Object.entries(selectedReview.parameterRatings).map(([paramId, rating], index) => (
-                            <div key={index} className="rating-item">
-                                <span>{parameters.find(param => param.paramId === paramId)?.paramName || 'Parameter'}: </span>
-                                {[...Array(5)].map((_, starIndex) => (
-                                    <FaStar key={starIndex} className={starIndex < rating ? 'filled-star' : ''} />
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                    <p className="review-content">{selectedReview.content}</p>
-                    <button className="close-modal-button" onClick={closeModal}>Close</button>
-                </Modal>
+                        <div className="modal-header">
+                            {loggedInUser && selectedReview.user.uid === loggedInUser.uid && (
+                                <button className="edit-review-button" onClick={handleEditReview}><FaEdit /> Edit</button>
+                            )}
+                        </div>
+                        <h2>{selectedReview.title}</h2>
+                        <p><strong>Posted:</strong> {new Date(new Date(selectedReview.timestamp.seconds * 1000)).toLocaleString()}</p>
+                        <div className="modal-stars">
+                            <span>Overall Rating: </span>
+                            {[...Array(5)].map((_, index) => (
+                                <FaStar key={index} className={index < selectedReview.averageRating ? 'filled-star' : ''} />
+                            ))}
+                        </div>
+                        <div className="rating-categories">
+                            <h3>Parameter Ratings:</h3>
+                            {Object.entries(selectedReview.parameterRatings).map(([paramId, rating], index) => (
+                                <div key={index} className="rating-item">
+                                    <span>{parameters.find(param => param.paramId === paramId)?.paramName || 'Parameter'}: </span>
+                                    {[...Array(5)].map((_, starIndex) => (
+                                        <FaStar key={starIndex} className={starIndex < rating ? 'filled-star' : ''} />
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                        <p className="review-content">{selectedReview.content}</p>
+                        <button className="close-modal-button" onClick={closeModal}>Close</button>
+                    </Modal>
+                )}
+
                 <div className="write-review-section">
                     <h2 className="review-heading">Judge It Yourself!</h2>
                     <form className="review-form" onSubmit={selectedReview ? handleUpdateReview : handleSubmit}>

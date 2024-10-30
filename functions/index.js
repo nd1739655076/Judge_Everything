@@ -280,13 +280,11 @@ exports.handleImageRequest = functions.https.onCall(async (data, context) => {
 exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action, title, content, averageRating, parameterRatings, user, productId } = data;
-
     if (action === 'generate') {
       // Step 1: 生成评论ID
       const generateId = new Id();
       const commentIdResult = await generateId.generateId('comment', title);
       const commentId = commentIdResult.idNum;
-
       // Step 2: 创建并存储评论至 `Comments` 集合
       const newComment = {
         commentId,
@@ -302,15 +300,12 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
         likeAmount: 0,
         dislikeAmount: 0,
       };
-
       await db.collection('Comments').doc(commentId).set(newComment);
-
       // Step 3: 更新 `ProductEntry` 的 `commentList`，仅添加 `commentId`
       const productRef = db.collection('ProductEntry').doc(productId);
       await productRef.update({
         commentList: admin.firestore.FieldValue.arrayUnion(commentId)
       });
-
       console.log('Comment successfully created and added to product entry.');
       return { success: true, message: 'Comment created successfully!' };
     }
@@ -320,15 +315,12 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
       const { commentId, uid, isLike } = data;
       const commentRef = db.collection('Comments').doc(commentId);
       const commentDoc = await commentRef.get();
-
       if (!commentDoc.exists) {
         throw new Error('Comment not found');
       }
-
       const commentData = commentDoc.data();
       let newLikes = [...(commentData.likes || [])];
       let newDislikes = [...(commentData.dislikes || [])];
-
       if (isLike) {
         if (newLikes.includes(uid)) {
           newLikes = newLikes.filter(id => id !== uid); // 取消点赞
@@ -344,7 +336,6 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
           newLikes = newLikes.filter(id => id !== uid); // 移除点赞
         }
       }
-
       // 更新评论的点赞和反对信息
       await commentRef.update({
         likes: newLikes,
@@ -352,7 +343,6 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
         likeAmount: newLikes.length,
         dislikeAmount: newDislikes.length,
       });
-
       return { success: true, message: 'Updated like/dislike successfully!' };
     }
   } catch (error) {

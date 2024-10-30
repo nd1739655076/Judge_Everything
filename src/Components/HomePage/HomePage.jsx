@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'; //change later
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; //change later
 import './HomePage.css';
 
 import { Link } from 'react-router-dom';
@@ -22,9 +22,9 @@ const Homepage = () => {
 
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState("");
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
-  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -38,8 +38,8 @@ const Homepage = () => {
           });
           if (response.data.success) {
             setIsLoggedIn(true);
-            setUsername(response.data.username);
             setUserId(response.data.uid);
+            setUsername(response.data.username);
           } else {
             setIsLoggedIn(false);
             localStorage.removeItem('authToken');
@@ -103,8 +103,8 @@ const Homepage = () => {
         if (response.data.success) {
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
-          setUsername("");
           setUserId("");
+          setUsername("");
           window.location.reload();
         }
       } catch (error) {
@@ -227,6 +227,7 @@ const Homepage = () => {
     setModalIsOpen(false);
   };
 
+  // in cloud function later
   const handleRecordBrowsing = async (productId) => {
     if (isLoggedIn) {
       try {
@@ -251,7 +252,6 @@ const Homepage = () => {
       }
     }   
   }
-
 
 
   return (
@@ -420,7 +420,7 @@ const Homepage = () => {
         </div>
         <div className="recommendationEntriesGrid">
           {products.length > 0 ? (
-            products.slice(0, 10).map(product => ( // Get the first 5 products
+            products.slice(0, 10).map(product => ( // Get the first 10 products
               <div key={product.id} className="recommendationEntryCard">
                 <img src={product.productImage || "placeholder.jpg"} alt={product.productName} />
                 <h1>

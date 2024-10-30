@@ -14,6 +14,7 @@ class Parameter {
       average: 0, // Current average score for this parameter
       totalScore: 0, // Total sum of all ratings for this parameter
       totalRater: 0, // Total number of raters who rated this parameter
+      scoreList: new Map(),
     };
   }
 

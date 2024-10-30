@@ -52,17 +52,17 @@ const ProductEntry = () => {
         try {
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
-    
+
             if (productSnap.exists()) {
                 const product = productSnap.data();
                 setProductData(product);
-                
+
                 // Fetch parameters related to the product
                 const paramsQuery = query(collection(db, 'Parameters'), where('productId', '==', productId));
                 const paramsSnapshot = await getDocs(paramsQuery);
                 const paramList = paramsSnapshot.docs.map(doc => ({ ...doc.data(), paramId: doc.id }));
                 setParameters(paramList);
-    
+
                 // Fetch creator information if product exists
                 if (product.creator) {
                     const userRef = doc(db, 'User', product.creator);
@@ -82,7 +82,7 @@ const ProductEntry = () => {
             setLoading(false);
         }
     };
-    
+
     useEffect(() => {
         fetchProductData();
         const fetchUserStatus = async () => {
@@ -147,35 +147,38 @@ const ProductEntry = () => {
         try {
             setSuccessMessage('');
             setErrorMessage('');
-    
+
             if (!loggedInUser) {
                 setErrorMessage('You must be logged in to submit a comment.');
                 return;
             }
-    
+
             if (!userCommentTitle.trim()) {
                 setErrorMessage('Cannot submit a comment without a title.');
                 return;
             }
-    
+
             if (!userComment.trim()) {
                 setErrorMessage('Cannot submit an empty comment.');
                 return;
             }
-    
+
             if ((productData.commentList || []).filter(comment => comment.userId === loggedInUser.uid).length >= 3) {
                 setErrorMessage('You have already provided three reviews for this entry. Please delete or edit your previous reviews before you start a new one.');
                 return;
             }
-    
+
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
-    
+
             if (productSnap.exists()) {
                 const productData = productSnap.data();
                 const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
                 const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
                 const newAverageScore = newTotalScore / newTotalRaters;
+                const scoreList = new Map(Object.entries(productData.averageScore.scoreList || {}));
+                scoreList.set(loggedInUser.uid, userProductRating);
+                const scoreListObject = Object.fromEntries(scoreList);
 
                 const currentDistribution = productData.ratingDistribution || {
                     'fiveStars': 0,
@@ -203,7 +206,7 @@ const ProductEntry = () => {
                     default:
                         console.error('Invalid rating input');
                 }
-                 const newComment = {
+                const newComment = {
                     title: userCommentTitle,
                     content: userComment,
                     rating: userProductRating,
@@ -213,18 +216,19 @@ const ProductEntry = () => {
                     userId: loggedInUser.uid,
                     username: loggedInUser.username
                 };
-    
+
                 // Update ProductEntry with new comment and average score
                 await updateDoc(productRef, {
                     averageScore: {
                         average: newAverageScore,
                         totalScore: newTotalScore,
                         totalRater: newTotalRaters,
+                        scoreList: scoreListObject,
                     },
                     ratingDistribution: currentDistribution,
                     commentList: arrayUnion(newComment)
                 });
-    
+
                 // Update Parameters collection
                 for (const [paramId, rating] of Object.entries(userRatings)) {
                     const paramRef = doc(db, 'Parameters', paramId);
@@ -234,17 +238,21 @@ const ProductEntry = () => {
                         const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
                         const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
                         const newParamAverage = newParamTotalScore / newParamTotalRaters;
-    
+                        const scoreList = new Map(Object.entries(productData.averageScore.scoreList || {}));
+                        scoreList.set(loggedInUser.uid, rating);
+                        const scoreListObject = Object.fromEntries(scoreList);
+
                         await updateDoc(paramRef, {
                             averageScore: {
                                 average: newParamAverage,
                                 totalScore: newParamTotalScore,
                                 totalRater: newParamTotalRaters,
+                                scoreList: scoreListObject,
                             }
                         });
                     }
                 }
-    
+
                 // Fetch updated product and parameter data to ensure UI reflects latest changes
                 await fetchProductData();
                 setSuccessMessage('Your ratings and comment have been submitted!');
@@ -260,7 +268,7 @@ const ProductEntry = () => {
             console.error('Error submitting ratings and comment:', error);
         }
     };
-    
+
     const handleEditReview = () => {
         if (selectedReview && loggedInUser && selectedReview.userId === loggedInUser.uid) {
             setUserCommentTitle(selectedReview.title);
@@ -276,22 +284,22 @@ const ProductEntry = () => {
         try {
             setSuccessMessage('');
             setErrorMessage('');
-    
+
             if (!loggedInUser) {
                 setErrorMessage('You must be logged in to edit a comment.');
                 return;
             }
-    
+
             if (!userCommentTitle.trim()) {
                 setErrorMessage('Cannot submit a comment without a title.');
                 return;
             }
-    
+
             if (!userComment.trim()) {
                 setErrorMessage('Cannot submit an empty comment.');
                 return;
             }
-    
+
             if (userCommentTitle === selectedReview.title &&
                 userComment === selectedReview.content &&
                 userProductRating === selectedReview.rating &&
@@ -299,7 +307,7 @@ const ProductEntry = () => {
                 setErrorMessage('Cannot submit a new comment without changing.');
                 return;
             }
-    
+
             const productRef = doc(db, 'ProductEntry', productId);
             const updatedCommentList = productData.commentList.map((comment) => {
                 if (comment.timestamp.seconds === selectedReview.timestamp.seconds && comment.content === selectedReview.content) {
@@ -314,11 +322,11 @@ const ProductEntry = () => {
                 }
                 return comment;
             });
-    
+
             await updateDoc(productRef, {
                 commentList: updatedCommentList
             });
-    
+
             // Update Parameters collection
             for (const [paramId, rating] of Object.entries(userRatings)) {
                 const paramRef = doc(db, 'Parameters', paramId);
@@ -328,7 +336,7 @@ const ProductEntry = () => {
                     const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
                     const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
                     const newParamAverage = newParamTotalScore / newParamTotalRaters;
-    
+
                     await updateDoc(paramRef, {
                         averageScore: {
                             average: newParamAverage,
@@ -338,15 +346,15 @@ const ProductEntry = () => {
                     });
                 }
             }
-    
+
             // Fetch updated product and parameter data to ensure UI reflects latest changes
             await fetchProductData();
-    
+
             setProductData((prevData) => ({
                 ...prevData,
                 commentList: updatedCommentList,
             }));
-    
+
             setSuccessMessage('Your review has been updated!');
             setUserComment('');
             setUserCommentTitle('');
@@ -358,8 +366,8 @@ const ProductEntry = () => {
             console.error('Error updating review:', error);
         }
     };
-    
-    
+
+
 
     const handleEditProduct = () => {
         if (loggedInUser && productData.creator === loggedInUser.uid) {
@@ -494,12 +502,26 @@ const ProductEntry = () => {
             <div className="product-entry-container">
                 <div className="product-info">
                     <div className="product-image">
-                    <img 
-                        src={productData.productImage || "https://via.placeholder.com/400"} 
-                        alt={productData.productName || "Product"} 
-                    />
+                        <img
+                            src={productData.productImage || "https://via.placeholder.com/400"}
+                            alt={productData.productName || "Product"}
+                        />
                     </div>
                     <div className="product-details">
+                        {/* Display product tags */}
+                        <h3>Tags</h3>
+                        {productData.tagList || productData.subtagList.length > 0 ? (
+                            <div className="tag-container">
+                                <span className="tag">{productData.tagList}</span>
+                                {productData.subtagList && productData.subtagList.length > 0 && (
+                                    productData.subtagList.map((subtag, index) => (
+                                        <span key={index} className="tag">{subtag}</span>
+                                    ))
+                                )}
+                            </div>
+                        ) : (
+                            <p>No tags available for this product.</p>
+                        )}
                         <h1>{productData.productName}
                             <FaStar
                                 className={`favorite-icon ${isFavorite ? 'favorite-active' : ''}`}
@@ -529,10 +551,10 @@ const ProductEntry = () => {
                         </div>
                         <div className="creator-info">
                             {productCreatorExists ? (
-        <p>Creator: {productData.creator}</p>
-    ) : (
-        <p>Creator: Account no longer exists</p>
-    )}
+                                <p>Creator: {productData.creator}</p>
+                            ) : (
+                                <p>Creator: Account no longer exists</p>
+                            )}
                             <button className="share-button"><FaShareAlt /> Share</button>
                         </div>
                     </div>
@@ -618,7 +640,7 @@ const ProductEntry = () => {
                             placeholder="Write your comment here..."
                         ></textarea>
                         <div className="rating-section">
-                            
+
                             {parameters.map((param, index) => (
                                 <div key={index} className="rating-item">
                                     <FaLightbulb />
@@ -634,11 +656,11 @@ const ProductEntry = () => {
                             ))}
                         </div>
                         <button type="submit" className="submit-button">Submit</button>
-                        
+
                     </form>
                     {successMessage && <p className="success-message">{successMessage}</p>}
                     {errorMessage && <p className="error-message">{errorMessage}</p>}
-                    
+
                 </div>
             </div>
         </div>

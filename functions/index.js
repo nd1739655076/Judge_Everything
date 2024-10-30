@@ -322,19 +322,21 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
         }
     }  else if (action === 'addReply') {
       // 添加回复
-      if (!parentCommentId) throw new Error("parentCommentId is required for replies");
-
+      const { content, user, productId, parentCommentId } = data;
+  
+      // 如果没有指定 parentCommentId，则表示这是对产品的直接评论
+      const isParentReply = !parentCommentId;
+  
       await Comment.addReply({
-        commentId,
-        content,
-        user,
-        productId,
-        parentCommentId
+          content,
+          user,
+          productId,
+          parentCommentId,
       });
-
+      
+      console.log("User data:", user);
       return { success: true, message: 'Reply added successfully!' };
-
-    }   else if (action === 'likeDislike') {
+  }  else if (action === 'likeDislike') {
       // Step 4: 处理点赞或反对逻辑
       const { commentId, uid, isLike } = data;
       const commentRef = db.collection('Comments').doc(commentId);

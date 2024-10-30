@@ -244,25 +244,49 @@ const ProductEntry = () => {
             setErrorMessage('You must be logged in to reply.');
             return;
         }
-
+    
+        if (!replyContent.trim()) {
+            setErrorMessage('Reply content cannot be empty.');
+            return;
+        }
+    
         const functions = getFunctions();
         const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
-
+    
         try {
-            const response = await handleCommentRequest({
+            const requestData = {
                 action: 'addReply',
-                content: replyContent,
+                content: replyContent.trim(),
                 user: { uid: loggedInUser.uid, username: loggedInUser.username },
                 productId,
                 parentCommentId: commentId
-            });
-
+            };
+            console.log("Sending request to handleCommentRequest for reply:", requestData);
+    
+            const response = await handleCommentRequest(requestData);
+            console.log("Response from handleCommentRequest for reply:", response.data);
+    
             if (response.data.success) {
-                setReplyContent('');
-                await fetchProductData(); // 刷新数据以显示新回复
+                setReplyContent(''); // Clear input
                 setSuccessMessage('Reply added successfully.');
+    
+                // Fetch updated replies for selected review and expand replies
+                console.log("Fetching updated replies...");
+                const updatedReplies = await fetchTopReplies(commentId);
+    
+                console.log("Updated replies:", updatedReplies);
+                setSelectedReview((prevReview) => ({
+                    ...prevReview,
+                    replies: updatedReplies,
+                }));
+    
+                setExpandedComments((prev) => ({
+                    ...prev,
+                    [commentId]: true
+                }));
             } else {
                 setErrorMessage('Failed to add reply.');
+                console.log("Failed to add reply:", response.data.message);
             }
         } catch (error) {
             console.error('Error adding reply:', error);
@@ -276,6 +300,7 @@ const ProductEntry = () => {
             [commentId]: !prev[commentId]
         }));
     };
+    
 
     const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
 
@@ -499,7 +524,7 @@ const ProductEntry = () => {
                 ),
             }));
             console.log("Local state updated with new comment data");
-    
+
             setSuccessMessage('Your review has been updated!');
             setUserComment('');
             setUserCommentTitle('');
@@ -802,11 +827,11 @@ const ProductEntry = () => {
 
         {/* 显示回复内容 */}
         {expandedComments[selectedReview.commentId] && selectedReview.replies?.map((reply, replyIndex) => (
-            <div key={replyIndex} className="reply-card">
-                <p>{reply.content}</p>
-                <span>by {reply.user.username || 'Anonymous'}</span>
-            </div>
-        ))}
+    <div key={replyIndex} className="reply-card">
+        <p>{reply.content}</p>
+        <span>by {reply.user?.username || 'Anonymous'}</span>
+    </div>
+))}
                         <button className="close-modal-button" onClick={closeModal}>Close</button>
                     </Modal>
                 )}

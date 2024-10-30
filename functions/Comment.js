@@ -40,34 +40,50 @@ class Comment {
   }
 
   // 添加新回复
-  static async addReply({ commentId, content, user, productId, parentCommentId }) {
-    const replyId = new Id().generateId('reply', content); // 生成回复的唯一 ID
-    const replyDocRef = db.collection('ProductEntry').doc(productId)
-                          .collection('Comments').doc(parentCommentId)
-                          .collection('Replies').doc(replyId);
+  // Id 生成方法不变，继续使用 'comment' 类型
+  static async addReply({ content, user, productId, parentCommentId }) {
+    const generateId = new Id();
+    const replyId = await generateId.generateId('comment', content); // 生成唯一 ID
+
+    // 确定是否为主评论
+    const parentReplies = !parentCommentId;
 
     const replyData = {
-      commentId: replyId,
-      parentCommentId,
-      content,
-      user,
-      timestamp: new Date().toISOString(),
-      likes: [],
-      dislikes: [],
-      likeAmount: 0,
-      dislikeAmount: 0
+        commentId: replyId,
+        content,
+        user: { uid: user.uid, username: user.username },
+        timestamp: new Date().toISOString(),
+        likes: [],
+        dislikes: [],
+        likeAmount: 0,
+        dislikeAmount: 0,
+        parentCommentId: parentCommentId || null, // 如果是主评论，parentCommentId为空
+        productId: productId, // 添加对应的 productId
+        parentReplies
     };
 
-    // 存储新回复到数据库
-    await replyDocRef.set(replyData);
+    // 存储新评论到 `Comments` 集合
+    const commentRef = db.collection('Comments').doc(replyId);
+    await commentRef.set(replyData);
+    console.log(`Reply saved with ID: ${replyId}`);
 
-    // 将新回复的 commentId 添加到主评论的 replies 列表中
-    const parentCommentRef = db.collection('ProductEntry').doc(productId)
-                               .collection('Comments').doc(parentCommentId);
-    await parentCommentRef.update({
-      replies: admin.firestore.FieldValue.arrayUnion(replyId)
-    });
-  }
+    // 更新父评论的 `replies` 字段
+    if (parentCommentId) {
+        const parentCommentRef = db.collection('Comments').doc(parentCommentId);
+        await parentCommentRef.update({
+            replies: admin.firestore.FieldValue.arrayUnion({
+                numbers: [replyId, parentCommentId],
+                content: content
+            })
+        });
+        console.log(`Updated parent comment ${parentCommentId} with new reply ID: ${replyId}`);
+    }
+
+    console.log(`Reply added with ID: ${replyId}, for product ID: ${productId}`);
+}
+
+
+
 
   // 获取按点赞数排序的部分回复
   static async getTopReplies({ commentId, productId, limit = 3 }) {

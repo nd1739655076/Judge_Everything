@@ -363,7 +363,8 @@ const ProductEntry = () => {
 
 
     const handleEditReview = () => {
-        if (selectedReview && loggedInUser && selectedReview.user.userId === loggedInUser.uid) {
+        console.log("Editing review:", selectedReview, "Logged in user:", loggedInUser);
+        if (selectedReview && loggedInUser && selectedReview.user.uid === loggedInUser.uid) {
             setUserCommentTitle(selectedReview.title);
             setUserComment(selectedReview.content);
             setUserProductRating(selectedReview.rating);

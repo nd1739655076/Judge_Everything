@@ -297,32 +297,37 @@ const ProductEntry = () => {
         try {
             setSuccessMessage('');
             setErrorMessage('');
-
+    
             if (!loggedInUser) {
                 setErrorMessage('You must be logged in to submit a comment.');
+                console.log("User not logged in.");
                 return;
             }
-
+    
             if (!userCommentTitle.trim()) {
                 setErrorMessage('Cannot submit a comment without a title.');
+                console.log("Comment title is empty.");
                 return;
             }
-
+    
             if (!userComment.trim()) {
                 setErrorMessage('Cannot submit an empty comment.');
+                console.log("Comment content is empty.");
                 return;
             }
-
-            if ((productData.comments || []).filter(comment => comment.userId === loggedInUser.uid).length >= 3) {
+    
+            const userCommentCount = (productData.comments || []).filter(comment => comment.userId === loggedInUser.uid).length;
+            if (userCommentCount >= 3) {
                 setErrorMessage('You have already provided three reviews for this entry. Please delete or edit your previous reviews before you start a new one.');
+                console.log(`User has ${userCommentCount} reviews; cannot add more.`);
                 return;
             }
-
+    
             const functions = getFunctions();
             const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
-
-            // Step 1: Create the new comment by calling the cloud function
-            const response = await handleCommentRequest({
+            
+            // 调用云函数生成新评论并打印传递的数据
+            const requestData = {
                 action: 'generate',
                 title: userCommentTitle,
                 content: userComment,
@@ -330,19 +335,25 @@ const ProductEntry = () => {
                 parameterRatings: userRatings,
                 user: { uid: loggedInUser.uid, username: loggedInUser.username },
                 productId
-            });
-
+            };
+            console.log("Sending request to handleCommentRequest with data:", requestData);
+    
+            const response = await handleCommentRequest(requestData);
+            console.log("Response from handleCommentRequest:", response.data);
+    
             if (response.data.success) {
-                // Step 2: Calculate new average score and update the rating distribution
+                console.log("Comment created successfully:", response.data.message);
+    
+                // 获取 ProductEntry 文档
                 const productRef = doc(db, 'ProductEntry', productId);
                 const productSnap = await getDoc(productRef);
-
+    
                 if (productSnap.exists()) {
                     const productData = productSnap.data();
                     const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
                     const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
                     const newAverageScore = newTotalScore / newTotalRaters;
-
+    
                     const currentDistribution = productData.ratingDistribution || {
                         fiveStars: 0,
                         fourStars: 0,
@@ -350,28 +361,18 @@ const ProductEntry = () => {
                         twoStars: 0,
                         oneStars: 0,
                     };
-
+    
+                    console.log("Updating rating distribution based on user rating:", userProductRating);
                     switch (userProductRating) {
-                        case 5:
-                            currentDistribution.fiveStars += 1;
-                            break;
-                        case 4:
-                            currentDistribution.fourStars += 1;
-                            break;
-                        case 3:
-                            currentDistribution.threeStars += 1;
-                            break;
-                        case 2:
-                            currentDistribution.twoStars += 1;
-                            break;
-                        case 1:
-                            currentDistribution.oneStars += 1;
-                            break;
-                        default:
-                            console.error('Invalid rating input');
+                        case 5: currentDistribution.fiveStars += 1; break;
+                        case 4: currentDistribution.fourStars += 1; break;
+                        case 3: currentDistribution.threeStars += 1; break;
+                        case 2: currentDistribution.twoStars += 1; break;
+                        case 1: currentDistribution.oneStars += 1; break;
+                        default: console.error('Invalid rating input');
                     }
-
-                    // Step 3: Update ProductEntry's average score and rating distribution
+    
+                    console.log("New average score:", newAverageScore);
                     await updateDoc(productRef, {
                         averageScore: {
                             average: newAverageScore,
@@ -380,8 +381,7 @@ const ProductEntry = () => {
                         },
                         ratingDistribution: currentDistribution,
                     });
-
-                    // Step 4: Update parameter scores
+    
                     for (const [paramId, rating] of Object.entries(userRatings)) {
                         const paramRef = doc(db, 'Parameters', paramId);
                         const paramSnap = await getDoc(paramRef);
@@ -390,7 +390,8 @@ const ProductEntry = () => {
                             const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
                             const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
                             const newParamAverage = newParamTotalScore / newParamTotalRaters;
-
+    
+                            console.log(`Updating parameter ${paramId} with new average:`, newParamAverage);
                             await updateDoc(paramRef, {
                                 averageScore: {
                                     average: newParamAverage,
@@ -400,8 +401,9 @@ const ProductEntry = () => {
                             });
                         }
                     }
-
-                    // Step 5: Refresh product data and reset form fields
+    
+                    // 刷新数据并重置表单
+                    console.log("Refreshing product data after comment submission.");
                     await fetchProductData();
                     setSuccessMessage('Your ratings and comment have been submitted!');
                     setUserComment('');
@@ -413,6 +415,7 @@ const ProductEntry = () => {
                 }
             } else {
                 setErrorMessage('Failed to submit your ratings and comment.');
+                console.log("Failed to create comment. Response data:", response.data);
             }
         } catch (error) {
             setErrorMessage('Failed to submit your ratings and comment. Please try again.');
@@ -779,6 +782,38 @@ const ProductEntry = () => {
                             ))}
                         </div>
                         <p className="review-content">{selectedReview.content}</p>
+                         {/* 添加回复框 */}
+        <div className="reply-section">
+            <input
+                type="text"
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                placeholder="Write a reply..."
+                className="reply-input"
+            />
+            <button onClick={(e) => {
+                e.stopPropagation();
+                handleAddReply(selectedReview.commentId);
+            }}>Reply</button>
+        </div>
+
+        {/* 展开和折叠回复 */}
+        {selectedReview.replies && selectedReview.replies.length > 0 && (
+            <button onClick={(e) => {
+                e.stopPropagation();
+                toggleExpandReplies(selectedReview.commentId);
+            }}>
+                {expandedComments[selectedReview.commentId] ? 'Hide Replies' : 'Show Replies'}
+            </button>
+        )}
+
+        {/* 显示回复内容 */}
+        {expandedComments[selectedReview.commentId] && selectedReview.replies?.map((reply, replyIndex) => (
+            <div key={replyIndex} className="reply-card">
+                <p>{reply.content}</p>
+                <span>by {reply.user.username || 'Anonymous'}</span>
+            </div>
+        ))}
                         <button className="close-modal-button" onClick={closeModal}>Close</button>
                     </Modal>
                 )}

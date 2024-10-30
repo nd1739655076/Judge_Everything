@@ -282,37 +282,45 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
     const { action, title, content, averageRating, parameterRatings, user, productId, commentId, uid, isLike, parentCommentId } = data;
 
     if (action === 'generate') {
-      // Step 1: 生成评论 ID
-      const generateId = new Id();
-      const commentIdResult = await generateId.generateId('comment', title);
-      const newComment = {
-        commentId,
-        title,
-        content,
-        averageRating,
-        parameterRatings,
-        user,
-        productId,
-        timestamp: new Date(),
-        likes: [],
-        dislikes: [],
-        likeAmount: 0,
-        dislikeAmount: 0,
-      };
-      await db.collection('Comments').doc(commentId).set(newComment);
+        try {
+            console.log("Generating comment...");
+            const generateId = new Id();
+            const { idNum: commentId } = await generateId.generateId('comment', title);
+            console.log("Generated comment ID:", commentId);
 
-      // Step 2: 存储新评论
-      //await newComment.generateComment();
+            const newComment = {
+                commentId,
+                title,
+                content,
+                averageRating,
+                parameterRatings,
+                user,
+                productId,
+                timestamp: new Date(),
+                likes: [],
+                dislikes: [],
+                likeAmount: 0,
+                dislikeAmount: 0,
+            };
+            console.log("New comment data:", newComment);
 
-      // Step 3: 更新 ProductEntry 中的 commentList 字段
-      const productRef = db.collection('ProductEntry').doc(productId);
-      await productRef.update({
-        commentList: admin.firestore.FieldValue.arrayUnion(newComment.commentId)
-      });
+            // Step 1: 存储评论数据
+            await db.collection('Comments').doc(commentId).set(newComment);
+            console.log("Comment added to Comments collection.");
 
-      return { success: true, message: 'Comment created successfully!' };
+            // Step 2: 更新 ProductEntry 中的 commentList
+            const productRef = db.collection('ProductEntry').doc(productId);
+            await productRef.update({
+                commentList: admin.firestore.FieldValue.arrayUnion(commentId)
+            });
+            console.log("Comment added to ProductEntry's commentList.");
 
-    } else if (action === 'addReply') {
+            return { success: true, message: 'Comment created successfully!' };
+        } catch (error) {
+            console.error("Error during comment generation:", error);
+            return { success: false, message: 'Failed to create comment.', error: error.message };
+        }
+    }  else if (action === 'addReply') {
       // 添加回复
       if (!parentCommentId) throw new Error("parentCommentId is required for replies");
 

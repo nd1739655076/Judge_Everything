@@ -80,9 +80,18 @@ html, body {
     cursor: pointer;
     border-radius: 5px;
     border-color: #ccc;
-    /* border: #ccc; */
-    padding: 6px 8px; /* Increase padding for height and width */
-    font-size: 16px; /* Increase font size */
+    padding: 6px 8px;
+    font-size: 16px;
+    background-color: whitesmoke;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.review-history-card button {
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    border-color: #ccc;
+    padding: 6px 8px;
+    font-size: 16px;
     background-color: whitesmoke;
     transition: transform 0.2s ease, background-color 0.2s ease;
 }
@@ -135,4 +144,13 @@ html, body {
     border: 1px solid #ccc;
     background-color: whitesmoke;
     transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.review-history-card .filled-star {
+    color: #f39c12;
+}
+.review-footer {
+    display: flex;
+    align-items:first baseline;
+    gap: 10%;
+    justify-content: flex-start;
 }

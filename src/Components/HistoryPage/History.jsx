@@ -4,10 +4,11 @@ import { functions } from '../../firebase';
 import './History.css';
 
 import { Link } from 'react-router-dom';
-import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
+import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter, FaStar, FaThumbsUp } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog} from 'react-icons/fa';
 import { doc, getDoc, updateDoc  } from 'firebase/firestore';
 import { db } from '../../firebase'; // Firebase Firestore instance
+import { LiaChessPawnSolid } from "react-icons/lia";
 
 const History = () => {
     const [isDropdownVisible, setDropdownVisible] = useState(false);
@@ -45,6 +46,7 @@ const History = () => {
                 await setUid(response.data.uid);
               } else {
                 setIsLoggedIn(false);
+                setLoading(false);
                 localStorage.removeItem('authToken');
               }
             } catch (error) {
@@ -81,14 +83,16 @@ const History = () => {
         return () => clearInterval(intervalId);
     }, []);
     const fetchProducts = async () => {
+        setLoading(true);
         console.log("get history, uid:", uid);
         const userRef = doc(db, 'User', uid);
         console.log(userRef);
         const userSnap = await getDoc(userRef);
         const userData = userSnap.data();
         console.log(userData);
-        const createProductHistory = userData.productProfileCreateHistory;
-        const browseHistory = userData.browseHistory;
+        const createProductHistory = userData.productProfileCreateHistory || [];
+        const browseHistory = userData.browseHistory || [];
+        const rateHistory = userData.rateCommentHistory || [];
         console.log(createProductHistory);
         if (createProductHistory.length==0) {
             console.log("product array is empty");
@@ -99,7 +103,6 @@ const History = () => {
             const productSnap = await getDoc(productRef);
             const productData = productSnap.data();
             createProductHistoryArray[i] = productData;
-            //console.log(i, ": ", createProductHistoryArray[i]);
         }
         setTotalCreatePages(Math.ceil(createProductHistory.length / 3));
         const browseHistoryArray = Array(browseHistory.length).fill(null);
@@ -108,21 +111,29 @@ const History = () => {
             const productSnap = await getDoc(productRef);
             const productData = productSnap.data();
             browseHistoryArray[i] = productData;
-            //console.log(i, ": ", createProductHistoryArray[i]);
         }
         setTotalBrowsePages(Math.ceil(browseHistory.length / 3));
-        //console.log(createProductHistoryArray);
+
+        const rateHistoryArray = Array(rateHistory.length).fill(null);
+        for (let i=0; i<rateHistory.length; i++) {
+            const rateRef = doc(db, 'Comments', rateHistory[i]);
+            const rateSnap = await getDoc(rateRef);
+            const rateData = rateSnap.data();
+            rateHistoryArray[i] = rateData;
+            console.log("rateHistoryArray[i]:",rateHistoryArray[i]);
+        }
+        setTotalRatePages(Math.ceil(rateHistory.length / 3));
         await setCreateProductRefs(createProductHistoryArray);
         await setBrowseProductRefs(browseHistoryArray);
-        console.log(createProductRefs);
-        console.log("create history:", createProductRefs);
-        // setRateHistory(userData.rateCommentHistory);
-        // setBrowseHistory(userData.browseHistory);
+        await setRateProductRefs(rateHistoryArray);
+        console.log("rateProductRefs:",rateProductRefs);
         setLoading(false);
     };
     useEffect(() => {
         if (isLoggedIn) {
             fetchProducts();
+        } else {
+            setLoading(false);
         }
     }, [isLoggedIn]);
     const toggleDropdown = () => {
@@ -255,11 +266,11 @@ const History = () => {
                             <button>View</button>
                           </Link>
                         </div>
-                    </div>) : (<p>Product is null</p>)}
+                    </div>) : (<p>Product not available.</p>)}
                 
                 </div>
               ))) : (             
-                <p>No product entry creation history available.</p>
+                <p>{loading ? ("Loading...") : ("No product creation history available.")}</p>
               )}
             </div>
             {/* Pagination */}
@@ -313,36 +324,78 @@ const History = () => {
           <section>
             <h1>Reviews History</h1>
             <div className="review-cards">
-              {[1, 2, 3].map((review) => (
-                <div className="review-history-card" key={review}>
+              {rateProductRefs.length > 0 ? (
+                rateProductRefs.slice((rateHistoryPage-1)*3, ((rateHistoryPage-1)*3)+3).map((review, index) => (
+                <div className="review-history-card" key={index}>
                   <div className="review-content">
                     <div>
-                      {/* Star rating placeholder */}
-                      <p>⭐⭐⭐⭐⭐</p>
-                      <h3>Review title</h3>
-                      <p>Review body</p>
-                      <p>
-                        <img
-                          src="https://via.placeholder.com/40"
-                          alt="Reviewer avatar"
-                          
-                        />
-                        Reviewer name
-                      </p>
-                      <p>Date</p>
+                        <p>
+                            {[...Array(5)].map((_, starIndex) => (
+                            <FaStar key={starIndex} className={starIndex < Math.round(review.averageRating) ? 'filled-star' : ''} />
+                            ))}
+                        </p>
+                        <h3><strong>{review.title}</strong> by {review.user.username ? review.user.username : 'Anonymous Judger'}</h3>
+                        <p>{review.content}</p>
+                        <p>Posted on: {review.timestamp && review.timestamp.seconds ? 
+                        new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
+                        <div className="review-footer">
+                            <div className="review-likes">
+                                <FaThumbsUp color={review.likes.includes(review.user.uid) ? "black" : "#ccc"} />
+                                {review.likeAmount}
+                            </div>
+                            <Link to={`/product/${review.productId}`} onClick={() => handleRecordBrowsing(review.productId)}>
+                                <button>View</button>
+                            </Link>
+                        </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              ))) : (
+                <p>{loading ? ("Loading...") : ("No review history available.")}</p>
+              )}
             </div>
             {/* Pagination */}
             <div className="paging">
-              <button>&larr; Prev</button>
-              <span>1</span>
-              <span>2</span>
-              <span>...</span>
-              <span>68</span>
-              <button>Next &rarr;</button>
+                <button disabled={rateHistoryPage === 1} onClick={() => setRateHistoryPage(rateHistoryPage - 1)}>
+                    &larr; Prev</button>
+                {/* Display all pages directly if there are less than 5 total pages */}
+                {totalRatePages < 5 ? (
+                    [...Array(totalRatePages)].map((_, index) => (
+                    <span
+                        key={index + 1}
+                        className={(rateHistoryPage === index + 1) ? "active" : ""}
+                        onClick={() => setRateHistoryPage(index + 1)}>
+                        {index + 1}
+                    </span>
+                    ))
+                ) : (
+                    <>
+                    {rateHistoryPage > 1 && <span onClick={() => setRateHistoryPage(1)}>1</span>}
+                    {rateHistoryPage > 3 && <span>...</span>}
+
+                    {/* Show current page and surrounding pages */}
+                    {rateHistoryPage > 1 && (
+                        <span onClick={() => setRateHistoryPage(rateHistoryPage - 1)}>
+                        {rateHistoryPage - 1}
+                        </span>
+                    )}
+                    <span className="active" onClick={() => setRateHistoryPage(rateHistoryPage)}>
+                        {rateHistoryPage}
+                        </span>
+                    {rateHistoryPage < totalRatePages && (
+                        <span onClick={() => setRateHistoryPage(rateHistoryPage + 1)}>
+                        {rateHistoryPage + 1}
+                        </span>
+                    )}
+
+                    {(rateHistoryPage < (totalRatePages - 2)) && <span>...</span>}
+                    {rateHistoryPage < totalRatePages && (
+                        <span onClick={() => setRateHistoryPage(totalRatePages)}>{totalRatePages}</span>
+                    )}
+                    </>
+                )}
+                <button disabled={rateHistoryPage === totalRatePages} onClick={() => setRateHistoryPage(rateHistoryPage + 1)}>
+                    Next &rarr;</button>
             </div>
           </section>
       </div>
@@ -368,15 +421,15 @@ const History = () => {
                         <div>
                           <h2>{product.productName}</h2>
                           <p>{product.description}</p>
-                          <Link to={`/product/${product.id}`}>
+                          <Link to={`/product/${product.id}`} onClick={() => handleRecordBrowsing(product.id)}>
                             <button>View</button>
                           </Link>
                         </div>
-                    </div>) : (<p>Product is null</p>)}
+                    </div>) : (<p>Product not available.</p>)}
                 
                 </div>
               ))) : (
-                <p>No product browse history available.</p>
+                <p>{loading ? ("Loading...") : ("No product browse history available.")}</p>
               )}
             </div>
             {/* Pagination */}

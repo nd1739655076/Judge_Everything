@@ -224,12 +224,48 @@
     background-color: #0056b3;
 }
 
-.thumbs-up-icon {
-    margin-right: 5px;
+@keyframes popScale {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
 }
 
-.thumbs-down-icon.disliked {
-    color: #ff4500; /* Red for disliked */
+.thumbs-up-icon.clicked, .thumbs-down-icon.clicked {
+    animation: popScale 0.3s ease forwards;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-like-dislike {
+    display: flex;
+    gap: 10px;
+}
+
+.modal-like, .modal-dislike {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.thumbs-up-icon, .thumbs-down-icon {
+    margin-right: 5px; /* 图标和计数之间的间距 */
+}
+
+.like-count, .dislike-count {
+    font-weight: bold;
+}
+
+
+.liked {
+    color: #007bff; 
+}
+
+.disliked {
+    color: #ff4500;
 }
 
 /* Write Review Section */
@@ -267,6 +303,30 @@
     font-size: 1.2rem;
     border: 1px solid #ccc;
     border-radius: 5px;
+}
+
+/* Tags container */
+.tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px; /* Space between tags */
+    margin-top: 10px;
+}
+
+/* Tag item */
+.tag {
+    background-color: #007bff; /* Background color */
+    color: #fff; /* Text color */
+    padding: 5px 12px; /* Padding for tag */
+    border-radius: 15px; /* Rounded corners */
+    font-size: 0.9rem; /* Font size */
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+/* Tag hover effect */
+.tag:hover {
+    background-color: #0056b3; /* Darker background on hover */
 }
 
 .title-stars {

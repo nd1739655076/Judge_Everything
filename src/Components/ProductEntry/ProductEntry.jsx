@@ -45,6 +45,7 @@ const ProductEntry = () => {
     const [selectedReview, setSelectedReview] = useState(null);
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const [likedComments, setLikedComments] = useState([]);
+    const [dislikedComments, setDislikedComments] = useState([]);
     const [loggedInUser, setLoggedInUser] = useState(null);
     const db = getFirestore();
     const [productCreatorExists, setProductCreatorExists] = useState(true);
@@ -142,9 +143,19 @@ const ProductEntry = () => {
             });
 
             if (response.data.success) {
-                // Refresh the comment data to get the updated like/dislike counts
+                // 更新本地状态以反映新的点赞或反对状态
+                if (isLike) {
+                    setLikedComments((prev) =>
+                        prev.includes(review.commentId) ? prev.filter((id) => id !== review.commentId) : [...prev, review.commentId]
+                    );
+                    setDislikedComments((prev) => prev.filter((id) => id !== review.commentId));
+                } else {
+                    setDislikedComments((prev) =>
+                        prev.includes(review.commentId) ? prev.filter((id) => id !== review.commentId) : [...prev, review.commentId]
+                    );
+                    setLikedComments((prev) => prev.filter((id) => id !== review.commentId));
+                }
                 await fetchProductData(); // Update product data to reflect new like/dislike counts
-                setSuccessMessage('Updated like/dislike successfully.');
             } else {
                 setErrorMessage('Failed to update like/dislike.');
             }
@@ -431,25 +442,6 @@ const ProductEntry = () => {
         setIsFavorite(!isFavorite);
     };
 
-
-    const handleLikeClick = async (review) => {
-        const productRef = doc(db, 'ProductEntry', productId);
-        const updatedCommentList = productData.commentList.map((comment) => {
-            if (comment.timestamp.seconds === review.timestamp.seconds && comment.content === review.content) {
-                return { ...comment, likes: comment.likes + 1 };
-            }
-            return comment;
-        });
-        await updateDoc(productRef, {
-            commentList: updatedCommentList
-        });
-        setProductData((prevData) => ({
-            ...prevData,
-            commentList: updatedCommentList,
-        }));
-        setLikedComments((prevLikedComments) => [...prevLikedComments, review]);
-    };
-
     const sliderSettings = {
         dots: true,
         infinite: false,
@@ -609,11 +601,23 @@ const ProductEntry = () => {
                                 <p>{review.content.substring(0, 40)}...</p>
                                 <p>Posted on: {review.timestamp ? new Date(review.timestamp.seconds * 1000).toLocaleString() : 'N/A'}</p>
                                 <div className="review-footer">
-                                    <div className="review-likes" onClick={(e) => { e.stopPropagation(); handleLikeDislike(review, true); }}>
-                                        <FaThumbsUp className={`thumbs-up-icon ${likedComments.includes(review) ? 'liked' : ''}`} /> {review.likeAmount || 0}
+                                    <div
+                                        className="review-likes"
+                                        onClick={(e) => { e.stopPropagation(); handleLikeDislike(review, true); }}
+                                    >
+                                        <FaThumbsUp
+                                            className={`thumbs-up-icon ${likedComments.includes(review.commentId) ? 'liked' : ''}`}
+                                        />
+                                        {review.likeAmount || 0}
                                     </div>
-                                    <div className="review-dislikes" onClick={(e) => { e.stopPropagation(); handleLikeDislike(review, false); }}>
-                                        <FaThumbsDown className={`thumbs-down-icon ${likedComments.includes(review) ? 'disliked' : ''}`} /> {review.dislikeAmount || 0}
+                                    <div
+                                        className="review-dislikes"
+                                        onClick={(e) => { e.stopPropagation(); handleLikeDislike(review, false); }}
+                                    >
+                                        <FaThumbsDown
+                                            className={`thumbs-down-icon ${dislikedComments.includes(review.commentId) ? 'disliked' : ''}`}
+                                        />
+                                        {review.dislikeAmount || 0}
                                     </div>
                                 </div>
                             </div>
@@ -621,42 +625,59 @@ const ProductEntry = () => {
                     </Slider>
                 </div>
 
-                {selectedReview && (
-                    <Modal
-                        isOpen={modalIsOpen}
-                        onRequestClose={closeModal}
-                        className="review-modal"
-                        overlayClassName="review-modal-overlay"
-                    >
-                        <div className="modal-header">
-                            {loggedInUser && selectedReview.userId === loggedInUser.uid && (
-                                <button className="edit-review-button" onClick={handleEditReview}><FaEdit /> Edit</button>
-                            )}
+                <Modal
+                    isOpen={modalIsOpen}
+                    onRequestClose={closeModal}
+                    className="review-modal"
+                    overlayClassName="review-modal-overlay"
+                >
+                    <div className="modal-header">
+                        <div className="modal-like-dislike">
+                            <div
+                                className="modal-like"
+                                onClick={() => handleLikeDislike(selectedReview, true)}
+                            >
+                                <FaThumbsUp
+                                    className={`thumbs-up-icon ${likedComments.includes(selectedReview.commentId) ? 'liked' : ''}`}
+                                />
+                                <span className="like-count">{selectedReview.likeAmount || 0}</span>
+                            </div>
+                            <div
+                                className="modal-dislike"
+                                onClick={() => handleLikeDislike(selectedReview, false)}
+                            >
+                                <FaThumbsDown
+                                    className={`thumbs-down-icon ${dislikedComments.includes(selectedReview.commentId) ? 'disliked' : ''}`}
+                                />
+                                <span className="dislike-count">{selectedReview.dislikeAmount || 0}</span>
+                            </div>
                         </div>
-                        <h2>{selectedReview.title}</h2>
-                        <p><strong>Posted:</strong> {new Date(new Date(selectedReview.timestamp.seconds * 1000)).toLocaleString()}</p>
-                        <div className="modal-stars">
-                            <span>Overall Rating: </span>
-                            {[...Array(5)].map((_, index) => (
-                                <FaStar key={index} className={index < selectedReview.rating ? 'filled-star' : ''} />
-                            ))}
-                        </div>
-                        <div className="rating-categories">
-                            <h3>Parameter Ratings:</h3>
-                            {Object.entries(selectedReview.parameterRatings).map(([paramId, rating], index) => (
-                                <div key={index} className="rating-item">
-                                    <span>{parameters.find(param => param.paramId === paramId)?.paramName || 'Parameter'}: </span>
-                                    {[...Array(5)].map((_, starIndex) => (
-                                        <FaStar key={starIndex} className={starIndex < rating ? 'filled-star' : ''} />
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                        <p className="review-content">{selectedReview.content}</p>
-                        <button className="close-modal-button" onClick={closeModal}>Close</button>
-                    </Modal>
-                )}
-
+                        {loggedInUser && selectedReview.userId === loggedInUser.uid && (
+                            <button className="edit-review-button" onClick={handleEditReview}><FaEdit /> Edit</button>
+                        )}
+                    </div>
+                    <h2>{selectedReview.title}</h2>
+                    <p><strong>Posted:</strong> {new Date(new Date(selectedReview.timestamp.seconds * 1000)).toLocaleString()}</p>
+                    <div className="modal-stars">
+                        <span>Overall Rating: </span>
+                        {[...Array(5)].map((_, index) => (
+                            <FaStar key={index} className={index < selectedReview.averageRating ? 'filled-star' : ''} />
+                        ))}
+                    </div>
+                    <div className="rating-categories">
+                        <h3>Parameter Ratings:</h3>
+                        {Object.entries(selectedReview.parameterRatings).map(([paramId, rating], index) => (
+                            <div key={index} className="rating-item">
+                                <span>{parameters.find(param => param.paramId === paramId)?.paramName || 'Parameter'}: </span>
+                                {[...Array(5)].map((_, starIndex) => (
+                                    <FaStar key={starIndex} className={starIndex < rating ? 'filled-star' : ''} />
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                    <p className="review-content">{selectedReview.content}</p>
+                    <button className="close-modal-button" onClick={closeModal}>Close</button>
+                </Modal>
                 <div className="write-review-section">
                     <h2 className="review-heading">Judge It Yourself!</h2>
                     <form className="review-form" onSubmit={selectedReview ? handleUpdateReview : handleSubmit}>

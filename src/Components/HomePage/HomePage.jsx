@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; //change later
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'; //change later
 import './HomePage.css';
 
 import { Link } from 'react-router-dom';

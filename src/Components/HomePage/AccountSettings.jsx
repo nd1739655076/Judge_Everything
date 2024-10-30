@@ -14,7 +14,6 @@ const AccountSettings = () => {
   const [profileImage, setProfileImage] = useState('');
   const [profileImageInput, setProfileImageInput] = useState('');
   const [account, setAccount] = useState('');
-  const [usernameInput, setUsernameInput] = useState('');
   const [password, setPassword] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [email, setEmail] = useState('');
@@ -80,6 +79,11 @@ const AccountSettings = () => {
             setNickName(nickname || '');
             setPreferences(preferences || []);
             setIfChange(false);
+            setProfileImageInput('');
+            setPasswordInput('');
+            setEmailInput('');
+            setNickNameInput('');
+            setPreferencesInput('');
             setErrorMessage('');
             setSuccessMessage('');
           } else {
@@ -103,7 +107,6 @@ const AccountSettings = () => {
     setIsEditing(!isEditing);
     setChangeField(null);
     setProfileImageInput('');
-    setUsernameInput('');
     setPasswordInput('');
     setEmailInput('');
     setNickNameInput('');
@@ -147,17 +150,6 @@ const AccountSettings = () => {
         return;
       } else {
         setProfileImage(profileImageInput);
-      }
-    }
-    if (field === 'account') {
-      if (usernameInput.trim() === '') {
-        setErrorMessage('Username cannot be empty.');
-        return;
-      } else if (usernameInput === account) {
-        setErrorMessage('No changes were made to the account.');
-        return;
-      } else {
-        setAccount(usernameInput);
       }
     }
     if (field === 'password') {
@@ -218,8 +210,6 @@ const AccountSettings = () => {
     setSuccessMessage('');
     if (changeField === 'profileImage') {
       setProfileImageInput('');
-    } else if (changeField === 'account') {
-      setUsernameInput('');
     } else if (changeField === 'password') {
       setPasswordInput('');
     } else if (changeField === 'email') {
@@ -376,29 +366,10 @@ const AccountSettings = () => {
           <input
             type="text"
             id="account"
-            value={usernameInput}
-            onChange={(e) => setUsernameInput(e.target.value)}
             placeholder={account}
             disabled={!isEditing || changeField !== 'account'}
             className={changeField === 'account' ? styles.placeholderEditable : styles.placeholderLocked}
           />
-          {isEditing && (
-            changeField === 'account' ? (
-              <>
-                <button type="button" onClick={() => handleSave('account')}>Save</button>
-                <button type="button" onClick={handleCancel}>Cancel</button>
-              </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleChangeClick('account')}
-                disabled={changeField !== null}
-                className={changeField !== null ? styles.disabledButton : ''}
-              >
-                Change
-              </button>
-            )
-          )}
         </div>
 
         <div className={styles.accountSettingsFormGroup}>

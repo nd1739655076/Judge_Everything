@@ -263,7 +263,7 @@ const BrowseHistory = () => {
                 
                 </div>
               ))) : (
-                <p>{loading ? ("Loading...") : ("No product browse history available.")}</p>
+                <p>{loading ? ("Loading...") : ("No products have been viewed yet.")}</p>
               )}
             </div>
             {/* Pagination */}
@@ -310,7 +310,7 @@ const BrowseHistory = () => {
                     Next &rarr;</button>
             </div>
           </section>
-          <Link to="/history"><button className="history-button">Back</button></Link>
+          <Link to="/history"><button className="history-button" style={{ padding: '7px 15px' }}>Back</button></Link>
       </div>
     </div>
   );

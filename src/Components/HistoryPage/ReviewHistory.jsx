@@ -236,7 +236,7 @@ const ReviewHistory = () => {
       {/* Reviews (Comment/Rate) History */}
       <div className="review-history-container">
           <section>
-            <h1>Reviews History</h1>
+            <h1>Comment/Rating History</h1>
             <div className="review-cards">
               {rateProductRefs.length > 0 ? (
                 rateProductRefs.slice((rateHistoryPage-1)*3, ((rateHistoryPage-1)*3)+3).map((review, index) => (
@@ -312,7 +312,7 @@ const ReviewHistory = () => {
                     Next &rarr;</button>
             </div>
           </section>
-          <Link to="/history"><button className="history-button">Back</button></Link>
+          <Link to="/history"><button className="history-button" style={{ padding: '7px 15px' }}>Back</button></Link>
       </div>
     </div>
   );

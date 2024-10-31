@@ -149,7 +149,7 @@ const History = () => {
             </div>
             <div className="history-buttons-container">
                 <Link to="/history/create"><button className="history-button">Product Creation History</button></Link>
-                <Link to="/history/review"><button className="history-button">Review History</button></Link>
+                <Link to="/history/review"><button className="history-button">Comment/Rating History</button></Link>
                 <Link to="/history/browse"><button className="history-button">Browse History</button></Link>
             </div>
         </div>

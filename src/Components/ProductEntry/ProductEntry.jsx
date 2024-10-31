@@ -57,6 +57,8 @@ const ProductEntry = () => {
     const [showAllReplies, setShowAllReplies] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [expandedReplies, setExpandedReplies] = useState({});
+    const [reportReason, setReportReason] = useState(''); // 举报原因
+    const [showReportModal, setShowReportModal] = useState(false); // 控制举报模态框的显示
 
 
     const modalStyles = {
@@ -666,6 +668,71 @@ const ProductEntry = () => {
         slidesToScroll: 1,
     };
 
+    const functions = getFunctions();
+
+    const openReportModal = () => {
+        setShowReportModal(true);
+    };
+
+    const closeReportModal = () => {
+        setShowReportModal(false);
+        setReportReason(''); // 清空举报原因
+        setErrorMessage('');
+    };
+
+    const handleReportProduct = async () => {
+        if (!reportReason) {
+            setErrorMessage('Please select a reason for reporting.');
+            return;
+        }
+
+        try {
+            // 获取 ProductEntry 文档
+            const productRef = doc(db, 'ProductEntry', productId);
+            const productSnap = await getDoc(productRef);
+
+            if (productSnap.exists()) {
+                const productData = productSnap.data();
+                const reportedBy = productData.reportedBy || [];
+
+                // 检查用户是否已举报过该产品
+                if (reportedBy.includes(loggedInUser.uid)) {
+                    setErrorMessage('You have reported the product and will be notified as soon as we process your report.');
+                    return;
+                }
+            } else {
+                setErrorMessage('Product not found.');
+                return;
+            }
+
+            const handleReportRequest = httpsCallable(functions, 'handleReportProduct');
+            const response = await handleReportRequest({
+                productId,
+                reportReason,
+                reporter: loggedInUser.uid
+            });
+
+            if (response.data.success) {
+                setSuccessMessage('Product reported successfully.');
+
+                // 更新 Firestore 中的 reportedBy 列表
+                await updateDoc(productRef, {
+                    reportedBy: arrayUnion(loggedInUser.uid)
+                });
+
+                closeReportModal();
+            } else {
+                setErrorMessage('Failed to report product.');
+            }
+        } catch (error) {
+            console.error('Error reporting product:', error);
+            setErrorMessage('An error occurred while reporting the product.');
+        }
+    };
+
+
+
+
 
 
     return (
@@ -770,9 +837,39 @@ const ProductEntry = () => {
                                 className={`favorite-icon ${isFavorite ? 'favorite-active' : ''}`}
                                 onClick={handleFavoriteClick}
                             />
-                            <button className="report-button">
+                            <button className="report-button" onClick={openReportModal}>
                                 <FaExclamationTriangle /> Report
                             </button>
+                            {showReportModal && (
+                                <Modal
+                                    isOpen={showReportModal}
+                                    onRequestClose={closeReportModal}
+                                    style={modalStyles}
+                                    className="review-modal"
+                                    overlayClassName="review-modal-overlay"
+                                >
+                                    <h2>Report Product</h2>
+                                    <p>Please select a reason for reporting this product:</p>
+                                    <select
+                                        value={reportReason}
+                                        onChange={(e) => setReportReason(e.target.value)}
+                                        className="report-reason-select"
+                                    >
+                                        <option value="">Select a reason</option>
+                                        <option value="Inappropriate Content">Inappropriate Content</option>
+                                        <option value="Spam">Spam</option>
+                                        <option value="False Title">False Title</option>
+                                        <option value="Repeated Title">Repeated Title</option>
+                                        <option value="False Parameters">False Parameters</option>
+                                    </select>
+                                    <div className="button-container">
+                                        <button onClick={handleReportProduct} className="submit-report-button">Submit Report</button>
+                                        <button onClick={closeReportModal} className="close-button">Close</button>
+                                    </div>
+                                    {errorMessage && <p className="error-message">{errorMessage}</p>}
+                                    {successMessage && <p className="success-message">{successMessage}</p>}
+                                </Modal>
+                            )}
                             {loggedInUser && productData.creator === loggedInUser.uid && (
                                 <button className="edit-product-button" onClick={handleEditProduct}>
                                     <FaEdit /> Edit Product

@@ -90,22 +90,19 @@ button[disabled] {
 
 /* Error message styling */
 .error-message {
-  color: #e74c3c;
-  font-size: 14px;
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 5px;
+  color: #d9534f;
+  font-size: 0.4rem;
+  text-align: center;
+  margin-top: 15px;
+  font-weight: normal;
 }
 
 /* Success message styling */
 .success-message {
   color: #28a745;
-  font-size: 14px;
-  margin-bottom: 10px;
-  padding: 10px;
-  background-color: #d4edda;
-  border: 1px solid #c3e6cb;
-  border-radius: 5px;
+  font-size: 0.4rem; 
+  text-align: center;
+  margin-top: 15px;
+  font-weight: normal;
 }
+

@@ -388,3 +388,28 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('internal', 'Failed to handle comment request');
   }
 });
+
+exports.handleReportProduct = functions.https.onCall(async (data, context) => {
+  const { productId, reportReason, reporter } = data;
+
+  try {
+    const result = await ProductEntry.reportProduct(productId, reportReason, reporter);
+    return { success: true, message: result.message };
+  } catch (error) {
+    console.error("Error reporting product:", error);
+    return { success: false, message: error.message };
+  }
+});
+
+// Handle updating product report flags
+exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, context) => {
+  const { productId } = data;
+
+  try {
+    const result = await ProductEntry.updateProductReportFlags(productId);
+    return { success: true, message: result.message };
+  } catch (error) {
+    console.error("Error updating product report flags:", error);
+    return { success: false, message: error.message };
+  }
+});

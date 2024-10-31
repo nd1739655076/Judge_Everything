@@ -18,7 +18,6 @@ class ProductEntry {
       average: 0,
       totalScore: 0,
       totalRater: 0,
-      scoreList: new Map(),
     };
     this.ratingDistribution = {
       fiveStars : 0,

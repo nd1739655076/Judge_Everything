@@ -714,10 +714,9 @@ const ProductEntry = () => {
 
             if (response.data.success) {
                 setSuccessMessage('Product reported successfully.');
-
-                // 更新 Firestore 中的 reportedBy 列表
                 await updateDoc(productRef, {
-                    reportedBy: arrayUnion(loggedInUser.uid)
+                    reportedBy: arrayUnion(loggedInUser.uid),
+                    reportCount: currentReportCount + 1 
                 });
 
                 closeReportModal();

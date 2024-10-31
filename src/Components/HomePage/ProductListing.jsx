@@ -88,61 +88,60 @@ const ProductListing = () => {
 
   return (
     <div className="product-listing">
-      <h1>Product Listings</h1>
-      
-      <div className="filter-container">
-        {/* Tag Dropdown */}
-        <label htmlFor="tag-dropdown">Filter by Tag:</label>
-        <select
-          id="tag-dropdown"
-          value={selectedTag}
-          onChange={(e) => {
-            setSelectedTag(e.target.value);
-            setSelectedSubtag(''); // Reset subtag when changing main tag
-          }}
-        >
-          <option value="">Select a Tag</option>
-          {tagLibrary.map((tag) => (
-            <option key={tag.tagName} value={tag.tagName}>
-              {tag.tagName}
-            </option>
-          ))}
-        </select>
-
-        {/* Subtag Dropdown */}
-        {selectedTag && (
-          <div className="subtag-container">
-            <label>Select a Subtag:</label>
-            <select
-              id="subtag-dropdown"
-              value={selectedSubtag}
-              onChange={(e) => handleSubtagChange(e.target.value)}
-            >
-              <option value="">Select a Subtag</option>
-              {tagLibrary.find(tag => tag.tagName === selectedTag)?.subTag &&
-                Object.entries(tagLibrary.find(tag => tag.tagName === selectedTag).subTag).map(([id, subtag]) => (
-                  <option key={id} value={subtag}>{subtag}</option>
-                ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      <div className="search-sort-container">
-        {/* Search Input */}
-        <input
-          type="text"
-          placeholder="Search by product name"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-
-        {/* Sort Dropdown */}
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-          <option value="">Sort By</option>
-          <option value="mostPopular">Most Popular</option>
-          <option value="highestRated">Highest Rated</option>
-        </select>
+      <div className="product-listing-hrader">
+        <h1>Product Listings</h1>
+        
+        <div className="filter-container">
+          {/* Tag Dropdown */}
+          <label htmlFor="tag-dropdown">Filter by Tag:</label>
+          <select
+            id="tag-dropdown"
+            value={selectedTag}
+            onChange={(e) => {
+              setSelectedTag(e.target.value);
+              setSelectedSubtag(''); // Reset subtag when changing main tag
+            }}
+          >
+            <option value="">Select a Tag</option>
+            {tagLibrary.map((tag) => (
+              <option key={tag.tagName} value={tag.tagName}>
+                {tag.tagName}
+              </option>
+            ))}
+          </select>
+          {/* Subtag Dropdown */}
+          {selectedTag && (
+            <div className="subtag-container">
+              <label>Select a Subtag:</label>
+              <select
+                id="subtag-dropdown"
+                value={selectedSubtag}
+                onChange={(e) => handleSubtagChange(e.target.value)}
+              >
+                <option value="">Select a Subtag</option>
+                {tagLibrary.find(tag => tag.tagName === selectedTag)?.subTag &&
+                  Object.entries(tagLibrary.find(tag => tag.tagName === selectedTag).subTag).map(([id, subtag]) => (
+                    <option key={id} value={subtag}>{subtag}</option>
+                  ))}
+              </select>
+            </div>
+          )}
+        </div>
+        <div className="search-sort-container">
+          {/* Search Input */}
+          <input
+            type="text"
+            placeholder="Search by product name"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {/* Sort Dropdown */}
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <option value="">Sort By</option>
+            <option value="mostPopular">Most Popular</option>
+            <option value="highestRated">Highest Rated</option>
+          </select>
+        </div>
       </div>
 
       {/* Product List */}

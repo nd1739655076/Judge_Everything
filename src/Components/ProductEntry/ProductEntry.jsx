@@ -58,9 +58,10 @@ const ProductEntry = () => {
     const [showAllReplies, setShowAllReplies] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [expandedReplies, setExpandedReplies] = useState({});
-    const [reportReason, setReportReason] = useState(''); // 举报原因
-    const [showReportModal, setShowReportModal] = useState(false); // 控制举报模态框的显示
-
+    const [reportReason, setReportReason] = useState('');
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [reportSuccessMessage, setReportSuccessMessage] = useState('');
+    const [reportErrorMessage, setReportErrorMessage] = useState('');
 
     const modalStyles = {
         content: {
@@ -78,6 +79,43 @@ const ProductEntry = () => {
             alignItems: 'center',
         }
     };
+
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => {
+                setSuccessMessage('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
+
+    useEffect(() => {
+        if (errorMessage) {
+            const timer = setTimeout(() => {
+                setErrorMessage('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [errorMessage]);
+
+    useEffect(() => {
+        if (reportSuccessMessage) {
+            const timer = setTimeout(() => {
+                setReportSuccessMessage('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [reportSuccessMessage]);
+    
+    useEffect(() => {
+        if (reportErrorMessage) {
+            const timer = setTimeout(() => {
+                setReportErrorMessage('');
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [reportErrorMessage]);
+
 
     const fetchReplies = async (commentId, limit = 3) => {
         const functions = getFunctions();
@@ -187,15 +225,18 @@ const ProductEntry = () => {
             if (response?.data?.replies && Array.isArray(response.data.replies)) {
                 setReplies(response.data.replies);
                 setAllReplies(response.data.replies); // 所有回复
+                return response.data.replies;
             } else {
                 setReplies([]);
                 setAllReplies([]);
                 console.warn("No replies found in response data:", response.data);
+                return [];
             }
         } catch (error) {
             console.error("Error fetching top replies:", error);
             setReplies([]);
             setAllReplies([]);
+            return [];
         }
     };
 
@@ -227,31 +268,31 @@ const ProductEntry = () => {
     }, [productId]);
 
     useEffect(() => {
-      if (productData) {
-          fetchRelatedProducts();
-      }
+        if (productData) {
+            fetchRelatedProducts();
+        }
     }, [productData]);
 
     const fetchRelatedProducts = async () => {
-      const functions = getFunctions();
-      const getRelatedProducts = httpsCallable(functions, 'handleProductEntryRequest');
+        const functions = getFunctions();
+        const getRelatedProducts = httpsCallable(functions, 'handleProductEntryRequest');
 
-      try {
-        const response = await getRelatedProducts({
-            action: 'getRelatedProducts',
-            productId: productId,
-        });
+        try {
+            const response = await getRelatedProducts({
+                action: 'getRelatedProducts',
+                productId: productId,
+            });
 
-        if (response.data.success && Array.isArray(response.data.relatedProducts)) {
-            setRelatedProducts(response.data.relatedProducts);
-        } else {
-            console.error("Failed to fetch related products:", response.data.message);
-            setRelatedProducts([]); // Set to empty array if no related products found
+            if (response.data.success && Array.isArray(response.data.relatedProducts)) {
+                setRelatedProducts(response.data.relatedProducts);
+            } else {
+                console.error("Failed to fetch related products:", response.data.message);
+                setRelatedProducts([]); // Set to empty array if no related products found
+            }
+        } catch (error) {
+            console.error("Error fetching related products:", error);
+            setRelatedProducts([]); // Set to empty array on error
         }
-      } catch (error) {
-        console.error("Error fetching related products:", error);
-        setRelatedProducts([]); // Set to empty array on error
-      }
     };
 
     const getCurrentLoggedInUser = async () => {
@@ -706,12 +747,13 @@ const ProductEntry = () => {
     const closeReportModal = () => {
         setShowReportModal(false);
         setReportReason(''); // 清空举报原因
-        setErrorMessage('');
+        setReportErrorMessage('');
+        setReportSuccessMessage('');
     };
 
     const handleReportProduct = async () => {
         if (!reportReason) {
-            setErrorMessage('Please select a reason for reporting.');
+            setReportErrorMessage('Please select a reason for reporting.');
             return;
         }
 
@@ -726,11 +768,11 @@ const ProductEntry = () => {
 
                 // 检查用户是否已举报过该产品
                 if (reportedBy.includes(loggedInUser.uid)) {
-                    setErrorMessage('You have reported the product and will be notified as soon as we process your report.');
+                    setReportErrorMessage('You have reported the product and will be notified as soon as we process your report.');
                     return;
                 }
             } else {
-                setErrorMessage('Product not found.');
+                setReportErrorMessage('Product not found.');
                 return;
             }
 
@@ -741,28 +783,22 @@ const ProductEntry = () => {
                 reporter: loggedInUser.uid
             });
 
-            // if (response.data.success) {
-            //     setSuccessMessage('Product reported successfully.');
-            //     await updateDoc(productRef, {
-            //         reportedBy: arrayUnion(loggedInUser.uid),
-            //         reportCount: currentReportCount + 1 
-            //     });
+             if (response.data.success) {
+                setReportSuccessMessage('Product reported successfully.');
+               await updateDoc(productRef, {
+                     reportedBy: arrayUnion(loggedInUser.uid),
+                    //reportCount: currentReportCount + 1 
+                });
 
-            //     closeReportModal();
-            // } else {
-            //     setErrorMessage('Failed to report product.');
-            // }
+                 closeReportModal();
+             } else {
+                 setErrorMessage('Failed to report product.');
+             }
         } catch (error) {
             console.error('Error reporting product:', error);
-            setErrorMessage('An error occurred while reporting the product.');
+            setReportErrorMessage('An error occurred while reporting the product.');
         }
     };
-
-
-
-
-
-
     return (
         <div className="product-entry-page">
             <div className="topbar">
@@ -894,8 +930,8 @@ const ProductEntry = () => {
                                         <button onClick={handleReportProduct} className="submit-report-button">Submit Report</button>
                                         <button onClick={closeReportModal} className="close-button">Close</button>
                                     </div>
-                                    {errorMessage && <p className="error-message">{errorMessage}</p>}
-                                    {successMessage && <p className="success-message">{successMessage}</p>}
+                                    {reportErrorMessage && <p className="report-error-message">{reportErrorMessage}</p>}
+                                    {reportSuccessMessage && <p className="report-success-message">{reportSuccessMessage}</p>}
                                 </Modal>
                             )}
                             {loggedInUser && productData.creator === loggedInUser.uid && (

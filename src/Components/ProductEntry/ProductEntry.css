@@ -421,6 +421,21 @@ button.reply-btn:hover {
     font-weight: normal; /* 取消加粗 */
 }
 
+.report-error-message {
+    color: #d9534f; /* 红色文字 */
+    font-size: 0.9rem; /* 调整字体大小 */
+    text-align: center;
+    margin-top: 15px;
+    font-weight: normal; /* 取消加粗 */
+}
+
+.report-success-message{
+    color: green; 
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 15px;
+    font-weight: normal;
+}
 
 
 

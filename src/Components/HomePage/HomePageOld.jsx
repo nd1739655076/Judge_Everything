@@ -1,28 +1,78 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'; //change later
+import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'; 
 import './HomePage.css';
+
 import { Link } from 'react-router-dom';
-// icon import
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
-// intro import
-import Joyride from "react-joyride";
-// chart import
-import Modal from 'react-modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-// image import
+import Joyride from "react-joyride";
+import Modal from 'react-modal';
 import logoImage from "../HomePageAssets/404.jpg";
 
 Modal.setAppElement('#root');
 
 const Homepage = () => {
+
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userId, setUserId] = useState("");
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
+
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [selectedProductData, setSelectedProductData] = useState(null);
+  const [ratingDistribution, setRatingDistribution] = useState([]); 
+  const db = getFirestore();
+
+  // intro
+  const [run, setRun] = useState(false);
+  const [showTourAgain, setShowTourAgain] = useState(true);
+  const steps = [
+    {
+      target: ".step-1",
+      content: "Use this menu bar to access your notifications, history, and accout settings"
+    },
+    {
+      target: ".step-2",
+      content: "Create new product entries here"
+    },
+    {
+      target: ".step-3",
+      content: "Have any doubts or want to give feedback? Click here!"
+    },
+    {
+      target: ".step-4",
+      content: "Brows Most Popular Entries Every Week"
+    },
+    {
+      target: ".step-5",
+      content: "Personalized recommendations, Just for YOU!"
+    },
+    {
+      target: ".step-6",
+      content: "You can always click here to revisit this tutorial."
+    }
+  ];
+  useEffect(() => {
+    const shouldRunTourAgain = localStorage.getItem("showTourAgain");
+    const firstLogin = localStorage.getItem("firstLogin");
+    if (firstLogin === null) {
+      localStorage.setItem("firstLogin", "false");
+      setRun(true);
+    } else {
+      localStorage.setItem("showTourAgain", "false");
+      setRun(shouldRunTourAgain !== "false");
+    }
+  }, []);
+  const handleTourFinish = () => {
+    localStorage.setItem("showTourAgain", "false");
+    setShowTourAgain(false);
+  }
+  // intro  done
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -36,7 +86,6 @@ const Homepage = () => {
           });
           if (response.data.success) {
             setIsLoggedIn(true);
-            setUserId(response.data.uid);
             setUsername(response.data.username);
           } else {
             setIsLoggedIn(false);
@@ -65,27 +114,12 @@ const Homepage = () => {
       }
       setGreeting(currentGreeting);
     };
-    const initializeTagLibrary = async () => {
-      const handleTagLibraryRequest = httpsCallable(functions, 'handleTagLibraryRequest');
-      const response = await handleTagLibraryRequest({ action: 'initializeTagLibrary' });
-      if (response.data.success) {
-        console.log('TagLibrary initialized successfully:', response.data.message);
-      } else {
-        console.error('Failed to initialize TagLibrary:', response.data.message);
-      }
-    };
 
-    //initializeTagLibrary();
     checkLoginStatus();
     setTimeGreeting();
     fetchProducts();
-
-    const intervalId = setInterval(() => {
-      checkLoginStatus();
-      setTimeGreeting();
-    }, 5000);
-    return () => clearInterval(intervalId);
   }, []);
+
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
@@ -101,7 +135,6 @@ const Homepage = () => {
         if (response.data.success) {
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
-          setUserId("");
           setUsername("");
           window.location.reload();
         }
@@ -110,67 +143,6 @@ const Homepage = () => {
       }
     }
   };
-
-  // intro
-  const [run, setRun] = useState(false);
-  const steps = [
-    {
-      target: ".step-1",
-      content: "Use this menu bar to access your notifications, history, and accout settings"
-    },
-    {
-      target: ".step-2",
-      content: "Create new product entries here"
-    },
-    {
-      target: ".step-3",
-      content: "Have any doubts or want to give feedback? Click here!"
-    },
-    {
-      target: ".step-4",
-      content: "Brows Most Popular Entries Every Week"
-    },
-    {
-      target: ".step-5",
-      content: "Personalized recommendations, Just for YOU!"
-    },
-    {
-      target: ".step-6",
-      content: "You can always click here to revisit this tutorial."
-    }
-  ];
-  useEffect(() => {
-    const checkFirstLogin = async () => {
-      if (isLoggedIn) {
-        const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
-        const firstLoginResponse = await handleUserRequest({
-          action: 'checkFirstLogin',
-          username: username,
-        });
-        if (firstLoginResponse.data.success) {
-          setRun(true);
-        }
-      }
-    }
-    
-    checkFirstLogin();
-  }, [isLoggedIn]);
-  const handleTourFinish = async () => {
-    const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
-    await handleUserRequest({
-      action: 'setFirstLoginFalse',
-      username: username
-    });
-  }
-  // intro done
-
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [selectedProductData, setSelectedProductData] = useState(null);
-  const [ratingDistribution, setRatingDistribution] = useState([]); 
-  const db = getFirestore();
-
   const fetchProducts = async () => {
     try {
       const productEntriesRef = collection(db, 'ProductEntry');
@@ -224,67 +196,11 @@ const Homepage = () => {
   const closeModal = () => {
     setModalIsOpen(false);
   };
-
-  // in cloud function later
-  const handleRecordBrowsing = async (productId) => {
-    if (isLoggedIn) {
-      try {
-        const userRef = doc(db, 'User', userId);
-        const userSnapshot = await getDoc(userRef);
-        const currentBrowseHistory = userSnapshot.data().browseHistory || [];
-        let updatedHistory;
-        if (!currentBrowseHistory.includes(productId)) {
-          updatedHistory = [productId, ...currentBrowseHistory];
-        } else {
-          updatedHistory = [
-            productId,
-            ...currentBrowseHistory.filter((id) => id !== productId)
-          ];
-        }
-        await updateDoc(userRef, {
-          browseHistory: updatedHistory,
-        });
-        console.log("Added ", productId, "to history");
-      } catch (error) {
-        console.error("Error recording browse history: ", error);
-      }
-    }   
-  }
-
-
+  
   return (
+
     <div className="homepage">
     
-      {/* Intro */}
-      <Joyride steps={steps}
-        run={run}
-        continuous
-        scrollToFirstStep
-        showProgress
-        showSkipButton
-        disableScrolling
-        callback={data => {
-          const { action } = data;
-          if (
-            action === "close" ||
-            action === "skip" ||
-            action === "finished"
-          ) {
-            setRun(false);
-            handleTourFinish();
-          }
-        }}
-        styles={{
-          tooltip: {
-            backgroundColor: "rgba(0, 0, 0, 0.8)",
-            color: "#fff"
-          },
-          buttonNext: {
-            backgroundColor: "#007bff"
-          }
-        }}
-      />
-
       {/* Top Bar */}
       <div className="topbar">
         <div className="contactinfo">
@@ -321,8 +237,6 @@ const Homepage = () => {
           <FaSearch />
           <input type="text" placeholder="Search" />
         </div>
-
-        {/* If the user is logged in, show the greeting and logout button */}
         {isLoggedIn && (
           <div className="currentUserStatus">
             <div className="greeting">
@@ -339,7 +253,6 @@ const Homepage = () => {
             </div>
           </div>
         )}
-
         <div className="menuContainer">
           <FaBars className="menuicon step-1" onClick={toggleDropdown} />
           {isDropdownVisible && (
@@ -355,17 +268,17 @@ const Homepage = () => {
                   <>
                     <li>
                       <div className="notifcations">
-                        <a href="#"><FaBell /> Notification</a>
+                        <a href="#"><FaBell /> Notifaction</a>
                       </div>
                     </li>
                     <li>
                       <div className="historys">
-                        <Link to="/history"><FaHistory /> History</Link>
+                        <a href="#"><FaHistory /> History</a>
                       </div>
                     </li>
                     <li>
                       <div className="settings">
-                        <Link to="/accountSettings"><FaUser /> Your Account</Link>
+                        <Link to="/accountSettings"><FaCog /> Your Account</Link>
                       </div>
                     </li>
                   </>
@@ -396,7 +309,7 @@ const Homepage = () => {
         <div className="mostPopularEntriesHeader">
           <h1>Ranking</h1>
           <h2>Most Popular Entries This Week</h2>
-          <p>Will update every Thursday 11:59 p.m. EST</p>
+          <p>will update every Thursday 11:59 p.m. EST</p>
         </div>
         <div className="mostPopularEntriesGrid">
           <div className="mostPopularEntryCard">
@@ -407,9 +320,7 @@ const Homepage = () => {
           </div>
         </div>
         <div className="mostPopularLoadMore">
-          <Link to="/ProductListing">
-            <button>LOAD MORE ENTRIES</button>
-          </Link>
+          <button>LOAD MORE ENTRIES</button>
         </div>
       </section>
 
@@ -422,11 +333,11 @@ const Homepage = () => {
         </div>
         <div className="recommendationEntriesGrid">
           {products.length > 0 ? (
-            products.slice(0, 50).map(product => ( // Get the first 10 products
+            products.slice(0, 5).map(product => ( // Get the first 5 products
               <div key={product.id} className="recommendationEntryCard">
-                <img src={product.productImage || "placeholder.jpg"} alt={product.productName} />
+                <img src={product.imageUrl || "placeholder.jpg"} alt={product.productName} />
                 <h1>
-                  <Link to={`/product/${product.id}`} onClick={() => handleRecordBrowsing(product.id)}>
+                  <Link to={`/product/${product.id}`}>
                     {product.productName}
                   </Link>
                 </h1>
@@ -449,9 +360,7 @@ const Homepage = () => {
           )}
         </div>
         <div className="recommendationLoadMore">
-          <Link to="/ProductListing">
-            <button>LOAD MORE ENTRIES</button>
-          </Link>
+          <button>LOAD MORE ENTRIES</button>
         </div>
       </section>
 
@@ -477,10 +386,39 @@ const Homepage = () => {
         <button onClick={closeModal}>Close</button>
       </Modal>
 
-      
+      <Joyride steps={steps}
+      run={run}
+      continuous
+      scrollToFirstStep
+      showProgress
+      showSkipButton
+      disableScrolling
+      callback={data => {
+        const { action } = data;
+        if (
+          action === "close" ||
+          action === "skip" ||
+          action === "finished"
+        ) {
+          setRun(false);
+        }
+      }}
+      styles={{
+        tooltip: {
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          color: "#fff"
+        },
+        buttonNext: {
+          backgroundColor: "#007bff"
+        }
+      }}
+      onFinish={handleTourFinish}
+      />
 
     </div>
+
   );
+
 };
 
 export default Homepage;

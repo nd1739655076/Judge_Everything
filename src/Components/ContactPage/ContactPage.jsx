@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import './ContactPage.css';
+import clock_icon from '../ContactPageAssets/clock.png';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaHistory} from 'react-icons/fa';
+import { db } from "../../firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 
 const ContactPage = () => {
@@ -11,6 +14,47 @@ const ContactPage = () => {
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const toggleDropdown = () => {
       setDropdownVisible(!isDropdownVisible);
+    };
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [subject, setSubject] = useState("");
+    const [message, setMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const handleSubmit = async() => {
+        setErrorMessage("");
+        if (!name.trim()) {
+            setErrorMessage("Please enter a name.");
+            return;
+        }
+        if (!email.trim()) {
+            setErrorMessage("Please enter an email.");
+            return;
+        }
+        if (!subject.trim()) {
+            setErrorMessage("Please enter the subject of your message.");
+            return;
+        }
+        if (!message.trim()) {
+            setErrorMessage("Please enter your message.");
+            return;
+        }
+        try {
+            const dbref = collection(db, "contacts")
+            await addDoc(dbref, {
+                name: name,
+                email: email,
+                subject: subject,
+                message: message,
+              });
+              alert('Message successfully submitted!');
+              setName("");
+              setEmail("");
+              setSubject("");
+              setMessage("");
+        } catch (error) {
+            alert(error.message);
+        }
     };
   
     return (
@@ -78,9 +122,10 @@ const ContactPage = () => {
                 </div>
             </div>
 
+            {/* Contact Form */}
             <div className="contact_us_6">
                 <div className="responsive-container-block container">
-                    <form className="form-box">
+                    <div className="form-box">
                         <div className="container-block form-wrapper">
                         <div className="mob-text">
                             <p className="text-blk contactus-head">
@@ -95,32 +140,37 @@ const ContactPage = () => {
                             <p className="text-blk input-title">
                                 NAME
                             </p>
-                            <input className="input" name="Name" placeholder="Please enter your name" />
+                            <input className="input" id="Name" placeholder="Please enter your name"
+                                    value={name} onChange={(e) => setName(e.target.value)}/>
                             </div>
                             <div className="responsive-cell-block wk-tab-12 wk-mobile-12 wk-desk-12 wk-ipadp-12">
                             <p className="text-blk input-title">
                                 EMAIL
                             </p>
-                            <input className="input" name="Email" placeholder="Please enter email" />
+                            <input className="input" id="Email" placeholder="Please enter email"
+                                    value={email} onChange={(e) => setEmail(e.target.value)}/>
                             </div>
                             <div className="responsive-cell-block wk-tab-12 wk-mobile-12 wk-desk-12 wk-ipadp-12">
                             <p className="text-blk input-title">
                                 SUBJECT
                             </p>
-                            <input className="input" name="Subject" placeholder="Please enter subject" />
+                            <input className="input" id="Subject" placeholder="Please enter subject"
+                                    value={subject} onChange={(e) => setSubject(e.target.value)}/>
                             </div>
                             <div className="responsive-cell-block wk-tab-12 wk-mobile-12 wk-desk-12 wk-ipadp-12">
                             <p className="text-blk input-title">
                                 WHAT CAN WE HELP YOU WITH?
                             </p>
-                            <textarea className="textinput" placeholder="Please enter your message"></textarea>
+                            <textarea className="textinput" placeholder="Please enter your message"
+                                    value={message} onChange={(e) => setMessage(e.target.value)} />
                             </div>
                         </div>
-                        <button className="submit-btn">
+                        {errorMessage && <p className="error-message">{errorMessage}</p>}
+                        <button className="submit-btn" onClick={handleSubmit}>
                             Submit
                         </button>
                         </div>
-                    </form>
+                    </div>
                     <div className="column2">
                     {/* class="responsive-cell-block wk-desk-7 wk-ipadp-12 wk-tab-12 wk-mobile-12" */}
                         <div className="map-part">
@@ -138,6 +188,11 @@ const ContactPage = () => {
                             <div className="address text-box">
                                 <img className="contact-svg" src="https://workik-widget-assets.s3.amazonaws.com/widget-assets/images/ET23.jpg" />
                                 <p className="contact-text"> Address: 102 N Grant Street</p>
+                            </div>
+                            <div className="hour text-box">
+                                <img className="contact-svg" src={clock_icon} />
+                                
+                                <p className="contact-text"> Working Hours: 10am-6pm </p>
                             </div>
                             <div className="social-media-links mob">
                                 <a className="social-icon-link" href="#">

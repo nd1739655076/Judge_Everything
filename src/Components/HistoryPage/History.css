@@ -1,0 +1,197 @@
+.body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.history-page {
+    padding: '20px';
+    overflow: visible;
+    padding-bottom: 50px;
+}
+
+.product-history-container {
+    max-width: 1900px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    gap: 30px;
+    background-color: white;
+}
+
+.review-history-container {
+    position: relative;
+    max-width: 1900px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    gap: 30px;
+    background-color: white;
+}
+
+.browse-history-container {
+    max-width: 1900px;
+    margin: 40px auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    gap: 30px;
+    background-color: white;
+}
+
+.product-history-content {
+    margin-bottom: 40px;
+}
+
+.product-cards {
+    display:grid;
+    gap: 20px;
+}
+
+.product-card {
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.product-img {
+    width: 80px;
+    height: 80px;
+    background-color: #eee;
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.image-placeholder {
+    width: 0;
+    height: 0;
+}
+.product-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-card button {
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    border-color: #ccc;
+    padding: 6px 8px;
+    font-size: 16px;
+    background-color: whitesmoke;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.review-history-card button {
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 5px;
+    border-color: #ccc;
+    padding: 6px 8px;
+    font-size: 16px;
+    background-color: whitesmoke;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.paging {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+
+.review-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.review-history-card {
+    border: 1px solid #ccc;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.review-history-card .review-content {
+    display: flex;
+    justify-content: space-between;
+}
+
+.review-history-card img{
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.paging span {
+    margin: 0 10px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+.paging button {
+    cursor: pointer;
+    border-radius: 5px; 
+    border: 1px solid #ccc;
+    background-color: whitesmoke;
+}
+.paging .active {
+    font-weight: bold;
+    color: black;
+    border-radius: 5px; 
+    border: 1px solid #ccc;
+    background-color: whitesmoke;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.review-history-card .filled-star {
+    color: #f39c12;
+}
+.review-footer {
+    display: flex;
+    align-items:first baseline;
+    gap: 10%;
+    justify-content: flex-start;
+}
+
+.history-buttons-container {
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically */
+    align-items: center;
+    justify-content: center;
+    width: 400px;
+    height: 300px; /* Fixed height */
+    margin-top: 100px;
+    margin-left: 425px;
+    margin-right: 425px;
+    gap: 20%;
+    padding: 7%;
+    background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent */
+}
+
+  .history-button {
+    padding: 15px 30px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background: linear-gradient(135deg, #4f93e8, #357edd);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .history-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  }
+  
+  .history-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }

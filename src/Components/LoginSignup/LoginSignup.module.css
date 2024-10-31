@@ -1,0 +1,185 @@
+/* LoginSignup.module.css */
+body {
+  min-width: 1000px;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: linear-gradient(#aacbd3, #29a3f5);
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 200px;
+}
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 90%; /* Responsive width that adapts to the screen */
+  max-width: 600px; /* Maximum width for larger screens */
+  margin: 50px auto;
+  background-color: white;
+  padding: 40px 20px; /* Reduce horizontal padding for smaller screens */
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.logo img {
+  max-width: 70%; /* Logo scales with container width */
+  height: auto;
+}
+
+.logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 5px;
+}
+
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+
+.slogan {
+  color: #3c009d;
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.text {
+  color: #3c009d;
+  font-size: 24px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.inputs {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  padding: 0 15px; /* Add padding for input side spacing */
+  box-sizing: border-box;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.input {
+  display: flex;
+  align-items: center;
+  width: 95%; /* Slightly reduce width to prevent overflow */
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 10px 15px; /* Adjust padding for balanced spacing */
+  background-color: #f8f8f8;
+  margin: 0 auto; /* Center the input fields within the container */
+}
+.input img {
+  width: 20px;
+  margin-right: 10px;
+}
+
+.input input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  background: transparent;
+}
+
+.formActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 95%; /* Match the input field width */
+  margin: 0 auto; /* Center within the container */
+  padding-top: 5px; /* Optional: Add slight padding to align vertically */
+}
+
+.formActions label {
+  color: #2ab4cc;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.checkbox {
+  margin-right: 5px; /* Adjust space between checkbox and label text */
+  cursor: pointer;
+}
+
+.forgotPassword {
+  color: #2ab4cc;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.submitContainer {
+  display: flex;
+  justify-content: center; /* Center the buttons */
+  gap: 20px; /* Add spacing between buttons */
+  width: 100%;
+  margin-top: 30px;
+}
+
+.submit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 130px;
+  height: 45px;
+  color: white;
+  background-color: #13a1f9;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submit.gray {
+  background-color: #eaeaea;
+  color: #676767;
+}
+
+.submit:hover {
+  background-color: #0d8ae0;
+}
+
+.message {
+  width: 100%;
+  font-size: 15px;
+  text-align: center;
+  margin-top: 30px;
+  margin-bottom: 0px;
+}
+.loadingMessage {
+  color: #2ab4cc;
+  display: inline;
+}
+.errorMessage {
+  color: red;
+  display: inline;
+}
+.successMessage {
+  color: rgb(41, 108, 208);
+  display: inline;
+}
+
+

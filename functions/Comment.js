@@ -90,7 +90,8 @@ class Comment {
         await parentCommentRef.update({
             replies: admin.firestore.FieldValue.arrayUnion({
                 numbers: [replyId, parentCommentId],
-                content: content
+                content: content,
+                user: { uid: user.uid, username: user.username }
             })
         });
         console.log(`Updated parent comment ${parentCommentId} with new reply ID: ${replyId}`);

@@ -57,7 +57,7 @@ const ProductListing = () => {
   // Update filtered products whenever tag or subtag changes
   useEffect(() => {
     let filtered = products;
-  
+
     // Filter by selected tag and subtag
     if (selectedTag) {
       filtered = filtered.filter(product => product.tagList && product.tagList.includes(selectedTag));
@@ -65,7 +65,7 @@ const ProductListing = () => {
     if (selectedSubtag) {
       filtered = filtered.filter(product => product.subtagList && product.subtagList.includes(selectedSubtag));
     }
-  
+
     setFilteredProducts(filtered);
   }, [products, selectedTag, selectedSubtag]);
 
@@ -79,6 +79,11 @@ const ProductListing = () => {
       if (sortBy === 'highestRated') {
         return b.averageScore.average - a.averageScore.average; // Sort by average rating
       }
+      if (sortBy === 'postTime') {
+        const aTime = a.createdAt ? a.createdAt.seconds : 0;
+        const bTime = b.createdAt ? b.createdAt.seconds : 0;
+        return bTime - aTime;
+      }
       return 0;
     });
 
@@ -90,7 +95,7 @@ const ProductListing = () => {
     <div className="product-listing">
       <div className="product-listing-hrader">
         <h1>Product Listings</h1>
-        
+
         <div className="filter-container">
           {/* Tag Dropdown */}
           <label htmlFor="tag-dropdown">Filter by Tag:</label>
@@ -138,6 +143,7 @@ const ProductListing = () => {
           {/* Sort Dropdown */}
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
             <option value="">Sort By</option>
+            <option value="postTime">Post Time</option>
             <option value="mostPopular">Most Popular</option>
             <option value="highestRated">Highest Rated</option>
           </select>
@@ -149,22 +155,32 @@ const ProductListing = () => {
         {loading ? (
           <p>Loading products...</p>
         ) : (
-          displayedProducts.map(product => (
-            <div key={product.id} className="product-item">
-              <h3>{product.productName}</h3>
-              <p>{product.description || "No description available"}</p>
-              <div className="tag-container">
-                <span className="tag">{product.tagList}</span>
-                {product.subtagList && product.subtagList.length > 0 && (
-                  product.subtagList.map((subtag, index) => (
-                    <span key={`product-subtag-${index}`} className="tag">{subtag}</span>
-                  ))
-                )}
+          displayedProducts.length > 0 ? (
+            displayedProducts.map(product => (
+              <div key={product.id} className="product-item">
+                <h3>{product.productName}</h3>
+                <p>{product.description || "No description available"}</p>
+                {console.log("product.createdAt:", product.createdAt)}
+                <div className="tag-container">
+                  <span className="tag">{product.tagList}</span>
+                  {product.subtagList && product.subtagList.length > 0 && (
+                    product.subtagList.map((subtag, index) => (
+                      <span key={`product-subtag-${index}`} className="tag">{subtag}</span>
+                    ))
+                  )}
+                </div>
+                <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
+                <p>Comments: {product.averageScore?.totalRater || 0}</p>
+                <p>Posted: {
+                  product.createdAt && typeof product.createdAt._seconds === 'number'
+                    ? new Date(product.createdAt._seconds * 1000).toLocaleDateString()
+                    : "No date available"
+                }</p>
               </div>
-              <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
-              <p>Comments: {product.averageScore?.totalRater || 0}</p>
-            </div>
-          ))
+            ))
+          ) : (
+            <p>No products available in the current category.</p>
+          )
         )}
       </div>
 

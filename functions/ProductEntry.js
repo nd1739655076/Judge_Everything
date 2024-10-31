@@ -14,6 +14,7 @@ class ProductEntry {
     this.productImage = ""; 
     this.tagList = tags; // Storing the selected tags
     this.subtagList = subtags; // Storing the selected subtags
+    this.createdAt = admin.firestore.FieldValue.serverTimestamp();
     this.averageScore = {
       average: 0,
       totalScore: 0,
@@ -59,6 +60,7 @@ class ProductEntry {
         oneStars: ProductEntry.sanitizeData(this.ratingDistribution.oneStars),
       },
       commentList: this.commentList,
+      createdAt: this.createdAt,
       reportList: Object.fromEntries(this.reportList)
     });
   }

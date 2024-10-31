@@ -43,8 +43,14 @@ class Comment {
   // Id 生成方法不变，继续使用 'comment' 类型
   static async addReply({ content, user, productId, parentCommentId }) {
     const generateId = new Id();
-    const replyId = await generateId.generateId('comment', content); // 生成唯一 ID
+    const replyIdResult = await generateId.generateId('comment', content);
+    const replyId = replyIdResult.idNum;
 
+    // 检查生成的 ID 是否为空
+    if (!replyId) {
+        console.error("Generated replyId is invalid:", replyId);
+        throw new Error("Generated replyId is invalid");
+    }
     // 确定是否为主评论
     const parentReplies = !parentCommentId;
 
@@ -62,6 +68,9 @@ class Comment {
         parentReplies
     };
 
+    // 打印准备存储的回复数据
+    console.log("Reply data to be saved:", replyData);
+
     // 存储新评论到 `Comments` 集合
     const commentRef = db.collection('Comments').doc(replyId);
     await commentRef.set(replyData);
@@ -69,7 +78,15 @@ class Comment {
 
     // 更新父评论的 `replies` 字段
     if (parentCommentId) {
+        console.log("Updating parent comment replies, parentCommentId:", parentCommentId);
         const parentCommentRef = db.collection('Comments').doc(parentCommentId);
+
+        // 检查父评论是否有正确的路径
+        if (!parentCommentId) {
+            console.error("parentCommentId is invalid:", parentCommentId);
+            throw new Error("parentCommentId is invalid");
+        }
+
         await parentCommentRef.update({
             replies: admin.firestore.FieldValue.arrayUnion({
                 numbers: [replyId, parentCommentId],
@@ -81,8 +98,6 @@ class Comment {
 
     console.log(`Reply added with ID: ${replyId}, for product ID: ${productId}`);
 }
-
-
 
 
   // 获取按点赞数排序的部分回复

@@ -1,4 +1,4 @@
-const {onRequest} = require("firebase-functions/v2/https");
+const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
@@ -18,22 +18,22 @@ const ProductEntry = require('./ProductEntry');
 exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action } = data;
-    
+
     if (action === 'initializeTagLibrary') {
       // action
       const initializeResponse = await TagLibrary.initializeTagLibrary();
       if (initializeResponse.status === 'success') {
         return { success: true, message: initializeResponse.message };
       }
-    } 
-    
+    }
+
     else if (action === 'getTagLibrary') {
       // action
       const getTagLibraryResponse = await TagLibrary.getTagLibrary();
       if (getTagLibraryResponse.status === 'success') {
         return { success: true, tagList: getTagLibraryResponse.tagList };
       }
-    } 
+    }
 
   } catch (error) {
     console.error('Error handling TagLibrary request:', error);
@@ -44,7 +44,7 @@ exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) =
 // Id Handle
 exports.handleIdRequest = functions.https.onCall(async (data, context) => {
   try {
-    const {action, type, name} = data;
+    const { action, type, name } = data;
 
     if (action === 'generate') {
       // type, name
@@ -195,7 +195,7 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
       const productEntryResponse = await ProductEntry.saveProductEntry(data);
       return productEntryResponse;
     }
-    
+
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
@@ -269,10 +269,10 @@ exports.handleImageRequest = functions.https.onCall(async (data, context) => {
         imageUrl: imageUrl,
       };
     }
-    
+
   } catch (error) {
-      console.error('Error uploading image and deleting old image:', error);
-      throw new functions.https.HttpsError('internal', 'Failed to upload image and store metadata');
+    console.error('Error uploading image and deleting old image:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to upload image and store metadata');
   }
 });
 
@@ -282,61 +282,62 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
     const { action, title, content, averageRating, parameterRatings, user, productId, commentId, uid, isLike, parentCommentId } = data;
 
     if (action === 'generate') {
-        try {
-            console.log("Generating comment...");
-            const generateId = new Id();
-            const { idNum: commentId } = await generateId.generateId('comment', title);
-            console.log("Generated comment ID:", commentId);
+      try {
+        console.log("Generating comment...");
+        const generateId = new Id();
+        const { idNum: commentId } = await generateId.generateId('comment', title);
+        console.log("Generated comment ID:", commentId);
 
-            const newComment = {
-                commentId,
-                title,
-                content,
-                averageRating,
-                parameterRatings,
-                user,
-                productId,
-                timestamp: new Date(),
-                likes: [],
-                dislikes: [],
-                likeAmount: 0,
-                dislikeAmount: 0,
-            };
-            console.log("New comment data:", newComment);
-
-            // Step 1: 存储评论数据
-            await db.collection('Comments').doc(commentId).set(newComment);
-            console.log("Comment added to Comments collection.");
-
-            // Step 2: 更新 ProductEntry 中的 commentList
-            const productRef = db.collection('ProductEntry').doc(productId);
-            await productRef.update({
-                commentList: admin.firestore.FieldValue.arrayUnion(commentId)
-            });
-            console.log("Comment added to ProductEntry's commentList.");
-
-            return { success: true, message: 'Comment created successfully!' };
-        } catch (error) {
-            console.error("Error during comment generation:", error);
-            return { success: false, message: 'Failed to create comment.', error: error.message };
-        }
-    }  else if (action === 'addReply') {
-      // 添加回复
-      const { content, user, productId, parentCommentId } = data;
-  
-      // 如果没有指定 parentCommentId，则表示这是对产品的直接评论
-      const isParentReply = !parentCommentId;
-  
-      await Comment.addReply({
+        const newComment = {
+          commentId,
+          title,
           content,
+          averageRating,
+          parameterRatings,
           user,
           productId,
-          parentCommentId,
+          timestamp: new Date(),
+          likes: [],
+          dislikes: [],
+          likeAmount: 0,
+          dislikeAmount: 0,
+        };
+        console.log("New comment data:", newComment);
+
+        // Step 1: 存储评论数据
+        await db.collection('Comments').doc(commentId).set(newComment);
+        console.log("Comment added to Comments collection.");
+
+        // Step 2: 更新 ProductEntry 中的 commentList
+        const productRef = db.collection('ProductEntry').doc(productId);
+        await productRef.update({
+          commentList: admin.firestore.FieldValue.arrayUnion(commentId)
+        });
+        console.log("Comment added to ProductEntry's commentList.");
+
+        return { success: true, message: 'Comment created successfully!' };
+      } catch (error) {
+        console.error("Error during comment generation:", error);
+        return { success: false, message: 'Failed to create comment.', error: error.message };
+      }
+    } else if (action === 'addReply') {
+      // 添加回复
+      const { content, user, productId, parentCommentId } = data;
+
+      if (!content || !user || !productId) {
+        throw new Error("Missing required fields for adding a reply");
+      }
+
+      await Comment.addReply({
+        content,
+        user,
+        productId,
+        parentCommentId,
       });
-      
+
       console.log("User data:", user);
       return { success: true, message: 'Reply added successfully!' };
-  }  else if (action === 'likeDislike') {
+    } else if (action === 'likeDislike') {
       // Step 4: 处理点赞或反对逻辑
       const { commentId, uid, isLike } = data;
       const commentRef = db.collection('Comments').doc(commentId);
@@ -369,8 +370,8 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
         dislikeAmount: newDislikes.length,
       });
       return { success: true, message: 'Updated like/dislike successfully!' };
-     }
-      else if (action === 'getTopReplies') {
+    }
+    else if (action === 'getTopReplies') {
       // 获取按点赞数排序的前几条回复
       const topReplies = await Comment.getTopReplies({ commentId, productId, limit: data.limit || 3 });
       return { success: true, replies: topReplies };

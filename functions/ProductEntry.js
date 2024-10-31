@@ -172,6 +172,71 @@ class ProductEntry {
 
     return { success: true, message: "Report flags updated successfully." };
   }
+
+  static async getRelatedProducts(productId) {
+    try {
+        console.log(`Fetching related products for productId: ${productId}`);
+        const productRef = db.collection('ProductEntry').doc(productId);
+        const productSnap = await productRef.get();
+
+        if (!productSnap.exists) {
+            console.error('Product not found in Firestore');
+            throw new Error('Product not found');
+        }
+
+        const { tagList = [], subtagList = [] } = productSnap.data(); // Use default empty arrays
+        console.log('Tag list:', tagList, 'Subtag list:', subtagList);
+
+        const productEntriesRef = db.collection('ProductEntry');
+        const querySnapshot = await productEntriesRef.get();
+        const relatedProducts = [];
+
+        querySnapshot.forEach(doc => {
+            const otherProduct = doc.data();
+            if (doc.id !== productId) {
+                const otherTagList = Array.isArray(otherProduct.tagList) ? otherProduct.tagList : [];
+                const otherSubtagList = Array.isArray(otherProduct.subtagList) ? otherProduct.subtagList : [];
+
+                const tagMatch = otherTagList.some(tag => tagList.includes(tag));
+                const subtagMatch = otherSubtagList.some(subtag => subtagList.includes(subtag));
+
+                let relevanceScore = 0;
+                if (tagMatch) relevanceScore += 2;
+                if (subtagMatch) relevanceScore += 1;
+
+                // Sanitize numerical values to ensure they're not NaN
+                relevanceScore = isNaN(relevanceScore) ? 0 : relevanceScore;
+                otherProduct.averageScore = {
+                    average: isNaN(otherProduct.averageScore?.average) ? 0 : otherProduct.averageScore.average,
+                    totalScore: isNaN(otherProduct.averageScore?.totalScore) ? 0 : otherProduct.averageScore.totalScore,
+                    totalRater: isNaN(otherProduct.averageScore?.totalRater) ? 0 : otherProduct.averageScore.totalRater,
+                };
+                otherProduct.ratingDistribution = {
+                    fiveStars: isNaN(otherProduct.ratingDistribution?.fiveStars) ? 0 : otherProduct.ratingDistribution.fiveStars,
+                    fourStars: isNaN(otherProduct.ratingDistribution?.fourStars) ? 0 : otherProduct.ratingDistribution.fourStars,
+                    threeStars: isNaN(otherProduct.ratingDistribution?.threeStars) ? 0 : otherProduct.ratingDistribution.threeStars,
+                    twoStars: isNaN(otherProduct.ratingDistribution?.twoStars) ? 0 : otherProduct.ratingDistribution.twoStars,
+                    oneStars: isNaN(otherProduct.ratingDistribution?.oneStars) ? 0 : otherProduct.ratingDistribution.oneStars,
+                };
+
+                if (relevanceScore > 0) {
+                    relatedProducts.push({
+                        id: doc.id,
+                        ...otherProduct,
+                        relevanceScore
+                    });
+                }
+            }
+        });
+
+        console.log('Related products fetched successfully:', relatedProducts);
+        return { success: true, relatedProducts };
+    } catch (error) {
+        console.error("Error in getRelatedProducts:", error);
+        throw new Error("Failed to fetch related products");
+    }
+}
+
   
 }
 

@@ -189,7 +189,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 // ProductEntry Handle
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action } = data;
+    const { action, productId } = data;
 
     if (action === 'generate') {
       const productEntryResponse = await ProductEntry.saveProductEntry(data);
@@ -200,6 +200,14 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
       const productsResponse = await ProductEntry.fetchProducts();
       console.log("Fetch Products Response:", productsResponse);
       return productsResponse;
+    }
+
+    else if (action === 'getRelatedProducts') {
+      if (!productId) {
+        throw new functions.https.HttpsError('invalid-argument', 'Product ID is required');
+      }
+      const relatedProductsResponse = await ProductEntry.getRelatedProducts(productId);
+      return relatedProductsResponse;
     }
     
   } catch (error) {

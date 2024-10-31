@@ -310,7 +310,7 @@ const ProductCreateHistory = () => {
                     Next &rarr;</button>
             </div>
           </section>
-          <Link to="/history"><button className="history-button" style={{ padding: '7px 15px' }}>Back</button></Link>
+          <Link to="/history"><button className="history-button">Back</button></Link>
       </div>
     </div>
   );

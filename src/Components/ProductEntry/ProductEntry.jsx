@@ -277,6 +277,12 @@ useEffect(() => {
     }
 }, [productId, loggedInUser]); // Run when productId or loggedInUser changes
 
+useEffect(() => {
+  if (productData) {
+      fetchRelatedProducts();
+  }
+}, [productData]);
+
     const fetchRelatedProducts = async () => {
         const functions = getFunctions();
         const getRelatedProducts = httpsCallable(functions, 'handleProductEntryRequest');
@@ -847,7 +853,7 @@ useEffect(() => {
                                         </li>
                                         <li>
                                             <div className="historys">
-                                                <Link to="/history"><FaHistory /> History</Link>
+                                              <Link to="/history"><FaHistory /> History</Link>
                                             </div>
                                         </li>
                                         <li>

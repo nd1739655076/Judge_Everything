@@ -1,6 +1,8 @@
-/* Main container */
-@import "~slick-carousel/slick/slick.css"; 
+/* Import Slick Carousel */
+@import "~slick-carousel/slick/slick.css";
 @import "~slick-carousel/slick/slick-theme.css";
+
+/* Main container */
 .product-entry-container {
     max-width: 1900px;
     margin: 40px auto;
@@ -18,15 +20,16 @@
 
 .favorite-icon {
     font-size: 1.5rem;
-    color: #ccc;  /* Default color (not favorited) */
+    color: #ccc;
     cursor: pointer;
     transition: color 0.3s ease;
     margin-left: 25px;
 }
 
 .favorite-active {
-    color: #f39c12; /* Favorite (gold star) color */
+    color: #f39c12;
 }
+
 .report-button {
     background-color: transparent;
     border: 1px solid #d9534f;
@@ -42,6 +45,7 @@
     background-color: #d9534f;
     color: white;
 }
+
 .product-image img {
     max-width: 400px;
     border-radius: 10px;
@@ -85,7 +89,8 @@
     margin-top: 20px;
 }
 
-.like-button, .dislike-button {
+.like-button,
+.dislike-button {
     padding: 10px 20px;
     margin-right: 10px;
     background-color: #007bff;
@@ -100,7 +105,8 @@
     background-color: #d9534f;
 }
 
-.like-button:hover, .dislike-button:hover {
+.like-button:hover,
+.dislike-button:hover {
     opacity: 0.9;
 }
 
@@ -152,7 +158,11 @@
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     text-align: center;
-    margin-right: 100px;
+    margin: 0 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
 }
 
 .review-stars {
@@ -167,16 +177,19 @@
 
 .review-footer {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
+    margin-top: 10px;
 }
 
-.review-likes {
+.review-likes,
+.review-dislikes {
     display: flex;
     align-items: center;
-    font-size: 1rem;
+    cursor: pointer;
 }
 
+/* Modal Styles */
 .review-modal {
     position: absolute;
     top: 50%;
@@ -184,13 +197,15 @@
     right: auto;
     bottom: auto;
     transform: translate(-50%, -50%);
-    background: white;
+    background: linear-gradient(to bottom right, #ffffff, #f3f4f6);
     padding: 30px;
-    border-radius: 10px;
-    outline: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
     max-width: 600px;
-    width: 90%;
+    width: 110%;
+    animation: fadeIn 0.4s ease;
 }
+
 .review-modal-overlay {
     position: fixed;
     top: 0;
@@ -203,10 +218,13 @@
     justify-content: center;
 }
 
-.modal-stars, .rating-categories p {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .close-modal-button {
@@ -218,18 +236,245 @@
     border-radius: 5px;
     cursor: pointer;
     font-size: 1rem;
+    transition: background-color 0.3s;
 }
 
 .close-modal-button:hover {
     background-color: #0056b3;
 }
 
-.thumbs-up-icon {
+.modal-header {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+}
+
+/* Modal Like-Dislike Buttons */
+.modal-like-dislike {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    padding: 10px 0;
+}
+
+.modal-like,
+.modal-dislike {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.thumbs-up-icon,
+.thumbs-down-icon {
     margin-right: 5px;
+    font-size: 1.5rem;
+    color: #888;
+    transition: color 0.3s, transform 0.2s;
+}
+
+.liked .thumbs-up-icon,
+.disliked .thumbs-down-icon {
+    color: #007bff;
+    transform: scale(1.2);
+}
+
+.liked {
     color: #007bff;
 }
 
-/* Write Review Section */
+.disliked {
+    color: #ff4500;
+}
+
+/* Reply Section */
+.reply-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 15px;
+    border-top: 1px solid #ddd;
+}
+
+.reply-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.reply-button, .show-replies-button, .close-button {
+    background-color: #007bff;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: inline-block;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.reply-button:hover, .show-replies-button:hover, .close-button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.show-replies-button, .close-button {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+}
+
+
+.show-replies-button:hover, .close-button:hover {
+    background-color: #e0e0e0;
+    color: #007bff;
+}
+
+
+.reply-card {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.reply-card p {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.reply-card span {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* Reply Button */
+button.reply-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button.reply-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Select dropdown and buttons */
+.report-reason-select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.submit-report-button,
+.close-button {
+    padding: 8px 16px;
+    margin: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.submit-report-button {
+    background-color: #007bff;
+    color: white;
+}
+
+.close-button {
+    background-color: #ccc;
+    color: #333;
+}
+
+.submit-report-button:hover {
+    background-color: #0056b3;
+}
+
+.close-button:hover {
+    background-color: #999;
+}
+
+.error-message {
+    color: #d9534f; /* 红色文字 */
+    font-size: 0.9rem; /* 调整字体大小 */
+    text-align: center;
+    margin-top: 15px;
+    font-weight: normal; /* 取消加粗 */
+}
+
+
+
+
+
+@keyframes popScale {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.thumbs-up-icon.clicked,
+.thumbs-down-icon.clicked {
+    animation: popScale 0.3s ease forwards;
+}
+
+/* Tag Styles */
+.tag-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.tag {
+    background-color: #007bff;
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.tag:hover {
+    background-color: #0056b3;
+}
+
+/* Star Rating Styles */
+.filled-star {
+    color: #f39c12;
+    cursor: pointer;
+}
+
+.filled-star:hover {
+    color: #ffcc00;
+}
+
+/* Review Form */
 .write-review-section {
     margin-bottom: 40px;
     text-align: center;
@@ -266,12 +511,6 @@
     border-radius: 5px;
 }
 
-.title-stars {
-    display: flex;
-    gap: 10px;
-    font-size: 1.8rem; /* Increased star size for better visibility */
-}
-
 textarea {
     width: 100%;
     max-width: 600px;
@@ -300,15 +539,6 @@ textarea {
     width: 100%;
 }
 
-.rating-item .filled-star {
-    font-size: 1.5rem; /* Adjusted size for consistency */
-    margin-right: 5px;
-}
-
-.rating-item span {
-    font-weight: bold;
-}
-
 button[type="submit"] {
     background-color: #007bff;
     color: white;
@@ -323,32 +553,4 @@ button[type="submit"] {
 button[type="submit"]:hover {
     background-color: #0056b3;
     transform: scale(1.05);
-}
-
-.filled-star {
-    color: #f39c12;
-    cursor: pointer;
-}
-
-.filled-star:hover {
-    color: #ffcc00;
-}
-
-/* Tag container */
-.tag-container {
-    margin-top: 10px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-/* Individual tag style */
-.tag {
-    background-color: #f0f0f0;
-    color: #333;
-    padding: 5px 10px;
-    border-radius: 12px;
-    font-size: 0.9rem;
-    border: 1px solid #ccc;
-    white-space: nowrap;
 }

@@ -129,6 +129,51 @@ class ProductEntry {
       throw new Error("Failed to fetch product list");
     }
   }
+
+  static async addCommentId(productId, commentId) {
+    const productRef = db.collection("ProductEntry").doc(productId);
+    await productRef.update({
+      commentList: admin.firestore.FieldValue.arrayUnion(commentId)
+    });
+    return { success: true, message: "Comment ID added to ProductEntry." };
+  }
+
+  static async reportProduct(productId, reportReason, reporter) {
+    const productRef = db.collection('ProductEntry').doc(productId);
+
+    const reportData = {
+      reportReason,
+      reporter,
+      flags: 1,
+    };
+
+    // 将举报信息添加到 reportList 中
+    await productRef.update({
+      [`reportList.${productId}`]: admin.firestore.FieldValue.arrayUnion(reportData),
+    });
+
+    return { success: true, message: "Product reported successfully." };
+  }
+
+  static async updateProductReportFlags(productId) {
+    const productRef = db.collection('ProductEntry').doc(productId);
+    const productSnap = await productRef.get();
+
+    if (!productSnap.exists) throw new Error("Product not found");
+
+    const reportList = productSnap.data().reportList;
+    if (!reportList[productId]) throw new Error("Report not found");
+
+    // 更新举报的 flags 数量
+    reportList[productId].flags += 1;
+    
+    await productRef.update({
+      reportList,
+    });
+
+    return { success: true, message: "Report flags updated successfully." };
+  }
+  
 }
 
 module.exports = ProductEntry;

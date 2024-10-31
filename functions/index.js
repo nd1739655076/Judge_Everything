@@ -1,4 +1,4 @@
-const {onRequest} = require("firebase-functions/v2/https");
+const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
@@ -44,7 +44,7 @@ exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) =
 // Id Handle
 exports.handleIdRequest = functions.https.onCall(async (data, context) => {
   try {
-    const {action, type, name} = data;
+    const { action, type, name } = data;
 
     if (action === 'generate') {
       // type, name
@@ -285,30 +285,137 @@ exports.handleImageRequest = functions.https.onCall(async (data, context) => {
 //this function is used for write the comment to a product with its scores and id.
 exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, title, content, averageRating, parameterRatings, user, productId } = data;
+    const { action, title, content, averageRating, parameterRatings, user, productId, commentId, uid, isLike, parentCommentId } = data;
 
     if (action === 'generate') {
-      // generate the id of the comment
-      const generateId = new Id();
-      const commentIdResult = await generateId.generateId('comment', title);
-      const commentId = commentIdResult.idNum;
+      try {
+        console.log("Generating comment...");
+        const generateId = new Id();
+        const { idNum: commentId } = await generateId.generateId('comment', title);
+        console.log("Generated comment ID:", commentId);
 
-      // create and generate the comment
-      const newComment = new Comment(commentId, title, content, averageRating, parameterRatings, user, productId);
-      await newComment.generateComment();
+        const newComment = {
+          commentId,
+          title,
+          content,
+          averageRating,
+          parameterRatings,
+          user,
+          productId,
+          timestamp: new Date(),
+          likes: [],
+          dislikes: [],
+          likeAmount: 0,
+          dislikeAmount: 0,
+        };
+        console.log("New comment data:", newComment);
 
-      // update the comment list in the product entry
-      const productRef = db.collection('ProductEntry').doc(productId);
-      await productRef.update({
-        commentList: admin.firestore.FieldValue.arrayUnion(commentId)
+        // Step 1: 存储评论数据
+        await db.collection('Comments').doc(commentId).set(newComment);
+        console.log("Comment added to Comments collection.");
+
+        // Step 2: 更新 ProductEntry 中的 commentList
+        const productRef = db.collection('ProductEntry').doc(productId);
+        await productRef.update({
+          commentList: admin.firestore.FieldValue.arrayUnion(commentId)
+        });
+        console.log("Comment added to ProductEntry's commentList.");
+
+        return { success: true, message: 'Comment created successfully!' };
+      } catch (error) {
+        console.error("Error during comment generation:", error);
+        return { success: false, message: 'Failed to create comment.', error: error.message };
+      }
+    } else if (action === 'addReply') {
+      // 添加回复
+      const { content, user, productId, parentCommentId } = data;
+
+      if (!content || !user || !productId) {
+        throw new Error("Missing required fields for adding a reply");
+      }
+
+      await Comment.addReply({
+        content,
+        user,
+        productId,
+        parentCommentId,
       });
-      
-      console.log('Comment successfully created and added to product entry.');
 
-      return { message: 'Comment created successfully!' };
+      console.log("User data:", user);
+      return { success: true, message: 'Reply added successfully!' };
+    } else if (action === 'likeDislike') {
+      // Step 4: 处理点赞或反对逻辑
+      const { commentId, uid, isLike } = data;
+      const commentRef = db.collection('Comments').doc(commentId);
+      const commentDoc = await commentRef.get();
+      if (!commentDoc.exists) {
+        throw new Error('Comment not found');
+      }
+      const commentData = commentDoc.data();
+      let newLikes = [...(commentData.likes || [])];
+      let newDislikes = [...(commentData.dislikes || [])];
+      if (isLike) {
+        if (newLikes.includes(uid)) {
+          newLikes = newLikes.filter(id => id !== uid); // 取消点赞
+        } else {
+          newLikes.push(uid); // 添加点赞
+          newDislikes = newDislikes.filter(id => id !== uid); // 移除反对
+        }
+      } else {
+        if (newDislikes.includes(uid)) {
+          newDislikes = newDislikes.filter(id => id !== uid); // 取消反对
+        } else {
+          newDislikes.push(uid); // 添加反对
+          newLikes = newLikes.filter(id => id !== uid); // 移除点赞
+        }
+      }
+      await commentRef.update({
+        likes: newLikes,
+        dislikes: newDislikes,
+        likeAmount: newLikes.length,
+        dislikeAmount: newDislikes.length,
+      });
+      return { success: true, message: 'Updated like/dislike successfully!' };
     }
+    else if (action === 'getTopReplies') {
+      // 获取按时间排序的前几条回复
+      const recentReplies = await Comment.getTopReplies({
+          commentId, 
+          limit: data.limit || 3, 
+          startAfter: data.startAfter || null // 添加分页参数
+      });
+      return { success: true, replies: recentReplies };
+  } else {
+      throw new Error("Invalid action specified");
+  }
+
   } catch (error) {
     console.error('Error handling comment request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle comment request');
+  }
+});
+
+exports.handleReportProduct = functions.https.onCall(async (data, context) => {
+  const { productId, reportReason, reporter } = data;
+
+  try {
+    const result = await ProductEntry.reportProduct(productId, reportReason, reporter);
+    return { success: true, message: result.message };
+  } catch (error) {
+    console.error("Error reporting product:", error);
+    return { success: false, message: error.message };
+  }
+});
+
+// Handle updating product report flags
+exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, context) => {
+  const { productId } = data;
+
+  try {
+    const result = await ProductEntry.updateProductReportFlags(productId);
+    return { success: true, message: result.message };
+  } catch (error) {
+    console.error("Error updating product report flags:", error);
+    return { success: false, message: error.message };
   }
 });

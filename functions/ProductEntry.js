@@ -95,6 +95,21 @@ class ProductEntry {
 
     // Save product entry
     await newProductEntry.generateProductEntry();
+    // Save product id to user history
+    try {
+    const userRef = db.collection("User").doc(uidNum);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) throw new Error('Invalid user');
+    const userData = userDoc.data();
+    const currentHistory = userData.productProfileCreateHistory || [];
+    const updatedHistory = [prodidNum, ...currentHistory];
+    await userRef.update({
+      productProfileCreateHistory: updatedHistory
+    });
+    } catch (error) {
+      console.error("error recording history:", error);
+      return { success: false, message: `Saving product to history failed: ${error}` };
+    }
     return { success: true, idNum: prodidNum, message: 'Product entry created successfully!' };
   }
 

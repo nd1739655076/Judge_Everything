@@ -195,6 +195,12 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
       const productEntryResponse = await ProductEntry.saveProductEntry(data);
       return productEntryResponse;
     }
+
+    else if (action === 'fetchProducts') {
+      const productsResponse = await ProductEntry.fetchProducts();
+      console.log("Fetch Products Response:", productsResponse);
+      return productsResponse;
+    }
     
   } catch (error) {
     console.error('Error handling product entry request:', error);

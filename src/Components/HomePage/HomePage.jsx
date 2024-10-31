@@ -407,7 +407,9 @@ const Homepage = () => {
           </div>
         </div>
         <div className="mostPopularLoadMore">
-          <button>LOAD MORE ENTRIES</button>
+          <Link to="/ProductListing">
+            <button>LOAD MORE ENTRIES</button>
+          </Link>
         </div>
       </section>
 
@@ -447,7 +449,9 @@ const Homepage = () => {
           )}
         </div>
         <div className="recommendationLoadMore">
-          <button>LOAD MORE ENTRIES</button>
+          <Link to="/ProductListing">
+            <button>LOAD MORE ENTRIES</button>
+          </Link>
         </div>
       </section>
 

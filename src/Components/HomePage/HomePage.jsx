@@ -3,7 +3,6 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'; //change later
 import './HomePage.css';
-
 import { Link } from 'react-router-dom';
 // icon import
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
@@ -19,7 +18,6 @@ import logoImage from "../HomePageAssets/404.jpg";
 Modal.setAppElement('#root');
 
 const Homepage = () => {
-
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState("");
@@ -255,7 +253,6 @@ const Homepage = () => {
 
 
   return (
-
     <div className="homepage">
     
       {/* Intro */}
@@ -324,6 +321,8 @@ const Homepage = () => {
           <FaSearch />
           <input type="text" placeholder="Search" />
         </div>
+
+        {/* If the user is logged in, show the greeting and logout button */}
         {isLoggedIn && (
           <div className="currentUserStatus">
             <div className="greeting">
@@ -340,6 +339,7 @@ const Homepage = () => {
             </div>
           </div>
         )}
+
         <div className="menuContainer">
           <FaBars className="menuicon step-1" onClick={toggleDropdown} />
           {isDropdownVisible && (
@@ -355,7 +355,7 @@ const Homepage = () => {
                   <>
                     <li>
                       <div className="notifcations">
-                        <a href="#"><FaBell /> Notifaction</a>
+                        <a href="#"><FaBell /> Notification</a>
                       </div>
                     </li>
                     <li>
@@ -365,7 +365,7 @@ const Homepage = () => {
                     </li>
                     <li>
                       <div className="settings">
-                        <Link to="/accountSettings"><FaCog /> Your Account</Link>
+                        <Link to="/accountSettings"><FaUser /> Your Account</Link>
                       </div>
                     </li>
                   </>
@@ -396,7 +396,7 @@ const Homepage = () => {
         <div className="mostPopularEntriesHeader">
           <h1>Ranking</h1>
           <h2>Most Popular Entries This Week</h2>
-          <p>will update every Thursday 11:59 p.m. EST</p>
+          <p>Will update every Thursday 11:59 p.m. EST</p>
         </div>
         <div className="mostPopularEntriesGrid">
           <div className="mostPopularEntryCard">
@@ -480,9 +480,7 @@ const Homepage = () => {
       
 
     </div>
-
   );
-
 };
 
 export default Homepage;

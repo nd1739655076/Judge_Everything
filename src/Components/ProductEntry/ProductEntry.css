@@ -274,9 +274,12 @@
     color: #888;
     transition: color 0.3s, transform 0.2s;
 }
-
-.liked .thumbs-up-icon,
 .disliked .thumbs-down-icon {
+    color:#d9534f;
+    transform: scale(1.2);
+}
+
+.liked .thumbs-up-icon {
     color: #007bff;
     transform: scale(1.2);
 }
@@ -421,6 +424,21 @@ button.reply-btn:hover {
     font-weight: normal; /* 取消加粗 */
 }
 
+.report-error-message {
+    color: #d9534f; /* 红色文字 */
+    font-size: 0.9rem; /* 调整字体大小 */
+    text-align: center;
+    margin-top: 15px;
+    font-weight: normal; /* 取消加粗 */
+}
+
+.report-success-message{
+    color: green; 
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 15px;
+    font-weight: normal;
+}
 
 
 

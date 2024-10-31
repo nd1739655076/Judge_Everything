@@ -50,21 +50,78 @@ const ProductEntry = () => {
     const db = getFirestore();
     const [productCreatorExists, setProductCreatorExists] = useState(true);
     const [replyContent, setReplyContent] = useState('');
-    const [expandedComments, setExpandedComments] = useState({}); 
+    const [expandedComments, setExpandedComments] = useState({});
+    const [lastReplyId, setLastReplyId] = useState(null);
+    const [replies, setReplies] = useState([]);
+    const [allReplies, setAllReplies] = useState([]);
+    const [showAllReplies, setShowAllReplies] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [expandedReplies, setExpandedReplies] = useState({});
+
+
+    const modalStyles = {
+        content: {
+            maxWidth: '600px',
+            maxHeight: '80vh',
+            margin: 'auto',
+            padding: '20px',
+            overflowY: 'auto',
+            borderRadius: '10px',
+        },
+        overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+        }
+    };
+
+    const fetchReplies = async (commentId, limit = 3) => {
+        const functions = getFunctions();
+        const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
+
+        try {
+            const response = await handleCommentRequest({
+                action: 'getTopReplies',
+                commentId,
+                limit,
+                startAfter: lastReplyId || null, // Set startAfter if we have a last reply
+            });
+
+            const newReplies = response.data.replies;
+            setReplies((prevReplies) => [...prevReplies, ...newReplies]);
+
+            // Update lastReplyId for next batch, if we have more replies
+            if (newReplies.length > 0) {
+                setLastReplyId(newReplies[newReplies.length - 1].commentId);
+            }
+        } catch (error) {
+            console.error("Error fetching replies:", error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
+
+    useEffect(() => {
+        if (productData && productData.comments && productData.comments.length > 0) {
+            const firstCommentId = productData.comments[0].commentId;
+            fetchReplies(firstCommentId);
+        }
+    }, [productData]);
 
     const fetchProductData = async () => {
         try {
             if (!productId) {
                 throw new Error("Invalid productId");
             }
-    
+
             const productRef = doc(db, 'ProductEntry', productId);
             const productSnap = await getDoc(productRef);
-    
+
             if (productSnap.exists()) {
                 const product = productSnap.data();
                 const commentIds = product.commentList || [];
-    
+
                 // 检查每个 commentId 是否是有效字符串
                 const commentPromises = commentIds.map(async (commentId) => {
                     if (typeof commentId !== 'string' || commentId.trim() === '') {
@@ -73,7 +130,7 @@ const ProductEntry = () => {
                     }
                     const commentRef = doc(db, 'Comments', commentId);
                     const commentSnap = await getDoc(commentRef);
-    
+
                     if (commentSnap.exists()) {
                         const commentData = commentSnap.data();
                         if (loggedInUser) {
@@ -89,9 +146,9 @@ const ProductEntry = () => {
                         return null;
                     }
                 });
-    
+
                 const comments = (await Promise.all(commentPromises)).filter(Boolean);
-    
+
                 const paramRefs = product.parametorList || [];
                 const paramPromises = paramRefs.map(async (paramId) => {
                     const paramRef = doc(db, 'Parameters', paramId);
@@ -99,7 +156,7 @@ const ProductEntry = () => {
                     return paramSnap.exists() ? { paramId, ...paramSnap.data() } : null;
                 });
                 const parametersData = (await Promise.all(paramPromises)).filter(Boolean);
-    
+
                 setProductData({ ...product, comments });
                 setParameters(parametersData);
             } else {
@@ -111,26 +168,48 @@ const ProductEntry = () => {
             setLoading(false);
         }
     };
-    
+
 
     const fetchTopReplies = async (commentId) => {
         const functions = getFunctions();
         const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
-
         try {
             const response = await handleCommentRequest({
                 action: 'getTopReplies',
                 commentId,
-                productId,
-                limit: 3  // 限制为点赞数最高的三条
+                limit: 3 // 初始加载前3条回复
             });
 
-            return response.data.replies || [];
+            // 检查 response 是否包含有效数据
+            if (response?.data?.replies && Array.isArray(response.data.replies)) {
+                setReplies(response.data.replies);
+                setAllReplies(response.data.replies); // 所有回复
+            } else {
+                setReplies([]);
+                setAllReplies([]);
+                console.warn("No replies found in response data:", response.data);
+            }
         } catch (error) {
             console.error("Error fetching top replies:", error);
-            return [];
+            setReplies([]);
+            setAllReplies([]);
         }
     };
+
+
+    const handleShowReplies = (commentId) => {
+        setExpandedReplies((prev) => ({
+            ...prev,
+            [commentId]: !prev[commentId] // 切换显示全部/部分的状态
+        }));
+    };
+
+
+    const handleShowAllReplies = () => {
+        setShowAllReplies(true);
+        setReplies(allReplies);
+    };
+
 
 
     useEffect(() => {
@@ -244,15 +323,15 @@ const ProductEntry = () => {
             setErrorMessage('You must be logged in to reply.');
             return;
         }
-    
+
         if (!replyContent.trim()) {
             setErrorMessage('Reply content cannot be empty.');
             return;
         }
-    
+
         const functions = getFunctions();
         const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
-    
+
         try {
             const requestData = {
                 action: 'addReply',
@@ -262,24 +341,24 @@ const ProductEntry = () => {
                 parentCommentId: commentId
             };
             console.log("Sending request to handleCommentRequest for reply:", requestData);
-    
+
             const response = await handleCommentRequest(requestData);
             console.log("Response from handleCommentRequest for reply:", response.data);
-    
+
             if (response.data.success) {
                 setReplyContent(''); // Clear input
                 setSuccessMessage('Reply added successfully.');
-    
+
                 // Fetch updated replies for selected review and expand replies
                 console.log("Fetching updated replies...");
                 const updatedReplies = await fetchTopReplies(commentId);
-    
+
                 console.log("Updated replies:", updatedReplies);
                 setSelectedReview((prevReview) => ({
                     ...prevReview,
                     replies: updatedReplies,
                 }));
-    
+
                 setExpandedComments((prev) => ({
                     ...prev,
                     [commentId]: true
@@ -293,6 +372,14 @@ const ProductEntry = () => {
             setErrorMessage('An error occurred while adding reply.');
         }
     };
+    useEffect(() => {
+        if (selectedReview) {
+            setSelectedReview((prevReview) => ({
+                ...prevReview,
+                replies: replies, // 使用最新的 replies 更新
+            }));
+        }
+    }, [replies]);
 
     const toggleExpandReplies = (commentId) => {
         setExpandedComments((prev) => ({
@@ -300,7 +387,7 @@ const ProductEntry = () => {
             [commentId]: !prev[commentId]
         }));
     };
-    
+
 
     const toggleDropdown = () => setDropdownVisible(!isDropdownVisible);
 
@@ -328,35 +415,35 @@ const ProductEntry = () => {
         try {
             setSuccessMessage('');
             setErrorMessage('');
-    
+
             if (!loggedInUser) {
                 setErrorMessage('You must be logged in to submit a comment.');
                 console.log("User not logged in.");
                 return;
             }
-    
+
             if (!userCommentTitle.trim()) {
                 setErrorMessage('Cannot submit a comment without a title.');
                 console.log("Comment title is empty.");
                 return;
             }
-    
+
             if (!userComment.trim()) {
                 setErrorMessage('Cannot submit an empty comment.');
                 console.log("Comment content is empty.");
                 return;
             }
-    
+
             const userCommentCount = (productData.comments || []).filter(comment => comment.userId === loggedInUser.uid).length;
             if (userCommentCount >= 3) {
                 setErrorMessage('You have already provided three reviews for this entry. Please delete or edit your previous reviews before you start a new one.');
                 console.log(`User has ${userCommentCount} reviews; cannot add more.`);
                 return;
             }
-    
+
             const functions = getFunctions();
             const handleCommentRequest = httpsCallable(functions, 'handleCommentRequest');
-            
+
             // 调用云函数生成新评论并打印传递的数据
             const requestData = {
                 action: 'generate',
@@ -368,23 +455,23 @@ const ProductEntry = () => {
                 productId
             };
             console.log("Sending request to handleCommentRequest with data:", requestData);
-    
+
             const response = await handleCommentRequest(requestData);
             console.log("Response from handleCommentRequest:", response.data);
-    
+
             if (response.data.success) {
                 console.log("Comment created successfully:", response.data.message);
-    
+
                 // 获取 ProductEntry 文档
                 const productRef = doc(db, 'ProductEntry', productId);
                 const productSnap = await getDoc(productRef);
-    
+
                 if (productSnap.exists()) {
                     const productData = productSnap.data();
                     const newTotalRaters = (productData.averageScore.totalRater || 0) + 1;
                     const newTotalScore = (productData.averageScore.totalScore || 0) + userProductRating;
                     const newAverageScore = newTotalScore / newTotalRaters;
-    
+
                     const currentDistribution = productData.ratingDistribution || {
                         fiveStars: 0,
                         fourStars: 0,
@@ -392,7 +479,7 @@ const ProductEntry = () => {
                         twoStars: 0,
                         oneStars: 0,
                     };
-    
+
                     console.log("Updating rating distribution based on user rating:", userProductRating);
                     switch (userProductRating) {
                         case 5: currentDistribution.fiveStars += 1; break;
@@ -402,7 +489,7 @@ const ProductEntry = () => {
                         case 1: currentDistribution.oneStars += 1; break;
                         default: console.error('Invalid rating input');
                     }
-    
+
                     console.log("New average score:", newAverageScore);
                     await updateDoc(productRef, {
                         averageScore: {
@@ -412,7 +499,7 @@ const ProductEntry = () => {
                         },
                         ratingDistribution: currentDistribution,
                     });
-    
+
                     for (const [paramId, rating] of Object.entries(userRatings)) {
                         const paramRef = doc(db, 'Parameters', paramId);
                         const paramSnap = await getDoc(paramRef);
@@ -421,7 +508,7 @@ const ProductEntry = () => {
                             const newParamTotalRaters = (paramData.averageScore.totalRater || 0) + 1;
                             const newParamTotalScore = (paramData.averageScore.totalScore || 0) + rating;
                             const newParamAverage = newParamTotalScore / newParamTotalRaters;
-    
+
                             console.log(`Updating parameter ${paramId} with new average:`, newParamAverage);
                             await updateDoc(paramRef, {
                                 averageScore: {
@@ -432,7 +519,7 @@ const ProductEntry = () => {
                             });
                         }
                     }
-    
+
                     // 刷新数据并重置表单
                     console.log("Refreshing product data after comment submission.");
                     await fetchProductData();
@@ -471,24 +558,24 @@ const ProductEntry = () => {
         try {
             setSuccessMessage('');
             setErrorMessage('');
-    
+
             console.log("Starting review update...");
-    
+
             if (!loggedInUser) {
                 setErrorMessage('You must be logged in to edit a comment.');
                 return;
             }
-    
+
             if (!userCommentTitle.trim()) {
                 setErrorMessage('Cannot submit a comment without a title.');
                 return;
             }
-    
+
             if (!userComment.trim()) {
                 setErrorMessage('Cannot submit an empty comment.');
                 return;
             }
-    
+
             if (userCommentTitle === selectedReview.title &&
                 userComment === selectedReview.content &&
                 userProductRating === selectedReview.averageRating &&
@@ -496,7 +583,7 @@ const ProductEntry = () => {
                 setErrorMessage('Cannot submit a new comment without changing.');
                 return;
             }
-    
+
             // Prepare the updated comment data
             const updatedCommentData = {
                 title: userCommentTitle,
@@ -505,16 +592,16 @@ const ProductEntry = () => {
                 parameterRatings: userRatings,
                 timestamp: new Date() // 使用新的时间戳
             };
-    
+
             console.log("Updated Comment Data:", updatedCommentData);
-    
+
             // Step: 更新评论内容到 Firestore 中的 Comments 集合
             const commentRef = doc(db, 'Comments', selectedReview.commentId);
-            
+
             console.log("Updating comment in Firestore...");
             await updateDoc(commentRef, updatedCommentData);
             console.log("Comment updated successfully in Firestore");
-    
+
             // 更新本地状态
             console.log("Updating local state...");
             setProductData((prevData) => ({
@@ -532,14 +619,14 @@ const ProductEntry = () => {
             setUserProductRating(0);
             setSelectedReview(null);
             console.log("Review update completed successfully.");
-    
+
         } catch (error) {
             setErrorMessage('Failed to update your review. Please try again.');
             console.error('Error updating review:', error);
         }
     };
-    
-    
+
+
 
 
 
@@ -578,6 +665,8 @@ const ProductEntry = () => {
         slidesToShow: 4,
         slidesToScroll: 1,
     };
+
+
 
     return (
         <div className="product-entry-page">
@@ -762,6 +851,7 @@ const ProductEntry = () => {
                     <Modal
                         isOpen={modalIsOpen}
                         onRequestClose={closeModal}
+                        style={modalStyles}
                         className="review-modal"
                         overlayClassName="review-modal-overlay"
                     >
@@ -800,39 +890,47 @@ const ProductEntry = () => {
                             ))}
                         </div>
                         <p className="review-content">{selectedReview.content}</p>
-                         {/* 添加回复框 */}
-        <div className="reply-section">
-            <input
-                type="text"
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                placeholder="Write a reply..."
-                className="reply-input"
-            />
-            <button onClick={(e) => {
-                e.stopPropagation();
-                handleAddReply(selectedReview.commentId);
-            }}>Reply</button>
-        </div>
+                        {/* 添加回复框 */}
+                        <div className="reply-section">
+                            <input
+                                type="text"
+                                value={replyContent}
+                                onChange={(e) => setReplyContent(e.target.value)}
+                                placeholder="Write a reply..."
+                                className="reply-input"
+                            />
+                            <button onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddReply(selectedReview.commentId);
+                            }}>Reply</button>
+                        </div>
 
-        {/* 展开和折叠回复 */}
-        {selectedReview.replies && selectedReview.replies.length > 0 && (
-            <button onClick={(e) => {
-                e.stopPropagation();
-                toggleExpandReplies(selectedReview.commentId);
-            }}>
-                {expandedComments[selectedReview.commentId] ? 'Hide Replies' : 'Show Replies'}
-            </button>
-        )}
+                        {selectedReview.replies && selectedReview.replies.length > 0 && (
+                            <button onClick={(e) => {
+                                e.stopPropagation();
+                                handleShowReplies(selectedReview.commentId);
+                            }}>
+                                {expandedReplies[selectedReview.commentId] ? 'Hide Replies' : 'Show Replies'}
+                            </button>
+                        )}
 
-        {/* 显示回复内容 */}
-        {expandedComments[selectedReview.commentId] && selectedReview.replies?.map((reply, replyIndex) => (
-    <div key={replyIndex} className="reply-card">
-        <p>{reply.content}</p>
-        <span>by {reply.user?.username || 'Anonymous'}</span>
-    </div>
-))}
-                        <button className="close-modal-button" onClick={closeModal}>Close</button>
+                        {/* 回复内容：初始显示3条，点击后显示全部 */}
+                        {selectedReview.replies && selectedReview.replies.length > 0 && (
+                            expandedReplies[selectedReview.commentId]
+                                ? selectedReview.replies.map((reply, replyIndex) => (
+                                    <div key={replyIndex} className="reply-card">
+                                        <p>{reply.content}</p>
+                                        <span>by {reply.user?.username || 'Anonymous'}</span>
+                                    </div>
+                                ))
+                                : selectedReview.replies.slice(0, 3).map((reply, replyIndex) => (
+                                    <div key={replyIndex} className="reply-card">
+                                        <p>{reply.content}</p>
+                                        <span>by {reply.user?.username || 'Anonymous'}</span>
+                                    </div>
+                                ))
+                        )}
+                        <button onClick={closeModal} className="close-button">Close</button>
                     </Modal>
                 )}
 

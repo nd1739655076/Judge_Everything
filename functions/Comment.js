@@ -100,19 +100,34 @@ class Comment {
 }
 
 
-  // 获取按点赞数排序的部分回复
-  static async getTopReplies({ commentId, productId, limit = 3 }) {
-    const repliesRef = db.collection('ProductEntry').doc(productId)
-                         .collection('Comments').doc(commentId)
-                         .collection('Replies');
-    
-    const querySnapshot = await repliesRef.orderBy('likeAmount', 'desc').limit(limit).get();
-    const topReplies = [];
-    querySnapshot.forEach(doc => {
-      topReplies.push({ ...doc.data(), commentId: doc.id });
-    });
-    return topReplies;
+static async getTopReplies({ commentId, limit = 3, startAfter = null }) {
+  const commentRef = db.collection('Comments').doc(commentId);
+  const commentSnap = await commentRef.get();
+
+  if (!commentSnap.exists) {
+      console.error(`Comment with ID ${commentId} does not exist.`);
+      return [];
   }
+
+  const repliesCollection = commentRef.collection('Replies');
+  let query = repliesCollection.orderBy('timestamp', 'asc').limit(limit);
+
+  // If we have a startAfter document, start after it for pagination
+  if (startAfter) {
+      const startDoc = await repliesCollection.doc(startAfter).get();
+      if (startDoc.exists) {
+          query = query.startAfter(startDoc);
+      }
+  }
+
+  const repliesSnap = await query.get();
+  const replies = [];
+  repliesSnap.forEach((doc) => {
+      replies.push({ ...doc.data(), commentId: doc.id });
+  });
+
+  return replies;
+}
 
   // 处理点赞或反对逻辑
   static async handleLikeDislike({ commentId, productId, uid, isLike }) {

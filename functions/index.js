@@ -372,13 +372,16 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
       return { success: true, message: 'Updated like/dislike successfully!' };
     }
     else if (action === 'getTopReplies') {
-      // 获取按点赞数排序的前几条回复
-      const topReplies = await Comment.getTopReplies({ commentId, productId, limit: data.limit || 3 });
-      return { success: true, replies: topReplies };
-
-    } else {
+      // 获取按时间排序的前几条回复
+      const recentReplies = await Comment.getTopReplies({
+          commentId, 
+          limit: data.limit || 3, 
+          startAfter: data.startAfter || null // 添加分页参数
+      });
+      return { success: true, replies: recentReplies };
+  } else {
       throw new Error("Invalid action specified");
-    }
+  }
 
   } catch (error) {
     console.error('Error handling comment request:', error);

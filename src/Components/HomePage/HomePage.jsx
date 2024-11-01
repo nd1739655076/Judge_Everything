@@ -7,7 +7,7 @@ import './HomePage.css';
 import { Link } from 'react-router-dom';
 // icon import
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory , FaCog, FaSignOutAlt} from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
 // intro import
 import Joyride from "react-joyride";
 // chart import
@@ -154,7 +154,7 @@ const Homepage = () => {
         }
       }
     }
-    
+
     checkFirstLogin();
   }, [isLoggedIn]);
   const handleTourFinish = async () => {
@@ -170,7 +170,7 @@ const Homepage = () => {
   const [loading, setLoading] = useState(true);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedProductData, setSelectedProductData] = useState(null);
-  const [ratingDistribution, setRatingDistribution] = useState([]); 
+  const [ratingDistribution, setRatingDistribution] = useState([]);
   const db = getFirestore();
 
   const fetchProducts = async () => {
@@ -213,9 +213,9 @@ const Homepage = () => {
         }));
 
         setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
-        console.log('Rating distribution:', distributionArray); 
+        console.log('Rating distribution:', distributionArray);
         setModalIsOpen(true); // Open the modal
-        console.log('Modal is open:', modalIsOpen); 
+        console.log('Modal is open:', modalIsOpen);
       } else {
         console.log("Product not found");
       }
@@ -250,14 +250,14 @@ const Homepage = () => {
       } catch (error) {
         console.error("Error recording browse history: ", error);
       }
-    }   
+    }
   }
 
 
   return (
 
     <div className="homepage">
-    
+
       {/* Intro */}
       <Joyride steps={steps}
         run={run}
@@ -324,10 +324,10 @@ const Homepage = () => {
           <FaSearch />
           <input type="text" placeholder="Search" />
         </div>
-        {isLoggedIn && (
+        {isLoggedIn ? (
           <div className="currentUserStatus">
             <div className="greeting">
-              {greeting} !
+              {greeting}!
             </div>
             <div className="currentUserStatusInfo">
               <FaUser />
@@ -338,6 +338,10 @@ const Homepage = () => {
                 className="logout-icon"
               />
             </div>
+          </div>
+        ) : (
+          <div className="login-prompt">
+            <p>Please log in to access more feature</p>
           </div>
         )}
         <div className="menuContainer">
@@ -434,7 +438,7 @@ const Homepage = () => {
                   Average Rating:{"\n"}
                   {product.averageScore?.average || "No ratings yet"}
                 </p>
-                <button 
+                <button
                   onClick={(e) => {
                     e.preventDefault();
                     handleViewRatingDistribution(product.id);
@@ -464,20 +468,20 @@ const Homepage = () => {
       >
         <h2>Rating Distribution for {selectedProductData?.productName}</h2>
         <ResponsiveContainer width={500} height={300}>
-  <BarChart
-    data={ratingDistribution}>
-    <CartesianGrid strokeDasharray="3 3" />
-    <XAxis dataKey="rating" />
-    <YAxis />
-    <Tooltip />
-    <Legend />
-    <Bar dataKey="count" fill="#8884d8" />
-  </BarChart>
-</ResponsiveContainer>
+          <BarChart
+            data={ratingDistribution}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="rating" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="count" fill="#8884d8" />
+          </BarChart>
+        </ResponsiveContainer>
         <button onClick={closeModal}>Close</button>
       </Modal>
 
-      
+
 
     </div>
 

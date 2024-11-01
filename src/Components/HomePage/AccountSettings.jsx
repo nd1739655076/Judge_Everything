@@ -35,6 +35,7 @@ const AccountSettings = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const [imageError, setImageError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -126,13 +127,20 @@ const AccountSettings = () => {
   };
   const handleProfileImageUpload = (event) => {
     const file = event.target.files[0];
-    if (file) {
+    const allowedTypes = ["image/jpeg", "image/png"];
+    if (file && !allowedTypes.includes(file.type)) {
+      setImageError("Invalid file type. Please upload a JPEG or PNG image.");
+      
+    } 
+    if (file && allowedTypes.includes(file.type)) {
+      setImageError("");
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfileImageInput(reader.result);
       };
       reader.readAsDataURL(file);
     }
+    
   };
   const handleTagSelection = (tagName) => {
     if (preferencesInput.includes(tagName)) {
@@ -145,7 +153,10 @@ const AccountSettings = () => {
     setErrorMessage('');
     setSuccessMessage('');
     if (field === 'profileImage') {
-      if (!profileImageInput) {
+      if (imageError){
+        setErrorMessage(imageError);
+        return;
+      } else if (!profileImageInput) {
         setErrorMessage('No image selected.');
         return;
       } else {

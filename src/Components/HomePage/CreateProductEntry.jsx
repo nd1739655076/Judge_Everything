@@ -15,6 +15,7 @@ const CreateProductEntry = () => {
   const [success, setSuccess] = useState(''); // For showing success messages
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState(null);
+  const [imageError, setImageError] = useState("");
 
   useEffect(() => {
     // Fetch current logged-in user's UID
@@ -48,10 +49,17 @@ const CreateProductEntry = () => {
 
   // Handle image file selection
   const handleImageChange = (e) => {
-    if (e.target.files.length > 0) {
-      setImageFile(e.target.files[0]);
-    }
-  };
+  const file = e.target.files[0];
+  const allowedTypes = ["image/jpeg", "image/png"];
+
+  if (file && !allowedTypes.includes(file.type)) {
+    setImageError("Invalid file type. Please upload a JPEG or PNG image.");
+    e.target.value = null; // Reset the input value
+  } else {
+    setImageError(""); // Clear any previous error messages
+    setImageFile(file);
+  }
+};
 
   // Convert image file to base64
   const convertToBase64 = (file) => {
@@ -281,7 +289,7 @@ const CreateProductEntry = () => {
           Upload Image:
           <input type="file" accept="image/jpeg, image/png" onChange={handleImageChange} />
         </label>
-
+        {imageError && <p className="error-message">{imageError}</p>} 
         <div className="buttons-container">
           <button type="submit" disabled={loading}>
             {loading ? 'Creating Product Entry...' : 'Create Product Entry'}

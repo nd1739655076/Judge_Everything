@@ -80,11 +80,11 @@ const ProductListing = () => {
         return b.averageScore.average - a.averageScore.average; // Sort by average rating
       }
       if (sortBy === 'postTime') {
-        const aTime = a.createdAt ? a.createdAt.seconds : 0;
-        const bTime = b.createdAt ? b.createdAt.seconds : 0;
+        const aTime = a.createdAt ? a.createdAt._seconds : 0;
+        const bTime = b.createdAt ? b.createdAt._seconds : 0;
         return bTime - aTime;
       }
-      return 0;
+      return b.averageScore.average - a.averageScore.average;
     });
 
   const handleSubtagChange = (subtag) => {
@@ -142,10 +142,9 @@ const ProductListing = () => {
           />
           {/* Sort Dropdown */}
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="">Sort By</option>
+           <option value="highestRated">Highest Rated</option>
             <option value="postTime">Post Time</option>
             <option value="mostPopular">Most Popular</option>
-            <option value="highestRated">Highest Rated</option>
           </select>
         </div>
       </div>

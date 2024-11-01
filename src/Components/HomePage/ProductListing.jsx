@@ -144,7 +144,7 @@ const ProductListing = () => {
           <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
            <option value="highestRated">Highest Rated</option>
             <option value="postTime">Post Time</option>
-            <option value="mostPopular">Most Popular</option>
+            <option value="mostPopular">Most Reviews</option>
           </select>
         </div>
       </div>

@@ -615,7 +615,7 @@ useEffect(() => {
         if (selectedReview && loggedInUser && selectedReview.user.uid === loggedInUser.uid) {
             setUserCommentTitle(selectedReview.title);
             setUserComment(selectedReview.content);
-            setUserProductRating(selectedReview.rating);
+            setUserProductRating(selectedReview.averageRating);
             setUserRatings(selectedReview.parameterRatings);
             setModalIsOpen(false);
         }

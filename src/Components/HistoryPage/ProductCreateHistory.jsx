@@ -134,23 +134,35 @@ const ProductCreateHistory = () => {
     };
     const handleRecordBrowsing = async (productId) => {
         if (isLoggedIn) {
+          const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
           try {
-            const userRef = doc(db, 'User', uid);
-            const userSnapshot = await getDoc(userRef);
-            const currentBrowseHistory = userSnapshot.data().browseHistory || [];
-            let updatedHistory;
-            if (!currentBrowseHistory.includes(productId)) {
-              updatedHistory = [productId, ...currentBrowseHistory];
-            } else {
-              updatedHistory = [
-                productId,
-                ...currentBrowseHistory.filter((id) => id !== productId)
-              ];
-            }
-            await updateDoc(userRef, {
-              browseHistory: updatedHistory,
+            // const userRef = doc(db, 'User', uid);
+            // const userSnapshot = await getDoc(userRef);
+            // const currentBrowseHistory = userSnapshot.data().browseHistory || [];
+            // let updatedHistory;
+            // if (!currentBrowseHistory.includes(productId)) {
+            //   updatedHistory = [productId, ...currentBrowseHistory];
+            // } else {
+            //   updatedHistory = [
+            //     productId,
+            //     ...currentBrowseHistory.filter((id) => id !== productId)
+            //   ];
+            // }
+            // await updateDoc(userRef, {
+            //   browseHistory: updatedHistory,
+            // });
+            // console.log("Added ", productId, "to history");
+            
+            const response = await handleUserRequest({
+              action: 'recordBrowseHistory',
+              productId: productId,
+              uid: uid,
             });
-            console.log("Added ", productId, "to history");
+            if (response.data.success) {
+              console.log("Recorded browsing history for ", productId);
+            } else {
+              console.error(`Browse history recording failed: ${response.data.message}`);
+            }
           } catch (error) {
             console.error("Error recording browse history: ", error);
           }

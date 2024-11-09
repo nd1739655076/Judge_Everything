@@ -47,7 +47,7 @@ const ProductEntry = () => {
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const [likedComments, setLikedComments] = useState([]);
     const [dislikedComments, setDislikedComments] = useState([]);
-    const [loggedInUser, setLoggedInUser] = useState(null);
+    const [loggedInUser, setLoggedInUser] = useState(undefined);
     const db = getFirestore();
     const [productCreatorExists, setProductCreatorExists] = useState(true);
     const [replyContent, setReplyContent] = useState('');
@@ -162,7 +162,10 @@ const ProductEntry = () => {
             if (productSnap.exists()) {
                 const product = productSnap.data();
                 const commentIds = product.commentList || [];
-
+                setLikedComments([]);
+                setDislikedComments([]);
+                const newLikedComments = [];
+                const newDislikedComments = [];
                 // 检查每个 commentId 是否是有效字符串
                 const commentPromises = commentIds.map(async (commentId) => {
                     if (typeof commentId !== 'string' || commentId.trim() === '') {
@@ -171,15 +174,14 @@ const ProductEntry = () => {
                     }
                     const commentRef = doc(db, 'Comments', commentId);
                     const commentSnap = await getDoc(commentRef);
-
                     if (commentSnap.exists()) {
                         const commentData = commentSnap.data();
                         if (loggedInUser) {
                             if (commentData.likes && commentData.likes.includes(loggedInUser.uid)) {
-                                setLikedComments((prev) => [...prev, commentId]);
+                                newLikedComments.push(commentId);
                             }
                             if (commentData.dislikes && commentData.dislikes.includes(loggedInUser.uid)) {
-                                setDislikedComments((prev) => [...prev, commentId]);
+                                newDislikedComments.push(commentId);
                             }
                         }
                         return { ...commentData, commentId };
@@ -189,6 +191,9 @@ const ProductEntry = () => {
                 });
 
                 const comments = (await Promise.all(commentPromises)).filter(Boolean);
+
+                setLikedComments(newLikedComments);
+                setDislikedComments(newDislikedComments);
 
                 const paramRefs = product.parametorList || [];
                 const paramPromises = paramRefs.map(async (paramId) => {
@@ -256,22 +261,27 @@ const ProductEntry = () => {
 
 
 
-    useEffect(() => {
-        fetchProductData();
-        const fetchUserStatus = async () => {
-            const userData = await getCurrentLoggedInUser();
-            if (userData) {
-                setLoggedInUser(userData);
-            }
-        };
-        fetchUserStatus();
-    }, [productId]);
+    // useEffect to fetch logged-in user
+useEffect(() => {
+    const fetchUserStatus = async () => {
+        const userData = await getCurrentLoggedInUser();
+        setLoggedInUser(userData); // This will set to null if no user is logged in
+    };
+    fetchUserStatus();
+}, []); // Run once on component mount
 
-    useEffect(() => {
-        if (productData) {
-            fetchRelatedProducts();
-        }
-    }, [productData]);
+// useEffect to fetch product data after loggedInUser is set
+useEffect(() => {
+    if (productId && loggedInUser !== undefined) {
+        fetchProductData();
+    }
+}, [productId, loggedInUser]); // Run when productId or loggedInUser changes
+
+useEffect(() => {
+  if (productData) {
+      fetchRelatedProducts();
+  }
+}, [productData]);
 
     const fetchRelatedProducts = async () => {
         const functions = getFunctions();
@@ -340,22 +350,8 @@ const ProductEntry = () => {
             });
 
             if (response.data.success) {
-                const commentRef = doc(db, 'Comments', review.commentId);
-                if (isLike) {
-                    await updateDoc(commentRef, {
-                        likedBy: arrayUnion(loggedInUser.uid),
-                        dislikedBy: arrayRemove(loggedInUser.uid)
-                    });
-                } else {
-                    await updateDoc(commentRef, {
-                        dislikedBy: arrayUnion(loggedInUser.uid),
-                        likedBy: arrayRemove(loggedInUser.uid)
-                    });
-                }
-
                 // 更新本地 liked 和 disliked 状态
                 let updatedReview = { ...review };
-
                 if (isLike) {
                     setLikedComments((prev) =>
                         prev.includes(review.commentId)
@@ -857,7 +853,7 @@ const ProductEntry = () => {
                                         </li>
                                         <li>
                                             <div className="historys">
-                                                <a href="#"><FaHistory /> History</a>
+                                              <Link to="/history"><FaHistory /> History</Link>
                                             </div>
                                         </li>
                                         <li>

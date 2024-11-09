@@ -134,23 +134,18 @@ const BrowseHistory = () => {
     };
     const handleRecordBrowsing = async (productId) => {
         if (isLoggedIn) {
+          const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
           try {
-            const userRef = doc(db, 'User', uid);
-            const userSnapshot = await getDoc(userRef);
-            const currentBrowseHistory = userSnapshot.data().browseHistory || [];
-            let updatedHistory;
-            if (!currentBrowseHistory.includes(productId)) {
-              updatedHistory = [productId, ...currentBrowseHistory];
-            } else {
-              updatedHistory = [
-                productId,
-                ...currentBrowseHistory.filter((id) => id !== productId)
-              ];
-            }
-            await updateDoc(userRef, {
-              browseHistory: updatedHistory,
+            const response = await handleUserRequest({
+              action: 'recordBrowseHistory',
+              productId: productId,
+              uid: uid,
             });
-            console.log("Added ", productId, "to history");
+            if (response.data.success) {
+              console.log("Recorded browsing history for ", productId);
+            } else {
+              console.error(`Browse history recording failed: ${response.data.message}`);
+            }
           } catch (error) {
             console.error("Error recording browse history: ", error);
           }
@@ -263,7 +258,7 @@ const BrowseHistory = () => {
                 
                 </div>
               ))) : (
-                <p>{loading ? ("Loading...") : ("No product browse history available.")}</p>
+                <p>{loading ? ("Loading...") : ("No products have been viewed yet.")}</p>
               )}
             </div>
             {/* Pagination */}
@@ -310,7 +305,7 @@ const BrowseHistory = () => {
                     Next &rarr;</button>
             </div>
           </section>
-          <Link to="/history"><button className="history-button">Back</button></Link>
+          <Link to="/history"><button className="history-button" style={{ padding: '7px 15px' }}>Back</button></Link>
       </div>
     </div>
   );

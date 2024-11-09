@@ -134,23 +134,18 @@ const ReviewHistory = () => {
     };
     const handleRecordBrowsing = async (productId) => {
         if (isLoggedIn) {
+          const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
           try {
-            const userRef = doc(db, 'User', uid);
-            const userSnapshot = await getDoc(userRef);
-            const currentBrowseHistory = userSnapshot.data().browseHistory || [];
-            let updatedHistory;
-            if (!currentBrowseHistory.includes(productId)) {
-              updatedHistory = [productId, ...currentBrowseHistory];
-            } else {
-              updatedHistory = [
-                productId,
-                ...currentBrowseHistory.filter((id) => id !== productId)
-              ];
-            }
-            await updateDoc(userRef, {
-              browseHistory: updatedHistory,
+            const response = await handleUserRequest({
+              action: 'recordBrowseHistory',
+              productId: productId,
+              uid: uid,
             });
-            console.log("Added ", productId, "to history");
+            if (response.data.success) {
+              console.log("Recorded browsing history for ", productId);
+            } else {
+              console.error(`Browse history recording failed: ${response.data.message}`);
+            }
           } catch (error) {
             console.error("Error recording browse history: ", error);
           }
@@ -236,7 +231,7 @@ const ReviewHistory = () => {
       {/* Reviews (Comment/Rate) History */}
       <div className="review-history-container">
           <section>
-            <h1>Reviews History</h1>
+            <h1>Comment/Rating History</h1>
             <div className="review-cards">
               {rateProductRefs.length > 0 ? (
                 rateProductRefs.slice((rateHistoryPage-1)*3, ((rateHistoryPage-1)*3)+3).map((review, index) => (
@@ -312,7 +307,7 @@ const ReviewHistory = () => {
                     Next &rarr;</button>
             </div>
           </section>
-          <Link to="/history"><button className="history-button">Back</button></Link>
+          <Link to="/history"><button className="history-button" style={{ padding: '7px 15px' }}>Back</button></Link>
       </div>
     </div>
   );

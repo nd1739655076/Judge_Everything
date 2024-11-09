@@ -22,6 +22,7 @@ const EditProductEntry = () => {
   const [parameterList, setParameterList] = useState(
     parameters ? [...parameters.map(param => param.paramName), ...new Array(10 - parameters.length).fill('')] : new Array(10).fill('')
   );
+  const [imageError, setImageError] = useState("");
   const [loading, setLoading] = useState(false); // For showing loading state during submission
   const [error, setError] = useState(''); // For showing error messages
   const [success, setSuccess] = useState(''); // For showing success messages
@@ -105,8 +106,15 @@ const EditProductEntry = () => {
   };
 
   const handleImageChange = (e) => {
-    if (e.target.files.length > 0) {
-      setImageFile(e.target.files[0]);
+    const file = e.target.files[0];
+    const allowedTypes = ["image/jpeg", "image/png"];
+  
+    if (file && !allowedTypes.includes(file.type)) {
+      setImageError("Invalid file type. Please upload a JPEG or PNG image.");
+      e.target.value = null; // Reset the input value
+    } else {
+      setImageError(""); // Clear any previous error messages
+      setImageFile(file);
     }
   };
 
@@ -138,9 +146,30 @@ const EditProductEntry = () => {
       let imageName = '';
 
       // 如果上传了新图片，将其转换为base64
-      if (imageFile) {
+      /*if (imageFile) {
         base64Image = await convertToBase64(imageFile);
         imageName = imageFile.name;
+      }*/
+      if (imageFile) {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64Image = reader.result.split(',')[1]; // Get base64 part
+          const functions = getFunctions();
+          const handleImageRequest = httpsCallable(functions, 'handleImageRequest');
+          try {
+            const imageResponse = await handleImageRequest({
+              action: 'upload',
+              base64: base64Image,
+              filename: imageFile.name,
+              productId: productId
+            });
+            console.log('Image uploaded:', imageResponse);
+          } catch (error) {
+            console.error('Error uploading image:', error);
+            setError('Failed to upload image.');
+          }
+        };
+        reader.readAsDataURL(imageFile);
       }
 
       // 更新产品信息，包含tagList和subtagList
@@ -246,6 +275,7 @@ const EditProductEntry = () => {
           Upload Image:
           <input type="file" accept="image/jpeg, image/png" onChange={handleImageChange} />
         </label>
+        {imageError && <p className="error-message">{imageError}</p>}
         <br />
 
         <label>

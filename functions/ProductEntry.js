@@ -14,6 +14,7 @@ class ProductEntry {
     this.productImage = ""; 
     this.tagList = tags; // Storing the selected tags
     this.subtagList = subtags; // Storing the selected subtags
+    this.createdAt = admin.firestore.FieldValue.serverTimestamp();
     this.averageScore = {
       average: 0,
       totalScore: 0,
@@ -59,6 +60,7 @@ class ProductEntry {
         oneStars: ProductEntry.sanitizeData(this.ratingDistribution.oneStars),
       },
       commentList: this.commentList,
+      createdAt: this.createdAt,
       reportList: Object.fromEntries(this.reportList)
     });
   }
@@ -95,6 +97,21 @@ class ProductEntry {
 
     // Save product entry
     await newProductEntry.generateProductEntry();
+    // Save product id to user history
+    try {
+    const userRef = db.collection("User").doc(uidNum);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) throw new Error('Invalid user');
+    const userData = userDoc.data();
+    const currentHistory = userData.productProfileCreateHistory || [];
+    const updatedHistory = [prodidNum, ...currentHistory];
+    await userRef.update({
+      productProfileCreateHistory: updatedHistory
+    });
+    } catch (error) {
+      console.error("error recording history:", error);
+      return { success: false, message: `Saving product to history failed: ${error}` };
+    }
     return { success: true, idNum: prodidNum, message: 'Product entry created successfully!' };
   }
 

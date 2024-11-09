@@ -169,6 +169,18 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: accountUpdateResponse.message };
       }
     }
+    
+    else if (action === 'recordBrowseHistory') {
+      console.log("index.js action invoked")
+      const recordHistoryResponse = await User.recordBrowseHistory(data);
+      if (recordHistoryResponse.status === 'success') {
+        console.log("got success");
+        return { success: true, message: recordHistoryResponse.message };
+      } else {
+        console.log("got error");
+        return { success: false, message: recordHistoryResponse.message };
+      }    
+    }
 
     else if (action === 'delete') {
       // uidNum
@@ -328,7 +340,18 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
           commentList: admin.firestore.FieldValue.arrayUnion(commentId)
         });
         console.log("Comment added to ProductEntry's commentList.");
-
+            
+        // Step 3: save history in user's info
+        const userRef = db.collection('User').doc(user.uid);
+        const userDoc = await userRef.get();
+        if (!userDoc.exists) throw new Error('Invalid user');
+        const userData = userDoc.data();
+        const currentHistory = userData.rateCommentHistory || [];
+        const updatedHistory = [commentId, ...currentHistory];
+        await userRef.update({
+          rateCommentHistory: updatedHistory
+        });
+        console.log("Comment added to history.");
         return { success: true, message: 'Comment created successfully!' };
       } catch (error) {
         console.error("Error during comment generation:", error);

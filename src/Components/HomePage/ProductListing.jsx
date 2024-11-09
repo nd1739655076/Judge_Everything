@@ -1,6 +1,7 @@
 // productListing.jsx
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from "firebase/functions";
+import { useNavigate } from "react-router-dom";
 import './ProductListing.css';
 
 const ProductListing = () => {
@@ -12,6 +13,7 @@ const ProductListing = () => {
   const [searchQuery, setSearchQuery] = useState(''); // Search query
   const [sortBy, setSortBy] = useState(''); // Sorting criteria
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch Products
@@ -57,7 +59,7 @@ const ProductListing = () => {
   // Update filtered products whenever tag or subtag changes
   useEffect(() => {
     let filtered = products;
-  
+
     // Filter by selected tag and subtag
     if (selectedTag) {
       filtered = filtered.filter(product => product.tagList && product.tagList.includes(selectedTag));
@@ -65,7 +67,7 @@ const ProductListing = () => {
     if (selectedSubtag) {
       filtered = filtered.filter(product => product.subtagList && product.subtagList.includes(selectedSubtag));
     }
-  
+
     setFilteredProducts(filtered);
   }, [products, selectedTag, selectedSubtag]);
 
@@ -79,7 +81,12 @@ const ProductListing = () => {
       if (sortBy === 'highestRated') {
         return b.averageScore.average - a.averageScore.average; // Sort by average rating
       }
-      return 0;
+      if (sortBy === 'postTime') {
+        const aTime = a.createdAt ? a.createdAt._seconds : 0;
+        const bTime = b.createdAt ? b.createdAt._seconds : 0;
+        return bTime - aTime;
+      }
+      return b.averageScore.average - a.averageScore.average;
     });
 
   const handleSubtagChange = (subtag) => {
@@ -88,61 +95,59 @@ const ProductListing = () => {
 
   return (
     <div className="product-listing">
-      <h1>Product Listings</h1>
-      
-      <div className="filter-container">
-        {/* Tag Dropdown */}
-        <label htmlFor="tag-dropdown">Filter by Tag:</label>
-        <select
-          id="tag-dropdown"
-          value={selectedTag}
-          onChange={(e) => {
-            setSelectedTag(e.target.value);
-            setSelectedSubtag(''); // Reset subtag when changing main tag
-          }}
-        >
-          <option value="">Select a Tag</option>
-          {tagLibrary.map((tag) => (
-            <option key={tag.tagName} value={tag.tagName}>
-              {tag.tagName}
-            </option>
-          ))}
-        </select>
-
-        {/* Subtag Dropdown */}
-        {selectedTag && (
-          <div className="subtag-container">
-            <label>Select a Subtag:</label>
-            <select
-              id="subtag-dropdown"
-              value={selectedSubtag}
-              onChange={(e) => handleSubtagChange(e.target.value)}
-            >
-              <option value="">Select a Subtag</option>
-              {tagLibrary.find(tag => tag.tagName === selectedTag)?.subTag &&
-                Object.entries(tagLibrary.find(tag => tag.tagName === selectedTag).subTag).map(([id, subtag]) => (
-                  <option key={id} value={subtag}>{subtag}</option>
-                ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      <div className="search-sort-container">
-        {/* Search Input */}
-        <input
-          type="text"
-          placeholder="Search by product name"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-
-        {/* Sort Dropdown */}
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-          <option value="">Sort By</option>
-          <option value="mostPopular">Most Popular</option>
-          <option value="highestRated">Highest Rated</option>
-        </select>
+      <div className="product-listing-hrader">
+        <h1>Product Listings</h1>
+        <div className="filter-container">
+          {/* Tag Dropdown */}
+          <label htmlFor="tag-dropdown">Filter by Tag:</label>
+          <select
+            id="tag-dropdown"
+            value={selectedTag}
+            onChange={(e) => {
+              setSelectedTag(e.target.value);
+              setSelectedSubtag(''); // Reset subtag when changing main tag
+            }}
+          >
+            <option value="">Select a Tag</option>
+            {tagLibrary.map((tag) => (
+              <option key={tag.tagName} value={tag.tagName}>
+                {tag.tagName}
+              </option>
+            ))}
+          </select>
+          {/* Subtag Dropdown */}
+          {selectedTag && (
+            <div className="subtag-container">
+              <label>Select a Subtag:</label>
+              <select
+                id="subtag-dropdown"
+                value={selectedSubtag}
+                onChange={(e) => handleSubtagChange(e.target.value)}
+              >
+                <option value="">Select a Subtag</option>
+                {tagLibrary.find(tag => tag.tagName === selectedTag)?.subTag &&
+                  Object.entries(tagLibrary.find(tag => tag.tagName === selectedTag).subTag).map(([id, subtag]) => (
+                    <option key={id} value={subtag}>{subtag}</option>
+                  ))}
+              </select>
+            </div>
+          )}
+        </div>
+        <div className="search-sort-container">
+          {/* Search Input */}
+          <input
+            type="text"
+            placeholder="Search by product name"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {/* Sort Dropdown */}
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+           <option value="highestRated">Highest Rated</option>
+            <option value="postTime">Post Time</option>
+            <option value="mostPopular">Most Reviews</option>
+          </select>
+        </div>
       </div>
 
       {/* Product List */}
@@ -150,22 +155,36 @@ const ProductListing = () => {
         {loading ? (
           <p>Loading products...</p>
         ) : (
-          displayedProducts.map(product => (
-            <div key={product.id} className="product-item">
-              <h3>{product.productName}</h3>
-              <p>{product.description || "No description available"}</p>
-              <div className="tag-container">
-                <span className="tag">{product.tagList}</span>
-                {product.subtagList && product.subtagList.length > 0 && (
-                  product.subtagList.map((subtag, index) => (
-                    <span key={`product-subtag-${index}`} className="tag">{subtag}</span>
-                  ))
-                )}
+          displayedProducts.length > 0 ? (
+            displayedProducts.map(product => (
+              <div 
+                key={product.id} 
+                className="product-item"
+                onClick={() => navigate(`/product/${product.id}`)}
+                >
+                <h3>{product.productName}</h3>
+                <p>{product.description || "No description available"}</p>
+                {console.log("product.createdAt:", product.createdAt)}
+                <div className="tag-container">
+                  <span className="tag">{product.tagList}</span>
+                  {product.subtagList && product.subtagList.length > 0 && (
+                    product.subtagList.map((subtag, index) => (
+                      <span key={`product-subtag-${index}`} className="tag">{subtag}</span>
+                    ))
+                  )}
+                </div>
+                <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
+                <p>Comments: {product.averageScore?.totalRater || 0}</p>
+                <p>Posted: {
+                  product.createdAt && typeof product.createdAt._seconds === 'number'
+                    ? new Date(product.createdAt._seconds * 1000).toLocaleDateString()
+                    : "No date available"
+                }</p>
               </div>
-              <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
-              <p>Comments: {product.averageScore?.totalRater || 0}</p>
-            </div>
-          ))
+            ))
+          ) : (
+            <p>No products available in the current category.</p>
+          )
         )}
       </div>
 

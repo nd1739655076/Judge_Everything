@@ -21,6 +21,7 @@ import EditProduct from './Components/ProductEntry/EditProductEntry';
 import ProductListing from './Components/HomePage/ProductListing';
 // AdminClient
 import AdminLogin from './AdminClient/Login/AdminLogin';
+import AdminHomepage from './AdminClient/Homepage/AdminHomePage';
 
 function App() {
   return (
@@ -49,6 +50,7 @@ function App() {
 
         {/* AdminClient */}
         <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin/home" element={<AdminHomepage />} />
       </Routes>
     </Router>
   );

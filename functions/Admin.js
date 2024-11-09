@@ -6,16 +6,18 @@ const jwt = require('jsonwebtoken');
 const db = admin.firestore();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-secret-key';
-
+// NOTE!! not tested!
 class Admin {
-  constructor(uid, username, password) {
+  constructor(uid, username, password, headAdmin) {
     this.uid = uid;
     this.username = username;
     this.password = password;
     this.statusToken = "";
+    this.headAdmin = headAdmin;
   }
 
   // action === 'generate'
+  // NOTE!! not edited, may not work!
   async generateUser() {
     //const hashedPassword = await User.hashPassword(this.password);
     const userDocRef = db.collection('Admin').doc(this.uid);
@@ -23,6 +25,7 @@ class Admin {
       uid: this.uid,
       username: this.username,
       password: this.password,
+      headAdmin: this.headAdmin
     });
   }
 
@@ -42,7 +45,6 @@ class Admin {
 
   // action == 'login'
   static async login(username, password) {
-    console.log("login in Admin.js");
     const userDocRef = db.collection('Admin').where('username', '==', username);
     const userDocRefSnapshot = await userDocRef.get();
     if (userDocRefSnapshot.empty) {
@@ -53,7 +55,6 @@ class Admin {
     if (password !== userDocData.password) {
       return { status: 'error', message: 'Invalid password' };
     }
-    console.log("valid username and password");
     const statusToken = Admin.generateStatusToken(username, userDocData.uid);
     await userDoc.ref.update({ statusToken });
     return { status: 'success', statusToken: statusToken };
@@ -101,7 +102,10 @@ class Admin {
     const userDoc = await db.collection('Admin').doc(uid).get();
     if (userDoc.exists) {
       const userDocData = userDoc.data();
-      return { status: 'success', username: userDocData.username, uid: userDocData.uid };
+      return { status: 'success',
+                username: userDocData.username,
+                uid: userDocData.uid,
+                headAdmin: userDocData.headAdmin };
     } else {
       return { status: 'error', message: 'User not found' };
     }

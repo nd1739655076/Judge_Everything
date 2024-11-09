@@ -227,7 +227,6 @@ const Homepage = () => {
     setModalIsOpen(false);
   };
 
-  // in cloud function later
   const handleRecordBrowsing = async (productId) => {
     if (isLoggedIn) {
       const handleUserRequest = httpsCallable(functions, 'handleUserRequest');

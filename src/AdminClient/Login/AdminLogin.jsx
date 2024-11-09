@@ -48,10 +48,9 @@ const AdminLogin = () => {
           localStorage.setItem('authToken', response.data.statusToken);
           setErrorMessage("");
           setSuccessMessage("Login successful! Redirecting...");
-          //TODO: uncomment and add navigation to homepage later
-        //   setTimeout(() => {
-        //     navigate("/admin/home");
-        //   }, 500);
+          setTimeout(() => {
+            navigate("/admin/home");
+          }, 500);
         } else {
           setErrorMessage(response.data.message);
         }

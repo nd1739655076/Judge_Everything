@@ -13,6 +13,7 @@ const Id = require('./Id');
 const User = require('./User');
 const Comment = require('./Comment');
 const ProductEntry = require('./ProductEntry');
+const Admin = require('./Admin');
 
 // TagLibrary Handle
 exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
@@ -448,5 +449,25 @@ exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, con
   } catch (error) {
     console.error("Error updating product report flags:", error);
     return { success: false, message: error.message };
+  }
+});
+
+// Admin Handle
+exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
+  const { action, username, password } = data;
+  try {
+    if (action === 'login') {
+      console.log("start admin login in index.js");
+      // username, password
+      const loginResponse = await Admin.login(username, password);
+      if (loginResponse.status === 'success') {
+        return { success: true, statusToken: loginResponse.statusToken };
+      } else {
+        return { success: false, message: loginResponse.message };
+      }
+    }
+  } catch (error) {
+    console.error("Error handeling admin request.");
+    return { success: false, message: error.message }
   }
 });

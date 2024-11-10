@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import './ContactPage.css';
 import clock_icon from '../ContactPageAssets/clock.png';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '../../firebase';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory} from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog, FaSignOutAlt} from 'react-icons/fa';
 import { db } from "../../firebase";
 import { collection, addDoc } from "firebase/firestore";
 
@@ -12,14 +14,90 @@ import { collection, addDoc } from "firebase/firestore";
 const ContactPage = () => {
 
     const [isDropdownVisible, setDropdownVisible] = useState(false);
-    const toggleDropdown = () => {
-      setDropdownVisible(!isDropdownVisible);
-    };
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [userId, setUserId] = useState("");
+    const [username, setUsername] = useState("");
+    const [greeting, setGreeting] = useState("");
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [subject, setSubject] = useState("");
     const [message, setMessage] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    useEffect(() => {
+        const checkLoginStatus = async () => {
+          const localStatusToken = localStorage.getItem('authToken');
+          if (localStatusToken) {
+            const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+            try {
+              const response = await handleUserRequest({
+                action: 'checkLoginStatus',
+                statusToken: localStatusToken,
+              });
+              if (response.data.success) {
+                setIsLoggedIn(true);
+                setUserId(response.data.uid);
+                setUsername(response.data.username);
+              } else {
+                setIsLoggedIn(false);
+                localStorage.removeItem('authToken');
+              }
+            } catch (error) {
+              setIsLoggedIn(false);
+              localStorage.removeItem('authToken');
+            }
+          } else {
+            setIsLoggedIn(false);
+          }
+        };
+        const setTimeGreeting = () => {
+          const now = new Date();
+          const hour = now.getHours();
+          let currentGreeting = "Good ";
+          if (hour >= 5 && hour < 12) {
+            currentGreeting += "morning";
+          } else if (hour >= 12 && hour < 17) {
+            currentGreeting += "afternoon";
+          } else if (hour >= 17 && hour < 21) {
+            currentGreeting += "evening";
+          } else {
+            currentGreeting += "night";
+          }
+          setGreeting(currentGreeting);
+        };
+    
+        checkLoginStatus();
+        setTimeGreeting();
+    
+        const intervalId = setInterval(() => {
+          checkLoginStatus();
+          setTimeGreeting();
+        }, 5000);
+        return () => clearInterval(intervalId);
+      }, []);
+      const toggleDropdown = () => {
+        setDropdownVisible(!isDropdownVisible);
+      };
+    const handleLogout = async () => {
+    const localStatusToken = localStorage.getItem('authToken');
+    if (localStatusToken) {
+      const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+      try {
+        const response = await handleUserRequest({
+          action: 'logout',
+          statusToken: localStatusToken,
+        });
+        if (response.data.success) {
+          localStorage.removeItem('authToken');
+          setIsLoggedIn(false);
+          setUserId("");
+          setUsername("");
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error("Error logging out:", error);
+      }
+    }
+  };
 
     const handleSubmit = async() => {
         setErrorMessage("");
@@ -83,41 +161,66 @@ const ContactPage = () => {
                     <h1>Judge Everything</h1>
                 </div>
                 <div className="navlinks">
-                    <Link to="/">Home</Link>
-                    <Link to="">About</Link>
-                    <Link to="/contact">Support</Link>
+                    <a href="/">Home</a>
+                    <a href="#">About</a>
+                    <a href="/contact">Support</a>
                 </div>
                 <div className="searchbar">
-                    <FaSearch/>
+                    <FaSearch />
                     <input type="text" placeholder="Search" />
                 </div>
-                <div className="menuContainer">
-                    <FaBars className="menuicon" onClick={toggleDropdown} />
-                    {isDropdownVisible && (
-                    <div className="dropdownMenu">
-                        <ul>
-                        <li>
-                            <div className="userauth">
-                            <Link to="/loginSignup"><FaUser /> Login/Register</Link>
-                            </div>
-                        </li>
-                        <li>
-                            <div className="notifcations">
-                            <a href="#"><FaBell /> Notifaction</a>
-                            </div>
-                        </li>
-                        <li>
-                            <div className="historys">
-                            <a href="#"><FaHistory /> History</a>
-                            </div>
-                        </li>
-                        <li>
-                            <div className="settings">
-                            <Link to="/accountSetting"><FaUser /> Your Account</Link>
-                            </div>
-                        </li>
-                        </ul>
+                {isLoggedIn ? (
+                <div className="currentUserStatus">
+                    <div className="greeting">
+                        {greeting}!
                     </div>
+                    <div className="currentUserStatusInfo">
+                        <FaUser />
+                        <span className="username">{username}</span>
+                        <FaSignOutAlt
+                            onClick={handleLogout}
+                            title="Logout"
+                            className="logout-icon"
+                        />
+                    </div>
+                </div>
+                ) : (
+                <div className="login-prompt">
+                    <p>Please log in to access more feature</p>
+                </div>
+                )}
+                <div className="menuContainer">
+                    <FaBars className="menuicon step-1" onClick={toggleDropdown} />
+                    {isDropdownVisible && (
+                        <div className="dropdownMenu">
+                        <ul>
+                            {!isLoggedIn ? (
+                            <li>
+                                <div className="userauth">
+                                <Link to="/loginSignup"><FaUser /> Login/Register</Link>
+                                </div>
+                            </li>
+                            ) : (
+                            <>
+                            <li>
+                                <div className="notifcations">
+                                    <a href="#"><FaBell /> Notifaction</a>
+                                </div>
+                            </li>
+                            <li>
+                                <div className="historys">
+                                    <Link to="/history"><FaHistory /> History</Link>
+                                </div>
+                            </li>
+                            <li>
+                                <div className="settings">
+                                    <Link to="/accountSettings"><FaCog /> Your Account</Link>
+                                </div>
+                            </li>
+                            </>
+                            )}
+                        </ul>
+                        </div>
                     )}
                 </div>
             </div>

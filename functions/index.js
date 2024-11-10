@@ -169,6 +169,18 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: accountUpdateResponse.message };
       }
     }
+    
+    else if (action === 'recordBrowseHistory') {
+      console.log("index.js action invoked")
+      const recordHistoryResponse = await User.recordBrowseHistory(data);
+      if (recordHistoryResponse.status === 'success') {
+        console.log("got success");
+        return { success: true, message: recordHistoryResponse.message };
+      } else {
+        console.log("got error");
+        return { success: false, message: recordHistoryResponse.message };
+      }    
+    }
 
     else if (action === 'delete') {
       // uidNum

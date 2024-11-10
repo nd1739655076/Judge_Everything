@@ -272,6 +272,36 @@ class User {
     return { status: 'success', message: 'User account deleted successfully' }
   }
 
+
+    // action === 'recordBrowseHistory'
+    static async recordBrowseHistory(data) {
+      const { action, productId, uid } = data;
+      console.log("User.js recordBrowseHistory invoked");
+      console.log("uid:", uid, "product id:", productId);
+      const userRef = db.collection("User").doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        console.log("User not found");
+        return { status: 'error', message: 'User not found' };
+      }      
+      const userData = userDoc.data();
+      const currentBrowseHistory = userData.browseHistory || [];
+      console.log("old hist:", currentBrowseHistory);
+      let updatedHistory;
+      if (!currentBrowseHistory.includes(productId)) {
+        updatedHistory = [productId, ...currentBrowseHistory];
+      } else {
+        updatedHistory = [
+          productId,
+          ...currentBrowseHistory.filter((id) => id !== productId)
+        ];
+      }
+      console.log("new hist:", updatedHistory);
+      await userRef.update({
+        browseHistory: updatedHistory
+      });
+      return { status: 'success', message: 'Browse history recorded successfully' }
+    }
 }
 
 module.exports = User;

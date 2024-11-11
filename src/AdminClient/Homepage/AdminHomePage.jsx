@@ -21,12 +21,29 @@ const AdminHomepage = () => {
   const [adminListPage, setAdminListPage] = useState(1);
   const [totalAdminPages, setTotalAdminPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [newUsername, setNewUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [rePassword, setRePassword] = useState("");
+  const [role, setRole] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [modalType, setModalType] = useState(null); // 'create', 'edit', 'delete', or null
+  const openModal = (type) => setModalType(type);
+  const closeModal = () => {
+    setLoading(false);
+    setErrorMessage("");
+    setSuccessMessage("");
+    setNewUsername("");
+    setPassword("");
+    setRePassword("");
+    setRole("");
+    setModalType(null)
+}; 
 
   useEffect(() => {
     const checkLoginStatus = async () => {
       const localStatusToken = localStorage.getItem('authToken');
       if (localStatusToken) {
-        console.log("local status token:", localStatusToken);
         const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
         try {
           const response = await handleAdminRequest({
@@ -34,13 +51,11 @@ const AdminHomepage = () => {
             statusToken: localStatusToken,
           });
           if (response.data.success) {
-            console.log("match");
             setIsLoggedIn(true);
             setAdminId(response.data.uid);
             setUsername(response.data.username);
             setIsHeadAdmin(response.data.headAdmin);
           } else {
-            console.log("not match");
             console.log(response.data.message);
             setIsLoggedIn(false);
             setUsername("");
@@ -119,9 +134,10 @@ const AdminHomepage = () => {
                 action: 'fetchAdmin'
             });
             if (response.data.success) {
-                console.log("admin list:", response.data.adminList);
-                setAdmins(response.data.adminList);
-                setTotalAdminPages(Math.ceil(admins.length / 5));
+                const adminList = response.data.adminList;
+                console.log("admin list:", adminList);
+                await setAdmins(adminList);
+                setTotalAdminPages(Math.ceil(adminList.length / 5));
                 setLoading(false);
             } else {
                 console.error(`Could not fetch admins list: ${response.data.message}`);
@@ -131,13 +147,66 @@ const AdminHomepage = () => {
         }
         setLoading(false);
     };
-  useEffect(() => {
-    if (isLoggedIn) {
-        fetchAdmins();
-    } else {
-        setLoading(false);
-    }
+    useEffect(() => {
+        if (isLoggedIn) {
+            fetchAdmins();
+        } else {
+            setLoading(false);
+        }
     }, [isLoggedIn]);
+
+    const handleCreateAdmin = async () => {
+        setErrorMessage("");
+        setSuccessMessage("");
+        setLoading(false);        
+        if (!newUsername.trim()) {
+            setErrorMessage("Please enter a username.");
+            return;
+        }
+        if (!password.trim()) {
+            setErrorMessage("Please enter a password.");
+            return;
+        }
+        if (!rePassword.trim()) {
+            setErrorMessage("Please re-enter the password.");
+            return;
+        }
+        if (!role.trim()) {
+            setErrorMessage("Please select an admin type.");
+            return;
+        }
+        if (password !== rePassword) {
+            setErrorMessage("Passwords do not match!");
+            return;
+        }
+        setLoading(true);
+        const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
+        try {
+            const newHeadAdmin = (role === "true");
+            const response = await handleAdminRequest({
+                action: 'create',
+                username: newUsername,
+                password: password,
+                headAdmin: newHeadAdmin
+            });
+            if (response.data.success) {
+                setLoading(false);
+                console.log("New admin account created successfully!");
+                setSuccessMessage("New admin account created successfully!");
+                setTimeout(() => {
+                    closeModal();
+                }, 500);
+            } else {
+                setLoading(false);
+                console.error(`Could not create admin account: ${response.data.message}`);
+                setErrorMessage(`Could not create admin account: ${response.data.message}`);
+            }
+        } catch (error) {
+            setLoading(false);
+            console.error("Error creating admin account: ", error);
+            setErrorMessage(`Error creating admin account: ${error}`)
+        }
+    };
 
 
   return (
@@ -232,10 +301,42 @@ const AdminHomepage = () => {
             <div className="admin-list-container">
                 <div className="admin-list-header">
                     <h2>Admin List</h2>
-                    <button className="create-admin-btn">Create Admin Account</button>
-                </div>
-                {isLoggedIn ? (
-                    admins.slice((adminListPage-1)*5, ((adminListPage-1)*5)+5).map((admin) => (
+                    <button className="create-admin-btn" onClick={() => openModal("create")}>
+                        Create Admin Account
+                    </button>
+                    {/* Conditionally Render Modals */}
+                    {modalType === "create" && (
+                        <div className="admin-modal-overlay">
+                        <div className="modal">
+                            <h3>Create Admin Account</h3>
+                            <form className="modal-form" onSubmit={(e) => e.preventDefault()}>
+                                <input type="text" placeholder="Username" required value={newUsername} onChange={(e) => setNewUsername(e.target.value)} />
+                                <input type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)}/>
+                                <input type="password" placeholder="Re-enter Password" required value={rePassword} onChange={(e) => setRePassword(e.target.value)}/>
+                                <select required value={role} onChange={(e) => setRole(e.target.value)}>
+                                    <option value="">Select Role</option>
+                                    <option value="true">Head Admin</option>
+                                    <option value="false">Regular Admin</option>
+                                </select>
+                                <div className="admin-home-message">
+                                    {loading && <div className="loadingMessage">Loading...</div>}
+                                    {errorMessage && <p className="errorMessage">{errorMessage}</p>}
+                                    {successMessage && <p className="successMessage">{successMessage}</p>}
+                                </div>
+                                <div className="modal-actions">
+                                    <button type="button" className="cancel-create-admin-btn" onClick={closeModal}>
+                                    Cancel
+                                    </button>
+                                    <button type="button" className="confirm-create-admin-btn"  onClick={handleCreateAdmin}>
+                                    Create
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        </div>
+                    )}
+                </div>              
+                    {admins.slice((adminListPage-1)*5, ((adminListPage-1)*5)+5).map((admin) => (
                     <div key={admin.id} className="admin-item">
                         <div className="admin-info">
                         <span className="admin-id">{admin.id}</span>
@@ -245,15 +346,12 @@ const AdminHomepage = () => {
                         <div className="head-admin-role">Head Admin</div>
                         ) : (
                         <div className="admin-actions">
-                            <button className="edit-btn">Edit</button>
-                            <button className="delete-btn">Delete</button>
+                            <button className="edit-btn" onClick={() => openModal("edit")}>Edit</button>
+                            <button className="delete-btn" onClick={() => openModal("delete")}>Delete</button>
                         </div>
                         )}
                     </div>
-                    ))
-                ) : (
-                    <div>{loading ? "Loading..." : "Please log in."}</div>
-                )}
+                    ))}
             </div>
             {/* Pagination */}
             <div className="paging">

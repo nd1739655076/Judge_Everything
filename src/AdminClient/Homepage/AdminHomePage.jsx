@@ -7,8 +7,7 @@ import './AdminHomePage.css';
 import { Link } from 'react-router-dom';
 // icon import
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { FaSearch, FaUser, FaBars, FaBell, FaCog, FaSignOutAlt } from 'react-icons/fa';
 
 const AdminHomepage = () => {
 
@@ -44,16 +43,22 @@ const AdminHomepage = () => {
             console.log("not match");
             console.log(response.data.message);
             setIsLoggedIn(false);
+            setUsername("");
+            setIsHeadAdmin(false);
             localStorage.removeItem('authToken');
           }
         } catch (error) {
           console.log("error verifying token");
           setIsLoggedIn(false);
+          setUsername("");
+          setIsHeadAdmin(false);
           localStorage.removeItem('authToken');
         }
       } else {
         console.log("no local token");
         setIsLoggedIn(false);
+        setUsername("");
+        setIsHeadAdmin(false);
       }
     };
     const setTimeGreeting = () => {
@@ -116,6 +121,7 @@ const AdminHomepage = () => {
             if (response.data.success) {
                 console.log("admin list:", response.data.adminList);
                 setAdmins(response.data.adminList);
+                setTotalAdminPages(Math.ceil(admins.length / 5));
                 setLoading(false);
             } else {
                 console.error(`Could not fetch admins list: ${response.data.message}`);
@@ -222,29 +228,76 @@ const AdminHomepage = () => {
         </div>
       </div>
         {/* Admin List Section */}
-        <div className="admin-list-container">
-            <h2>Admin List</h2>
-            {isLoggedIn ? (
-                admins.map((admin) => (
-                <div key={admin.id} className="admin-item">
-                    <div className="admin-info">
-                    <span className="admin-id">{admin.id}</span>
-                    <span className="admin-username">{admin.username}</span>
-                    </div>
-                    {admin.headAdmin ? (
-                    <div className="head-admin-role">Head Admin</div>
-                    ) : (
-                    <div className="admin-actions">
-                        <button className="edit-btn">Edit</button>
-                        <button className="delete-btn">Delete</button>
-                    </div>
-                    )}
+        {isHeadAdmin && <section className="admin-list">
+            <div className="admin-list-container">
+                <div className="admin-list-header">
+                    <h2>Admin List</h2>
+                    <button className="create-admin-btn">Create Admin Account</button>
                 </div>
-                ))
-            ) : (
-                <div>{loading ? "Loading..." : "Please log in."}</div>
-            )}
-        </div>
+                {isLoggedIn ? (
+                    admins.slice((adminListPage-1)*5, ((adminListPage-1)*5)+5).map((admin) => (
+                    <div key={admin.id} className="admin-item">
+                        <div className="admin-info">
+                        <span className="admin-id">{admin.id}</span>
+                        <span className="admin-username">{admin.username}</span>
+                        </div>
+                        {admin.headAdmin ? (
+                        <div className="head-admin-role">Head Admin</div>
+                        ) : (
+                        <div className="admin-actions">
+                            <button className="edit-btn">Edit</button>
+                            <button className="delete-btn">Delete</button>
+                        </div>
+                        )}
+                    </div>
+                    ))
+                ) : (
+                    <div>{loading ? "Loading..." : "Please log in."}</div>
+                )}
+            </div>
+            {/* Pagination */}
+            <div className="paging">
+                <button disabled={adminListPage === 1} onClick={() => setAdminListPage(adminListPage - 1)}>
+                    &larr; Prev</button>
+                {/* Display all pages directly if there are less than 5 total pages */}
+                {totalAdminPages < 5 ? (
+                    [...Array(totalAdminPages)].map((_, index) => (
+                        <span
+                            key={index + 1}
+                            className={(adminListPage === index + 1) ? "active" : ""}
+                            onClick={() => setAdminListPage(index + 1)}>
+                            {index + 1}
+                        </span>
+                    ))
+                ) : (
+                    <>
+                    {adminListPage > 1 && <span onClick={() => setAdminListPage(1)}>1</span>}
+                    {adminListPage > 3 && <span>...</span>}
+                    {/* Show current page and surrounding pages */}
+                    {adminListPage > 1 && (
+                        <span onClick={() => setAdminListPage(adminListPage - 1)}>
+                            {adminListPage - 1}
+                        </span>
+                    )}
+                    <span className="active" onClick={() => setAdminListPage(adminListPage)}>
+                        {adminListPage}
+                    </span>
+                    {adminListPage < totalAdminPages && (
+                        <span onClick={() => setAdminListPage(adminListPage + 1)}>
+                            {adminListPage + 1}
+                        </span>
+                    )}
+                    {(adminListPage < (totalAdminPages - 2)) && <span>...</span>}
+                    {adminListPage < totalAdminPages && (
+                        <span onClick={() => setAdminListPage(totalAdminPages)}>{totalAdminPages}</span>
+                    )}
+                    </>
+                )}
+                <button disabled={adminListPage === totalAdminPages} onClick={() => setAdminListPage(adminListPage + 1)}>
+                    Next &rarr;</button>
+            </div>
+        </section>
+        }
       
 
     </div>

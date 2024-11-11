@@ -18,6 +18,10 @@ const AdminHomepage = () => {
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
   const [isHeadAdmin, setIsHeadAdmin] = useState(false);
+  const [admins, setAdmins] = useState([]);
+  const [adminListPage, setAdminListPage] = useState(1);
+  const [totalAdminPages, setTotalAdminPages] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -73,7 +77,7 @@ const AdminHomepage = () => {
     const intervalId = setInterval(() => {
       checkLoginStatus();
       setTimeGreeting();
-    }, 10000);
+    }, 100000);
     return () => clearInterval(intervalId);
   }, []);
   const toggleDropdown = () => {
@@ -102,8 +106,32 @@ const AdminHomepage = () => {
     }
   };
 
-  const [loading, setLoading] = useState(true);
-  const db = getFirestore();
+    const fetchAdmins = async () => {
+        setLoading(true);
+        const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
+        try {
+            const response = await handleAdminRequest({
+                action: 'fetchAdmin'
+            });
+            if (response.data.success) {
+                console.log("admin list:", response.data.adminList);
+                setAdmins(response.data.adminList);
+                setLoading(false);
+            } else {
+                console.error(`Could not fetch admins list: ${response.data.message}`);
+            }
+        } catch(error) {
+            console.error("Error fetching admins list: ", error);
+        }
+        setLoading(false);
+    };
+  useEffect(() => {
+    if (isLoggedIn) {
+        fetchAdmins();
+    } else {
+        setLoading(false);
+    }
+    }, [isLoggedIn]);
 
 
   return (
@@ -193,6 +221,31 @@ const AdminHomepage = () => {
           )}
         </div>
       </div>
+        {/* Admin List Section */}
+        <div className="admin-list-container">
+            <h2>Admin List</h2>
+            {isLoggedIn ? (
+                admins.map((admin) => (
+                <div key={admin.id} className="admin-item">
+                    <div className="admin-info">
+                    <span className="admin-id">{admin.id}</span>
+                    <span className="admin-username">{admin.username}</span>
+                    </div>
+                    {admin.headAdmin ? (
+                    <div className="head-admin-role">Head Admin</div>
+                    ) : (
+                    <div className="admin-actions">
+                        <button className="edit-btn">Edit</button>
+                        <button className="delete-btn">Delete</button>
+                    </div>
+                    )}
+                </div>
+                ))
+            ) : (
+                <div>{loading ? "Loading..." : "Please log in."}</div>
+            )}
+        </div>
+      
 
     </div>
 

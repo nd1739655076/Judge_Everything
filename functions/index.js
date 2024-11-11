@@ -479,6 +479,17 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: loginStatusResponse.message };
       }
     }
+    else if (action === 'fetchAdmin') {
+      console.log("start fetch index.js");
+      const fetchAdminResponse = await Admin.fetchAdmin();
+      if (fetchAdminResponse.status === 'success') {
+        return { success: true,
+          adminList: fetchAdminResponse.adminList
+        };
+      } else {
+        return { success: false, message: fetchAdminResponse.message };
+      }
+    }
   } catch (error) {
     console.error("Error handeling admin request.");
     return { success: false, message: error.message }

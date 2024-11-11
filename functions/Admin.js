@@ -163,6 +163,31 @@ class Admin {
     return { status: 'success', message: 'Admin account deleted successfully' }
   }
 
+  //action === 'fetchAdmin'
+  static async fetchAdmin() {
+    try {
+      console.log("fetch admin in Admin.js");
+      const AdminDocRef = db.collection("Admin");
+      const adminSnapshot = await AdminDocRef.get();
+      console.log("adminSnapshot:",adminSnapshot);
+      const adminList = adminSnapshot.docs.map(doc => {
+        const data = doc.data();
+        console.log("doc:",data.uid,",",data.username,",",data.headAdmin);
+        return {
+          id: data.uid,
+          username: data.username,
+          headAdmin: data.headAdmin
+        };
+      });
+      console.log("admin list:", adminList);
+      return { status: 'success', adminList: adminList };
+    } catch (error) {
+      console.error("Error fetching admin list:", error);
+      return { status: 'error', message: `Error fetching admin list:${error}` };
+    }
+
+  }
+
 }
 
 module.exports = Admin;

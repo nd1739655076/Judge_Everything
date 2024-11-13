@@ -11,9 +11,10 @@ const bucket = admin.storage().bucket('judge-everything.appspot.com');
 const TagLibrary = require('./TagLibrary');
 const Id = require('./Id');
 const User = require('./User');
-const Comment = require('./Comment');
+const Conversation = require('./Conversation');
 const ProductEntry = require('./ProductEntry');
-const Admin = require('./Admin');
+const Comment = require('./Comment');
+
 
 // TagLibrary Handle
 exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
@@ -171,18 +172,6 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       }
     }
     
-    else if (action === 'recordBrowseHistory') {
-      console.log("index.js action invoked")
-      const recordHistoryResponse = await User.recordBrowseHistory(data);
-      if (recordHistoryResponse.status === 'success') {
-        console.log("got success");
-        return { success: true, message: recordHistoryResponse.message };
-      } else {
-        console.log("got error");
-        return { success: false, message: recordHistoryResponse.message };
-      }    
-    }
-
     else if (action === 'delete') {
       // uidNum
       const deleteResponse = await User.delete(uidNum);
@@ -193,9 +182,41 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       }
     }
 
+    else if (action === 'recordBrowseHistory') {
+      // productId, uid
+      const recordHistoryResponse = await User.recordBrowseHistory(data);
+      if (recordHistoryResponse.status === 'success') {
+        return { success: true, message: recordHistoryResponse.message };
+      } else {
+        return { success: false, message: recordHistoryResponse.message };
+      }    
+    }
+
   } catch (error) {
     console.error('Error handling User request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle user request.');
+  }
+});
+
+// Conversation Handle
+exports.handleConversationRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const { action, user1Id, user2Id, conversationId, senderId, content } = data;
+    const conversation = new Conversation();
+
+    if (action === 'generate') {
+      await conversation.generateConversation(user1Id, user2Id);
+      return { success: true, message: 'Conversation generated successfully' };
+    } 
+
+    else if (action === 'sendMessage') {
+      const message = await conversation.sendMessage(conversationId, senderId, content);
+      return { success: true, message: 'Message sent successfully', data: message };
+    }
+
+  } catch (error) {
+    console.error('Error handling conversation request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle conversation request');
   }
 });
 
@@ -449,49 +470,5 @@ exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, con
   } catch (error) {
     console.error("Error updating product report flags:", error);
     return { success: false, message: error.message };
-  }
-});
-
-// Admin Handle
-exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
-  const { action, username, password,  statusToken } = data;
-  try {
-    if (action === 'login') {
-      // username, password
-      const loginResponse = await Admin.login(username, password);
-      if (loginResponse.status === 'success') {
-        return { success: true, statusToken: loginResponse.statusToken };
-      } else {
-        return { success: false, message: loginResponse.message };
-      }
-    }
-    else if (action === 'checkLoginStatus') {
-      // statusToken
-      console.log("start status check in index.js");
-      const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
-      if (loginStatusResponse.status === 'success') {
-        return { success: true,
-          username: loginStatusResponse.username,
-          uid: loginStatusResponse.uid,
-          headAdmin: loginStatusResponse.headAdmin
-        };
-      } else {
-        return { success: false, message: loginStatusResponse.message };
-      }
-    }
-    else if (action === 'fetchAdmin') {
-      console.log("start fetch index.js");
-      const fetchAdminResponse = await Admin.fetchAdmin();
-      if (fetchAdminResponse.status === 'success') {
-        return { success: true,
-          adminList: fetchAdminResponse.adminList
-        };
-      } else {
-        return { success: false, message: fetchAdminResponse.message };
-      }
-    }
-  } catch (error) {
-    console.error("Error handeling admin request.");
-    return { success: false, message: error.message }
   }
 });

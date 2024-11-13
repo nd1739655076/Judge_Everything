@@ -176,6 +176,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 1rem;
+  font-weight: normal;
 }
 .dropdownMenu a:hover, .dropdownMenu Link:hover {
   color: #007bff;

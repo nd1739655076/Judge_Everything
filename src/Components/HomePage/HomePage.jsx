@@ -7,7 +7,7 @@ import './HomePage.css';
 import { Link } from 'react-router-dom';
 // icon import
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaComments, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
 // intro import
 import Joyride from "react-joyride";
 // chart import
@@ -354,6 +354,11 @@ const Homepage = () => {
                     <li>
                       <div className="notifcations">
                         <a href="#"><FaBell /> Notifaction</a>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="message">
+                        <Link to="/message"><FaComments /> Message</Link>
                       </div>
                     </li>
                     <li>

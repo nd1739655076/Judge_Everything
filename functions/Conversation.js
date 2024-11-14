@@ -18,7 +18,7 @@ class Conversation {
   }
 
   // action === 'generate'
-  async generateConversation(user1Id, user2Id) {
+  static async generateConversation(user1Id, user2Id) {
     const conversationId = await this.generateConversationId();
     const conversationDocRef = db.collection('Conversations').doc(conversationId);
     await conversationDocRef.set({
@@ -30,8 +30,28 @@ class Conversation {
     });
   }
 
+  // action === 'fetchUserConversation'
+  static async fetchUserConversation(user1Id) {
+    const userRef = db.collection('User').doc(user1Id);
+    const userDoc = await userRef.get();
+    const userData = userDoc.data();
+    const conversationList = userData.conversationList || [];
+    const conversations = [];
+    if (conversationList.length === 0) {
+      return conversations;
+    }
+    for (const conversationId of conversationList) {
+      const conversationRef = db.collection('Conversations').doc(conversationId);
+      const conversationDoc = await conversationRef.get();
+      if (conversationDoc.exists) {
+        conversations.push({ id: conversationDoc.id, ...conversationDoc.data() });
+      }
+    }
+    return conversations;
+  }
+
   // Method to send a message and insert it into the conversation's messageList
-  async sendMessage(conversationId, senderId, content) {
+  static async sendMessage(conversationId, senderId, content) {
     const conversationDocRef = db.collection('Conversations').doc(conversationId);
 
     // Construct the message object

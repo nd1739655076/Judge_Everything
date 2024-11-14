@@ -9,12 +9,14 @@ const db = admin.firestore();
 const bucket = admin.storage().bucket('judge-everything.appspot.com');
 
 const TagLibrary = require('./TagLibrary');
+
+const Admin = require('./Admin');
+
 const Id = require('./Id');
 const User = require('./User');
 const Conversation = require('./Conversation');
 const ProductEntry = require('./ProductEntry');
 const Comment = require('./Comment');
-
 
 // TagLibrary Handle
 exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
@@ -40,6 +42,50 @@ exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) =
   } catch (error) {
     console.error('Error handling TagLibrary request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle TagLibrary request.');
+  }
+});
+
+// Admin Handle
+exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
+  const { action, username, password,  statusToken } = data;
+  try {
+    if (action === 'login') {
+      // username, password
+      const loginResponse = await Admin.login(username, password);
+      if (loginResponse.status === 'success') {
+        return { success: true, statusToken: loginResponse.statusToken };
+      } else {
+        return { success: false, message: loginResponse.message };
+      }
+    }
+    else if (action === 'checkLoginStatus') {
+      // statusToken
+      console.log("start status check in index.js");
+      const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
+      if (loginStatusResponse.status === 'success') {
+        return { success: true,
+          username: loginStatusResponse.username,
+          uid: loginStatusResponse.uid,
+          headAdmin: loginStatusResponse.headAdmin
+        };
+      } else {
+        return { success: false, message: loginStatusResponse.message };
+      }
+    }
+    else if (action === 'fetchAdmin') {
+      console.log("start fetch index.js");
+      const fetchAdminResponse = await Admin.fetchAdmin();
+      if (fetchAdminResponse.status === 'success') {
+        return { success: true,
+          adminList: fetchAdminResponse.adminList
+        };
+      } else {
+        return { success: false, message: fetchAdminResponse.message };
+      }
+    }
+  } catch (error) {
+    console.error("Error handeling admin request.");
+    return { success: false, message: error.message }
   }
 });
 
@@ -202,15 +248,19 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 exports.handleConversationRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action, user1Id, user2Id, conversationId, senderId, content } = data;
-    const conversation = new Conversation();
 
     if (action === 'generate') {
-      await conversation.generateConversation(user1Id, user2Id);
+      await generateConversation(user1Id, user2Id);
       return { success: true, message: 'Conversation generated successfully' };
-    } 
+    }
+
+    else if (action === 'fetchUserConversation') {
+      const conversations = await Conversation.fetchUserConversation(user1Id);
+      return { success: true, data: conversations };
+    }
 
     else if (action === 'sendMessage') {
-      const message = await conversation.sendMessage(conversationId, senderId, content);
+      const message = await sendMessage(conversationId, senderId, content);
       return { success: true, message: 'Message sent successfully', data: message };
     }
 

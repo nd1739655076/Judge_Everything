@@ -6,6 +6,8 @@ import { FollowModalProvider } from './Components/FollowModal/FollowModal';
 // HomePage
 import HomePage from './Components/HomePage/HomePage';
 import ContactPage from './Components/ContactPage/ContactPage';
+import MessagePage from './Components/MessagePage/MessagePage';
+// History
 import History from './Components/HistoryPage/History';
 import ProductCreateHistory from './Components/HistoryPage/ProductCreateHistory';
 import ReviewHistory from './Components/HistoryPage/ReviewHistory';
@@ -30,6 +32,9 @@ function App() {
           {/* HomePage */}
           <Route path="/" element={<HomePage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/message" element={<MessagePage />} />
+
+          {/* History */}
           <Route path="/history" element={<History />} />
           <Route path="/history/create" element={<ProductCreateHistory />} />
           <Route path="/history/review" element={<ReviewHistory />} />

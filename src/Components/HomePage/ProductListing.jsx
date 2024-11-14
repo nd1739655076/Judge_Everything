@@ -1,4 +1,3 @@
-// ProductListing.jsx
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useNavigate } from "react-router-dom";
@@ -97,7 +96,6 @@ const ProductListing = () => {
     });
   };
 
-  // 定义内联样式
   const buttonStyles = {
     padding: '12px 25px',
     fontSize: '18px',
@@ -107,7 +105,7 @@ const ProductListing = () => {
     border: 'none',
     borderRadius: '8px',
     cursor: 'pointer',
-    margin: '15px 0',
+    margin: '15px 5px',
     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)'
   };
@@ -177,14 +175,30 @@ const ProductListing = () => {
           )}
         </div>
 
-        <button
-          style={buttonStyles}
-          onMouseEnter={handleButtonHover}
-          onMouseLeave={handleButtonLeave}
-          onClick={() => setShowCheckboxes(!showCheckboxes)}
-        >
-          Compare Two Products
-        </button>
+        {/* Buttons Container */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '15px' }}>
+          <button
+            style={buttonStyles}
+            onMouseEnter={handleButtonHover}
+            onMouseLeave={handleButtonLeave}
+            onClick={() => {
+              setShowCheckboxes(true);
+              setSelectedProducts([]);
+            }}
+          >
+            Compare Two Products
+          </button>
+          {showCheckboxes && selectedProducts.length === 2 && (
+            <button
+              style={buttonStyles}
+              onMouseEnter={handleButtonHover}
+              onMouseLeave={handleButtonLeave}
+              onClick={() => setShowComparison(true)}
+            >
+              Finished
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="product-list">
@@ -211,17 +225,6 @@ const ProductListing = () => {
         )}
       </div>
 
-      {selectedProducts.length === 2 && (
-        <button
-          style={buttonStyles}
-          onMouseEnter={handleButtonHover}
-          onMouseLeave={handleButtonLeave}
-          onClick={() => setShowComparison(true)}
-        >
-          Finished
-        </button>
-      )}
-
       {showComparison && (
         <>
           <div className="overlay"></div>
@@ -231,11 +234,13 @@ const ProductListing = () => {
                 <div className="product-details">
                   <h2>{selectedProducts[0].productName}</h2>
                   <p>Average Score: {selectedProducts[0].averageScore?.average || 'N/A'}</p>
+                  <p>Tags: {selectedProducts[0].tagList || 'N/A'}</p>
                 </div>
                 <div className="divider"></div>
                 <div className="product-details">
                   <h2>{selectedProducts[1].productName}</h2>
                   <p>Average Score: {selectedProducts[1].averageScore?.average || 'N/A'}</p>
+                  <p>Tags: {selectedProducts[1].tagList || 'N/A'}</p>
                 </div>
               </div>
               <button className="close-button" onClick={() => setShowComparison(false)}>Close</button>

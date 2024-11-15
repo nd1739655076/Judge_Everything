@@ -92,7 +92,19 @@
   border-bottom: 1px solid #f0f0f0; /* Light bottom border for separation */
   transition: background-color 0.2s; /* Smooth background color transition */
 }
+.clear-history-button {
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #e74c3c; /* Red color for emphasis */
+  cursor: pointer;
+  text-align: center;
+  border-top: 1px solid #f0f0f0; /* Light border to separate from search items */
+  transition: background-color 0.2s;
+}
 
+.clear-history-button:hover {
+  background-color: #f5f5f5; /* Light gray background on hover */
+}
 /* Last item should not have a border */
 .search-history-item:last-child {
   border-bottom: none;

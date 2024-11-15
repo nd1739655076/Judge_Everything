@@ -107,6 +107,11 @@ const ProductListing = () => {
     setSelectedTag(''); // Clear any selected tag filters if you have them
     setSelectedSubtag(''); // Clear any selected subtag filters
   };
+  const handleClearHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem('searchHistory');
+    setShowHistoryDropdown(false);
+  };
   const handleSearchInputClick = () => {
     setShowHistoryDropdown(true); // Show the dropdown when the input is clicked
   };
@@ -232,6 +237,13 @@ const ProductListing = () => {
                       {term}
                     </div>
                   ))}
+                  {/* Clear History Button */}
+                  <div
+                    className="clear-history-button"
+                    onClick={handleClearHistory}
+                  >
+                    Clear History
+                  </div>
                 </div>
               )}
             </div>

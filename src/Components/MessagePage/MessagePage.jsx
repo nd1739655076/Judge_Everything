@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
+import styles from './MessagePage.module.css'; // Using CSS Module
+
 import { useNavigate } from 'react-router-dom';
-import './MessagePage.css';
+import { useFollowModal } from '../FollowModal/FollowModal';
 
 const MessagePage = () => {
   const [userId, setUserId] = useState("");
@@ -11,6 +13,10 @@ const MessagePage = () => {
   const [conversations, setConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState('');
   const [inputText, setInputText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+
+  const { openModal } = useFollowModal();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,7 +49,6 @@ const MessagePage = () => {
         user1Id: userId,
       });
       if (response.data.success) {
-        console.log(response.data.success);
         setConversations(response.data.data);
       }
     };
@@ -98,83 +103,110 @@ const MessagePage = () => {
   }, [userId]);
 
   const selectConversation = async (conversation) => {
-
+    // Add your functionality here
   };
   const handleSend = async () => {
-
+    // Add your functionality here
+  };
+  const handleSearch = async () => {
+    if (!searchQuery) return;
+    const searchUsers = httpsCallable(functions, 'handleConversationRequest');
+    const response = await searchUsers({
+      action: 'searchUsersByUsername',
+      searchString: searchQuery,
+    });
+    if (response.data.success) {
+      setSearchResults(response.data.data);
+    }
+  };
+  const handleSearchResultClick = (userId, username) => {
+    openModal(userId, username);
   };
 
   return (
-    <div className="messagePage">
+    <div className={styles.messagePage}>
       {/* Back to HomePage Button */}
-      <button className="backToHomePageButton" 
-        onClick={() => navigate('/')}>Back to HomePage
+      <button className={styles.backToHomePageButton} onClick={() => navigate('/')}>
+        Back to HomePage
       </button>
 
       {/* Left Side */}
-      <div className="leftPanel">
-        {/* Conversation List */}
-        <h2 className="conversationListTitle">Conversation List</h2>
-        <hr className="separator" />
-        <div className="conversationList">
+      <div className={styles.leftPanel}>
+        <h2 className={styles.conversationListTitle}>Conversation List</h2>
+        <hr className={styles.separator} />
+        <div className={styles.conversationList}>
           {conversations.map((conversation) => (
             <div
               key={conversation.id}
-              className={`conversationItem ${
-                selectedConversationId === conversation.id ? 'active' : ''
+              className={`${styles.conversationItem} ${
+                selectedConversationId === conversation.id ? styles.active : ''
               }`}
               onClick={() => setSelectedConversationId(conversation.id)}
             >
-              <div className="conversationInfo">
+              <div className={styles.conversationInfo}>
                 <h3>{conversation.user1 === userId ? conversation.user2 : conversation.user1}</h3>
                 <p>{conversation.lastMessage}</p>
               </div>
             </div>
           ))}
         </div>
-        <hr className="separator" />
+        <hr className={styles.separator} />
+
         {/* Search User Area */}
-        <div className="searchUserArea">
+        <div className={styles.searchUserArea}>
           <input
             type="text"
             placeholder="Search the User and follow!"
-            className="searchInput"
+            className={styles.searchInput}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
+          <button onClick={handleSearch} className={styles.searchButton}>
+            Search
+          </button>
+          <div className={styles.searchResults}>
+            {searchResults.map((user) => (
+              <div
+                key={user.userId}
+                className={styles.searchResultItem}
+                onClick={() => handleSearchResultClick(user.userId, user.username)}
+              >
+                <p>{user.username}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-  
+
       {/* Right Side: Chat Window */}
-      <div className="rightPanel">
+      <div className={styles.rightPanel}>
         {selectedConversationId ? (
           <>
-            {/* Message List */}
-            <h2 className="followUserName">???</h2>
-            <hr className="separator" />
-            <div className="messageList">
-              {/* Render messages dynamically here */}
-            </div>
-            <hr className="separator" />
-            {/* Input Area */}
-            <div className="inputArea">
+            <h2 className={styles.followUserName}>???</h2>
+            <hr className={styles.separator} />
+            <div className={styles.messageList}>{/* Render messages dynamically here */}</div>
+            <hr className={styles.separator} />
+            <div className={styles.inputArea}>
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Send message here..."
-                className="messageInput"
+                className={styles.messageInput}
               />
-              <button onClick={handleSend} className="sendButton">Send</button>
+              <button onClick={handleSend} className={styles.sendButton}>
+                Send
+              </button>
             </div>
           </>
         ) : (
-          <div className="noConversationSelected">
+          <div className={styles.noConversationSelected}>
             Choose one of the conversation and send the message!
           </div>
         )}
       </div>
     </div>
   );
-  
 };
 
 export default MessagePage;

@@ -50,6 +50,23 @@ class Conversation {
     return conversations;
   }
 
+  // action === 'searchUsersByUsername'
+  static async searchUsersByUsername(searchString) {
+    const usersRef = db.collection('User');
+    const snapshot = await usersRef
+      .where('username', '>=', searchString)
+      .where('username', '<=', searchString + '\uf8ff')
+      .get();
+    if (snapshot.empty) {
+      return [];
+    }
+    const users = [];
+    snapshot.forEach(doc => {
+      users.push({ userId: doc.id, username: doc.data().username });
+    });
+    return users;
+  }
+
   // Method to send a message and insert it into the conversation's messageList
   static async sendMessage(conversationId, senderId, content) {
     const conversationDocRef = db.collection('Conversations').doc(conversationId);

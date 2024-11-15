@@ -2,7 +2,7 @@ import React, { useEffect, createContext, useContext, useState } from 'react';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import './FollowModal.css';
+import styles from './FollowModal.module.css';
 
 const FollowModalContext = createContext();
 
@@ -51,17 +51,20 @@ const FollowModal = () => {
   };
 
   return (
-    <div className={`followModal ${isOpen ? 'visible' : 'hidden'}`}>
-      <div className="followModalContent">
-        <h2>Username: {followUserName}</h2>
-        {isFollowing ? (
-          <button onClick={handleUnfollow}>Unfollow</button>
-        ) : (
-          <button onClick={handleFollow}>Follow</button>
-        )}
-        <button onClick={closeModal}>Close</button>
+    <div className={`${styles.followModal} ${isOpen ? styles.visible : styles.hidden}`}>
+      <div className={styles.followModalContent}>
+        <h2>Username: <span>{followUserName}</span></h2>
+        <div className={styles.buttonContainer}>
+          {isFollowing ? (
+            <button onClick={handleUnfollow} className={styles.followModalButton}>Unfollow</button>
+          ) : (
+            <button onClick={handleFollow} className={styles.followModalButton}>Follow</button>
+          )}
+          <button onClick={closeModal} className={styles.followModalButton}>Close</button>
+        </div>
       </div>
-    </div>
+</div>
+
   );
 };
 

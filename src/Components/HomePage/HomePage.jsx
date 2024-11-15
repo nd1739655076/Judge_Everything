@@ -305,7 +305,6 @@ const Homepage = () => {
         </div>
         <div className="navlinks">
           <a href="/">Home</a>
-          <a href="#">About</a>
           <a href="/contact" className="step-3">Support</a>
           <a onClick={() => setRun(true)}
             className="step-6"

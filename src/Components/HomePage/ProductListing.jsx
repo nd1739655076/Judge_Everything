@@ -9,6 +9,7 @@ const ProductListing = () => {
   const [tagLibrary, setTagLibrary] = useState([]);
   const [selectedTag, setSelectedTag] = useState('');
   const [selectedSubtag, setSelectedSubtag] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('');
   const [loading, setLoading] = useState(true);
@@ -16,7 +17,8 @@ const ProductListing = () => {
   const [showCheckboxes, setShowCheckboxes] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [parameterData, setParameterData] = useState({});
-
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
 
   const navigate = useNavigate();
 
@@ -55,10 +57,12 @@ const ProductListing = () => {
       }
     };
 
+    const storedHistory = JSON.parse(localStorage.getItem('searchHistory')) || [];
+    setSearchHistory(storedHistory);
     fetchProducts();
     fetchTagLibrary();
-  }, []);  
-  
+  }, []);
+
   useEffect(() => {
     let filtered = products;
     if (selectedTag) {
@@ -87,6 +91,34 @@ const ProductListing = () => {
       return b.averageScore.average - a.averageScore.average;
     });
 
+  const handleSearchClick = () => {
+    if (searchInput.trim()) {
+      setSearchQuery(searchInput); // Update the search query
+
+      // Save to search history
+      const updatedHistory = [searchInput, ...searchHistory.filter(term => term !== searchInput)].slice(0, 5); // Keep only the latest 5 unique entries
+      setSearchHistory(updatedHistory);
+      localStorage.setItem('searchHistory', JSON.stringify(updatedHistory)); // Save to local storage
+    }
+  }
+  const handleResetClick = () => {
+    setSearchInput(''); // Clear the search input
+    setSearchQuery(''); // Clear the search query to show all content
+    setSelectedTag(''); // Clear any selected tag filters if you have them
+    setSelectedSubtag(''); // Clear any selected subtag filters
+  };
+  const handleSearchInputClick = () => {
+    setShowHistoryDropdown(true); // Show the dropdown when the input is clicked
+  };
+
+  const handleHistoryItemClick = (term) => {
+    setSearchInput(term); // Fill the input with the selected history term
+    setShowHistoryDropdown(false); // Hide the dropdown
+  };
+
+  const handleSearchInputBlur = () => {
+    setTimeout(() => setShowHistoryDropdown(false), 150); // Delay hiding to allow item click
+  };
   const handleSelectProduct = (product) => {
     setSelectedProducts(prevSelected => {
       if (prevSelected.some(selected => selected.id === product.id)) {
@@ -103,14 +135,14 @@ const ProductListing = () => {
       const fetchParameters = async () => {
         const functions = getFunctions();
         const handleParameterRequest = httpsCallable(functions, 'handleParameterRequest');
-        
+
         console.log("Fetching parameters for selected products...");
-        
+
         // 打印 selectedProducts 的内容
         console.log("Selected products:", selectedProducts);
-        
+
         let allParameters = {};
-        
+
         // 遍历 selectedProducts，获取每个 product 的参数列表
         for (let product of selectedProducts) {
           console.log("Current product:", product);  // 打印当前的 product 信息
@@ -121,11 +153,11 @@ const ProductListing = () => {
             if (!allParameters[paramId]) {
               try {
                 console.log(`Fetching parameter with ID: ${paramId}`);  // 打印当前正在请求的 paramId
-                
+
                 const response = await handleParameterRequest({ paramId });
-                
+
                 console.log(`Parameter fetch response for ID ${paramId}:`, response);  // 打印参数请求的响应
-                
+
                 if (response.data.success) {
                   allParameters[paramId] = response.data.parameter;
                   console.log(`Parameter data for ID ${paramId}:`, response.data.parameter);  // 打印成功获取的参数数据
@@ -138,15 +170,15 @@ const ProductListing = () => {
             }
           }
         }
-        
+
         console.log("All fetched parameters:", allParameters);  // 打印所有已获取的参数数据
         setParameterData(allParameters);
       };
-  
+
       fetchParameters();
     }
   }, [selectedProducts]);
-  
+
 
   const buttonStyles = {
     padding: '12px 25px',
@@ -178,17 +210,57 @@ const ProductListing = () => {
         <h1>Product Listings</h1>
 
         <div className="search-sort-container">
-          <input
-            type="text"
-            placeholder="Search by product name"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="highestRated">Highest Rated</option>
-            <option value="postTime">Post Time</option>
-            <option value="mostPopular">Most Reviews</option>
-          </select>
+          {/* Group the input box and dropdown menu */}
+          <div className="input-dropdown-group">
+            <div className="Search-History">
+              <input
+                type="text"
+                placeholder="Search by product name"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onClick={handleSearchInputClick}
+                onBlur={handleSearchInputBlur}
+              />
+              {showHistoryDropdown && searchHistory.length > 0 && (
+                <div className="search-history-dropdown">
+                  {searchHistory.map((term, index) => (
+                    <div
+                      key={index}
+                      className="search-history-item"
+                      onClick={() => handleHistoryItemClick(term)}
+                    >
+                      {term}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="highestRated">Highest Rated</option>
+              <option value="postTime">Post Time</option>
+              <option value="mostPopular">Most Reviews</option>
+            </select>
+          </div>
+
+          {/* Group the buttons together */}
+          <div className="button-group">
+            <button
+              style={buttonStyles}
+              onMouseEnter={handleButtonHover}
+              onMouseLeave={handleButtonLeave}
+              onClick={handleSearchClick}
+            >
+              Search
+            </button>
+            <button
+              style={buttonStyles}
+              onMouseEnter={handleButtonHover}
+              onMouseLeave={handleButtonLeave}
+              onClick={handleResetClick} // New function to handle reset
+            >
+              Reset
+            </button>
+          </div>
         </div>
 
         <div className="filter-container">

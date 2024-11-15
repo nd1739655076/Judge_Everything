@@ -11,11 +11,13 @@ export const useFollowModal = () => useContext(FollowModalContext);
 const FollowModal = () => {
   const {
     isOpen,
+    loginUserId,
+    loginUserName,
     followUserId,
     followUserName,
-    closeModal,
-    loginUserId,
     followingList,
+    openModal,
+    closeModal,
     updateFollowingList,
   } = useFollowModal();
   const [isFollowing, setIsFollowing] = useState(false);
@@ -38,6 +40,16 @@ const FollowModal = () => {
       setIsFollowing(true);
       updateFollowingList(updatedList);
       await updateFirestoreFollowingList(updatedList);
+
+      const generateConversation = httpsCallable(functions, 'handleConversationRequest');
+      await generateConversation({
+        action: 'generate',
+        user1Id: loginUserId,
+        user2Id: followUserId,
+        user1Name: loginUserName,
+        user2Name: followUserName,
+        senderId: loginUserId,
+      });
     }
   };
 
@@ -78,30 +90,35 @@ export const FollowModalProvider = ({ children }) => {
 
   useEffect(() => {
     const checkLoginStatusFetchData = async () => {
-      const localStatusToken = localStorage.getItem('authToken');
-      if (localStatusToken) {
-        const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
-        const response = await handleUserRequest({
-          action: 'checkLoginStatus',
-          statusToken: localStatusToken,
-        });
-        if (response.data.success) {
-          setLoginUserId(response.data.uid);
-          setLoginUserName(response.data.username);
-          const db = getFirestore();
-          const userRef = doc(db, 'User', response.data.uid);
-          const userDoc = await getDoc(userRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            setFollowingList(userData.followingList || []);
+      try {
+        const localStatusToken = localStorage.getItem('authToken');
+        if (localStatusToken) {
+          const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+          const response = await handleUserRequest({
+            action: 'checkLoginStatus',
+            statusToken: localStatusToken,
+          });
+  
+          if (response.data.success) {
+            setLoginUserId(response.data.uid);
+            setLoginUserName(response.data.username);
+            const db = getFirestore();
+            const userRef = doc(db, 'User', response.data.uid);
+            const userDoc = await getDoc(userRef);
+            
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              setFollowingList(userData.followingList || []);
+            }
+          } else {
+            localStorage.removeItem('authToken');
           }
         }
-        else {
-          localStorage.removeItem('authToken');
-        }
+      } catch (error) {
+        console.error('Error checking login status:', error);
       }
     };
-
+  
     checkLoginStatusFetchData();
   }, [isOpen, followingList]);
 

@@ -52,15 +52,17 @@ const MessagePage = () => {
       if (response.data.success) {
         if (response.data.data && response.data.data.length > 0) {
           const formattedConversations = response.data.data.map((conversation) => {
-            // Format lastMessage using Date.now() format
-            if (conversation.lastMessage && typeof conversation.lastMessage === 'number') {
-              conversation.lastMessage = new Date(conversation.lastMessage).toLocaleString();
+            if (conversation.lastMessage && conversation.lastMessage.seconds) {
+              conversation.lastMessage = new Date(
+                conversation.lastMessage.seconds * 1000
+              ).toLocaleString();
             }
-            // Format messageList timestamps
             if (Array.isArray(conversation.messageList)) {
               conversation.messageList = conversation.messageList.map((message) => {
-                if (message.timestamp && typeof message.timestamp === 'number') {
-                  message.timestamp = new Date(message.timestamp).toLocaleString();
+                if (message.timestamp && message.timestamp.seconds) {
+                  message.timestamp = new Date(
+                    message.timestamp.seconds * 1000
+                  ).toLocaleString();
                 }
                 return message;
               });
@@ -68,7 +70,7 @@ const MessagePage = () => {
             return conversation;
           });
           console.log("Fetched conversations from Cloud Function:", response.data.data);
-          setConversations(formattedConversations);
+          setConversations(response.data.data);
         } else {
           console.log(response.data.message);
           setConversations([]);
@@ -100,15 +102,17 @@ const MessagePage = () => {
               id: conversationSnapshot.id,
               ...conversationSnapshot.data(),
             };
-            // Format lastMessage using Date.now() format
-            if (conversationData.lastMessage && typeof conversationData.lastMessage === 'number') {
-              conversationData.lastMessage = new Date(conversationData.lastMessage).toLocaleString();
+            if (conversationData.lastMessage && conversationData.lastMessage.seconds) {
+              conversationData.lastMessage = new Date(
+                conversationData.lastMessage.seconds * 1000
+              ).toLocaleString();
             }
-            // Format messageList timestamps
             if (Array.isArray(conversationData.messageList)) {
               conversationData.messageList = conversationData.messageList.map((message) => {
-                if (message.timestamp && typeof message.timestamp === 'number') {
-                  message.timestamp = new Date(message.timestamp).toLocaleString();
+                if (message.timestamp && message.timestamp.seconds) {
+                  message.timestamp = new Date(
+                    message.timestamp.seconds * 1000
+                  ).toLocaleString();
                 }
                 return message;
               });
@@ -145,15 +149,17 @@ const MessagePage = () => {
       (conv) => conv.id === selectedConversationId
     );
     if (conversation) {
-      // Format lastMessage using Date.now() format
-      if (conversation.lastMessage && typeof conversation.lastMessage === 'number') {
-        conversation.lastMessage = new Date(conversation.lastMessage).toLocaleString();
+      if (conversation.lastMessage && conversation.lastMessage.seconds) {
+        conversation.lastMessage = new Date(
+          conversation.lastMessage.seconds * 1000
+        ).toLocaleString();
       }
-      // Format messageList timestamps
       if (Array.isArray(conversation.messageList)) {
         conversation.messageList = conversation.messageList.map((message) => {
-          if (message.timestamp && typeof message.timestamp === 'number') {
-            message.timestamp = new Date(message.timestamp).toLocaleString();
+          if (message.timestamp && message.timestamp.seconds) {
+            message.timestamp = new Date(
+              message.timestamp.seconds * 1000
+            ).toLocaleString();
           }
           return message;
         });
@@ -237,7 +243,7 @@ const MessagePage = () => {
 
       {/* Right Side: Chat Window */}
       <div className={styles.rightPanel}>
-        {selectedConversation ? (
+        {selectedConversation  ? (
           <>
             <h2 className={styles.followUserName}>
               {selectedConversation.user1 === userId
@@ -248,22 +254,22 @@ const MessagePage = () => {
             <div className={styles.messageList}>
               {selectedConversation &&
                 selectedConversation.messageList.map((message, index) => (
-                  <div
-                    key={index}
-                    className={
-                      message.sender === userId
-                        ? `${styles.message} ${styles.rightMessage}`
-                        : `${styles.message} ${styles.leftMessage}`
-                    }
-                  >
-                    <div className={styles.messageContent}>{message.content}</div>
-                    <div className={styles.messageTimestamp}>
-                      {message.timestamp
-                        ? new Date(message.timestamp).toLocaleString()
-                        : ""}
-                    </div>
+                <div
+                  key={index}
+                  className={
+                    message.sender === userId
+                      ? `${styles.message} ${styles.rightMessage}`
+                      : `${styles.message} ${styles.leftMessage}`
+                  }
+                >
+                  <div className={styles.messageContent}>{message.content}</div>
+                  <div className={styles.messageTimestamp}>
+                    {message.timestamp && message.timestamp._seconds
+                      ? new Date(message.timestamp._seconds * 1000).toLocaleString()
+                      : ""}
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
             <hr className={styles.separator} />
             <div className={styles.inputArea}>
@@ -281,7 +287,7 @@ const MessagePage = () => {
           </>
         ) : (
           <div className={styles.noConversationSelected}>
-            Choose one of the conversations and send a message!
+            Choose one of the conversation and send the message!
           </div>
         )}
       </div>

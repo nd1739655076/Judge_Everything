@@ -4,7 +4,7 @@ const db = admin.firestore();
 
 class Conversation {
   // helper
-  async generateConversationId() {
+  static async generateConversationId() {
     const counterRef = db.collection('Counters').doc('conversationCounter');
     const counterDoc = await counterRef.get();
     let conversationCount = 0;
@@ -18,28 +18,50 @@ class Conversation {
   }
 
   // action === 'generate'
-  static async generateConversation(user1Id, user2Id) {
+  static async generateConversation(user1Id, user2Id, user1Name, user2Name, senderId) {
+    const existingConversationSnapshot = await db.collection('Conversations')
+    .where('user1', 'in', [user1Id, user2Id])
+    .where('user2', 'in', [user1Id, user2Id])
+    .get();
+    if (!existingConversationSnapshot.empty) {
+    return;
+    }
     const conversationId = await this.generateConversationId();
     const conversationDocRef = db.collection('Conversations').doc(conversationId);
     await conversationDocRef.set({
       conversationId: conversationId,
       user1: user1Id,
       user2: user2Id,
+      user1Name: user1Name,
+      user2Name: user2Name,
       messageList: [],
-      lastMessage: admin.firestore.FieldValue.serverTimestamp(),
+      lastMessage: Date.now(),
     });
+    // Update both users' conversation lists
+    const user1Ref = db.collection('User').doc(user1Id);
+    const user2Ref = db.collection('User').doc(user2Id);
+    await user1Ref.update({
+      conversationList: admin.firestore.FieldValue.arrayUnion(conversationId),
+    });
+    await user2Ref.update({
+      conversationList: admin.firestore.FieldValue.arrayUnion(conversationId),
+    });
+    ///await this.sendMessage(conversationId, senderId, 'Hi! I just followed you. Excited to chat!');
   }
 
   // action === 'fetchUserConversation'
-  static async fetchUserConversation(user1Id) {
-    const userRef = db.collection('User').doc(user1Id);
+  static async fetchUserConversation(loginUserId) {
+    const userRef = db.collection('User').doc(loginUserId);
     const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+      return { success: false, message: 'User document does not exist.' };
+    }
     const userData = userDoc.data();
     const conversationList = userData.conversationList || [];
-    const conversations = [];
     if (conversationList.length === 0) {
-      return conversations;
+      return { success: true, message: 'No conversations found.', data: [] };
     }
+    const conversations = [];
     for (const conversationId of conversationList) {
       const conversationRef = db.collection('Conversations').doc(conversationId);
       const conversationDoc = await conversationRef.get();
@@ -47,7 +69,7 @@ class Conversation {
         conversations.push({ id: conversationDoc.id, ...conversationDoc.data() });
       }
     }
-    return conversations;
+    return { success: true, data: conversations };
   }
 
   // action === 'searchUsersByUsername'
@@ -70,20 +92,15 @@ class Conversation {
   // Method to send a message and insert it into the conversation's messageList
   static async sendMessage(conversationId, senderId, content) {
     const conversationDocRef = db.collection('Conversations').doc(conversationId);
-
-    // Construct the message object
     const message = {
       sender: senderId,
-      receiver: receiverId,
       content: content,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      timestamp: Date.now(),
     };
-
     await conversationDocRef.update({
       messageList: admin.firestore.FieldValue.arrayUnion(message),
-      lastMessage: admin.firestore.FieldValue.serverTimestamp(),
+      lastMessage: Date.now(),
     });
-    return message;
   }
 }
 

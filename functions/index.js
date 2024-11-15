@@ -247,16 +247,17 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
 // Conversation Handle
 exports.handleConversationRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, user1Id, user2Id, searchString, conversationId, senderId, content } = data;
+    const { action, user1Id, user2Id, user1Name, user2Name, loginUserId,
+      searchString, conversationId, senderId, content } = data;
 
     if (action === 'generate') {
-      await Conversation.generateConversation(user1Id, user2Id);
+      await Conversation.generateConversation(user1Id, user2Id, user1Name, user2Name, senderId);
       return { success: true, message: 'Conversation generated successfully' };
     }
 
     else if (action === 'fetchUserConversation') {
-      const conversations = await Conversation.fetchUserConversation(user1Id);
-      return { success: true, data: conversations };
+      const response = await Conversation.fetchUserConversation(loginUserId);
+      return response;
     }
 
     else if (action === 'searchUsersByUsername') {
@@ -265,8 +266,7 @@ exports.handleConversationRequest = functions.https.onCall(async (data, context)
     }
 
     else if (action === 'sendMessage') {
-      const message = await Conversation.sendMessage(conversationId, senderId, content);
-      return { success: true, message: 'Message sent successfully', data: message };
+      await Conversation.sendMessage(conversationId, senderId, content);
     }
 
   } catch (error) {

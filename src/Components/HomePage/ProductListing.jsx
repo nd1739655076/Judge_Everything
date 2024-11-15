@@ -15,6 +15,8 @@ const ProductListing = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [showCheckboxes, setShowCheckboxes] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
+  const [parameterData, setParameterData] = useState({});
+
 
   const navigate = useNavigate();
 
@@ -55,8 +57,8 @@ const ProductListing = () => {
 
     fetchProducts();
     fetchTagLibrary();
-  }, []);
-
+  }, []);  
+  
   useEffect(() => {
     let filtered = products;
     if (selectedTag) {
@@ -96,6 +98,56 @@ const ProductListing = () => {
     });
   };
 
+  useEffect(() => {
+    if (selectedProducts.length === 2) {
+      const fetchParameters = async () => {
+        const functions = getFunctions();
+        const handleParameterRequest = httpsCallable(functions, 'handleParameterRequest');
+        
+        console.log("Fetching parameters for selected products...");
+        
+        // 打印 selectedProducts 的内容
+        console.log("Selected products:", selectedProducts);
+        
+        let allParameters = {};
+        
+        // 遍历 selectedProducts，获取每个 product 的参数列表
+        for (let product of selectedProducts) {
+          console.log("Current product:", product);  // 打印当前的 product 信息
+          const parameterList = Array.isArray(product.parametorList) ? product.parametorList : [];
+          console.log("Parameter list for product:", parameterList);  // 打印当前 product 的 parameterList
+          // 遍历 parameterList，逐个请求参数信息
+          for (let paramId of parameterList) {
+            if (!allParameters[paramId]) {
+              try {
+                console.log(`Fetching parameter with ID: ${paramId}`);  // 打印当前正在请求的 paramId
+                
+                const response = await handleParameterRequest({ paramId });
+                
+                console.log(`Parameter fetch response for ID ${paramId}:`, response);  // 打印参数请求的响应
+                
+                if (response.data.success) {
+                  allParameters[paramId] = response.data.parameter;
+                  console.log(`Parameter data for ID ${paramId}:`, response.data.parameter);  // 打印成功获取的参数数据
+                } else {
+                  console.error(`Failed to retrieve parameter with ID ${paramId}`);
+                }
+              } catch (error) {
+                console.error(`Error fetching parameter with ID ${paramId}:`, error);
+              }
+            }
+          }
+        }
+        
+        console.log("All fetched parameters:", allParameters);  // 打印所有已获取的参数数据
+        setParameterData(allParameters);
+      };
+  
+      fetchParameters();
+    }
+  }, [selectedProducts]);
+  
+
   const buttonStyles = {
     padding: '12px 25px',
     fontSize: '18px',
@@ -124,7 +176,7 @@ const ProductListing = () => {
     <div className="product-listing">
       <div className="product-listing-header">
         <h1>Product Listings</h1>
-        
+
         <div className="search-sort-container">
           <input
             type="text"
@@ -217,31 +269,39 @@ const ProductListing = () => {
               <img src={product.productImage || 'default.jpg'} alt={product.productName} className="product-image" />
               <h3 onClick={() => navigate(`/product/${product.id}`)}>{product.productName}</h3>
               <p>{product.description || "No description available"}</p>
-              <p>Tags: {(Array.isArray(product.tagList) ? product.tagList : []).join(', ')}</p>
+              <p>Tags: {product.tagList || "No tag yet"}</p>
               <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
               <button onClick={() => navigate(`/product/${product.id}`)}>View</button>
             </div>
           ))
         )}
       </div>
-
       {showComparison && (
         <>
           <div className="overlay"></div>
           <div className="comparison-modal">
             <div className="comparison-content">
               <div className="product-comparison">
-                <div className="product-details">
-                  <h2>{selectedProducts[0].productName}</h2>
-                  <p>Average Score: {selectedProducts[0].averageScore?.average || 'N/A'}</p>
-                  <p>Tags: {selectedProducts[0].tagList || 'N/A'}</p>
-                </div>
-                <div className="divider"></div>
-                <div className="product-details">
-                  <h2>{selectedProducts[1].productName}</h2>
-                  <p>Average Score: {selectedProducts[1].averageScore?.average || 'N/A'}</p>
-                  <p>Tags: {selectedProducts[1].tagList || 'N/A'}</p>
-                </div>
+                {selectedProducts.map((product, index) => (
+                  <div key={index} className="product-details">
+                    <h2>{product.productName}</h2>
+                    <p>Average Score: {product.averageScore?.average || 'N/A'}</p>
+                    <p>Tags: {product.tagList || "No tag yet"}</p>
+                    <h3>Parameters:</h3>
+                    <ul>
+                      {(Array.isArray(product.parametorList) ? product.parametorList : []).map((paramId) => {
+                        const paramData = parameterData[paramId];
+                        console.log(`Parameter ID: ${paramId}`, paramData);
+                        return (
+                          <li key={paramId}>
+                            <strong>{paramData?.paramName || 'Loading...'}</strong>:
+                            Average Score: {paramData?.averageScore?.average || 'N/A'}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
               </div>
               <button className="close-button" onClick={() => setShowComparison(false)}>Close</button>
             </div>

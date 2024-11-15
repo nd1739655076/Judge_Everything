@@ -13,6 +13,7 @@ const Id = require('./Id');
 const User = require('./User');
 const Comment = require('./Comment');
 const ProductEntry = require('./ProductEntry');
+const Admin = require('./Admin');
 
 // TagLibrary Handle
 exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
@@ -448,5 +449,61 @@ exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, con
   } catch (error) {
     console.error("Error updating product report flags:", error);
     return { success: false, message: error.message };
+  }
+});
+
+// Admin Handle
+exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
+  const { action, username, password,  statusToken } = data;
+  try {
+    if (action === 'login') {
+      // username, password
+      const loginResponse = await Admin.login(username, password);
+      if (loginResponse.status === 'success') {
+        return { success: true, statusToken: loginResponse.statusToken };
+      } else {
+        return { success: false, message: loginResponse.message };
+      }
+    }
+    else if (action === 'checkLoginStatus') {
+      // statusToken
+      console.log("start status check in index.js");
+      const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
+      if (loginStatusResponse.status === 'success') {
+        return { success: true,
+          username: loginStatusResponse.username,
+          uid: loginStatusResponse.uid,
+          headAdmin: loginStatusResponse.headAdmin
+        };
+      } else {
+        return { success: false, message: loginStatusResponse.message };
+      }
+    }
+  } catch (error) {
+    console.error("Error handeling admin request.");
+    return { success: false, message: error.message }
+  }
+});
+
+// In your Firebase functions index.js
+exports.handleParameterRequest = functions.https.onCall(async (data, context) => {
+  const { paramId } = data;
+
+  if (!paramId) {
+    throw new functions.https.HttpsError('invalid-argument', 'Parameter ID is required.');
+  }
+  try {
+    const parameterRef = db.collection('Parameters').doc(paramId);
+    const parameterDoc = await parameterRef.get();
+    if (!parameterDoc.exists) {
+      console.error(`Parameter with ID ${paramId} not found.`);
+      return { success: false, message: 'Parameter not found.' };
+    }
+    const parameterData = parameterDoc.data();
+    console.log(`Fetched parameter data for ID ${paramId}:`, parameterData);
+    return { success: true, parameter: parameterData };
+  } catch (error) {
+    console.error(`Error fetching parameter with ID ${paramId}:`, error);
+    throw new functions.https.HttpsError('internal', 'Failed to fetch parameter.');
   }
 });

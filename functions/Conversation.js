@@ -36,6 +36,8 @@ class Conversation {
       user2Name: user2Name,
       messageList: [],
       lastMessage: Date.now(),
+      user1UnreadMessageCount: 0,
+      user2UnreadMessageCount: 0,
     });
     // Update both users' conversation lists
     const user1Ref = db.collection('User').doc(user1Id);
@@ -92,15 +94,43 @@ class Conversation {
   // action === 'sendMessage'
   static async sendMessage(conversationId, senderId, content) {
     const conversationDocRef = db.collection('Conversations').doc(conversationId);
+    const conversationDoc = await conversationDocRef.get();
+    const conversationData = conversationDoc.data();
+    const { user1, user2 } = conversationData;
     const message = {
       sender: senderId,
       content: content,
       timestamp: Date.now(),
     };
-    await conversationDocRef.update({
+  
+    let updateData = {
       messageList: admin.firestore.FieldValue.arrayUnion(message),
       lastMessage: Date.now(),
-    });
+    };
+    if (senderId === user1) {
+      updateData.user2UnreadMessageCount = admin.firestore.FieldValue.increment(1);
+    } else if (senderId === user2) {
+      updateData.user1UnreadMessageCount = admin.firestore.FieldValue.increment(1);
+    }
+
+    await conversationDocRef.update(updateData);
+  }
+
+  // action === 'setAllRead'
+  static async setAllRead(conversationId, senderId) {
+    const conversationDocRef = db.collection('Conversations').doc(conversationId);
+    const conversationDoc = await conversationDocRef.get();
+    const conversationData = conversationDoc.data();
+    const { user1, user2 } = conversationData;
+  
+    let updateData = {};
+    if (senderId === user1) {
+      updateData.user1UnreadMessageCount = 0;
+    } else if (senderId === user2) {
+      updateData.user2UnreadMessageCount = 0;
+    }
+  
+    await conversationDocRef.update(updateData);
   }
 }
 

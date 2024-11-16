@@ -269,6 +269,11 @@ exports.handleConversationRequest = functions.https.onCall(async (data, context)
       await Conversation.sendMessage(conversationId, senderId, content);
     }
 
+    else if (action === 'setAllRead') {
+      await Conversation.setAllRead(conversationId, senderId);
+      return { success: true, message: 'Unread messages set to zero' };
+    }
+
   } catch (error) {
     console.error('Error handling conversation request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle conversation request');

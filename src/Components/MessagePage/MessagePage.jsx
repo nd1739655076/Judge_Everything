@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import styles from './MessagePage.module.css'; // Using CSS Module
+import styles from './MessagePage.module.css';
 
 import { useNavigate } from 'react-router-dom';
 import { useFollowModal } from '../FollowModal/FollowModal';
@@ -160,6 +160,15 @@ const MessagePage = () => {
       }
     }
     setSelectedConversation(conversation || null);
+
+    if (selectedConversationId && userId) {
+      const setAllRead = httpsCallable(functions, 'handleConversationRequest');
+      setAllRead({
+        action: 'setAllRead',
+        conversationId: selectedConversationId,
+        senderId: userId,
+      });
+    }
   }, [selectedConversationId, conversations]);
 
   const handleSend = async () => {
@@ -201,22 +210,34 @@ const MessagePage = () => {
         <h2 className={styles.conversationListTitle}>Conversation List</h2>
         <hr className={styles.separator} />
         <div className={styles.conversationList}>
-          {conversations.map((conversation) => (
-            <div
-              key={conversation.id}
-              className={`${styles.conversationItem} ${
-                selectedConversationId === conversation.id ? styles.active : ''
-              }`}
-              onClick={() => setSelectedConversationId(conversation.id)}
-            >
-              <div className={styles.conversationInfo}>
-                <div className={styles.conversationName}>
-                  {conversation.user1 === userId ? conversation.user2Name : conversation.user1Name}
+          {conversations.map((conversation) => {
+            let unreadMessageCount = 0;
+            if (conversation.user1 === userId) {
+              unreadMessageCount = conversation.user1UnreadMessageCount || 0;
+            } else if (conversation.user2 === userId) {
+              unreadMessageCount = conversation.user2UnreadMessageCount || 0;
+            }
+
+            return (
+              <div
+                key={conversation.id}
+                className={`${styles.conversationItem} ${
+                  selectedConversationId === conversation.id ? styles.active : ''
+                }`}
+                onClick={() => setSelectedConversationId(conversation.id)}
+              >
+                <div className={styles.conversationInfo}>
+                  <div className={styles.conversationName}>
+                    {conversation.user1 === userId ? conversation.user2Name : conversation.user1Name}
+                  </div>
+                  <div className={styles.conversationDate}>{conversation.lastMessage}</div>
                 </div>
-                <div className={styles.conversationDate}>{conversation.lastMessage}</div>
+                {unreadMessageCount > 0 && (
+                  <span className={styles.unreadMessageBadge}>{unreadMessageCount}</span>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <hr className={styles.separator} />
         {/* Search User Area */}

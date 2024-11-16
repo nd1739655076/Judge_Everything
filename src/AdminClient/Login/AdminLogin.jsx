@@ -46,11 +46,19 @@ const AdminLogin = () => {
         setLoading(false);
         if (response.data.success) {
           localStorage.setItem('authToken', response.data.statusToken);
+          console.log("status token:", response.data.statusToken);
           setErrorMessage("");
           setSuccessMessage("Login successful! Redirecting...");
-          setTimeout(() => {
-            navigate("/admin/home");
-          }, 500);
+          if (response.data.headAdmin) {
+            setTimeout(() => {
+              navigate("/headadmin/home");
+            }, 500);
+          } else {
+            setTimeout(() => {
+              navigate("/admin/home");
+            }, 500);
+          }
+          
         } else {
           setErrorMessage(response.data.message);
         }

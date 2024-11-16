@@ -57,7 +57,7 @@ class Admin {
     }
     const statusToken = Admin.generateStatusToken(username, userDocData.uid);
     await userDoc.ref.update({ statusToken });
-    return { status: 'success', statusToken: statusToken };
+    return { status: 'success', statusToken: statusToken, headAdmin: userDocData.headAdmin };
   }
 
 //   // action == 'checkFirstLogin'
@@ -113,6 +113,7 @@ class Admin {
 
   // action === 'logout'
   static async logout(token) {
+    console.log("logout in Admin");
     const verificationResult = Admin.verifyToken(token);
     if (verificationResult.status === 'error') {
       return { status: 'error', message: verificationResult.message };
@@ -126,6 +127,7 @@ class Admin {
 
   // action === 'delete'
   static async delete(uid) {
+    console.log("delete in Admin");
     const userDocRef = db.collection('Admin').doc(uid);
     const userDoc = await userDocRef.get();
     if (!userDoc.exists) {

@@ -104,7 +104,9 @@ const HeadAdminHomepage = () => {
     setDropdownVisible(!isDropdownVisible);
   };
   const handleLogout = async () => {
+    console.log("start logout");
     const localStatusToken = localStorage.getItem('authToken');
+    console.log("localStatusToken:", localStatusToken);
     if (localStatusToken) {
       const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
       try {
@@ -112,7 +114,9 @@ const HeadAdminHomepage = () => {
           action: 'logout',
           statusToken: localStatusToken,
         });
+        console.log("response:", response);
         if (response.data.success) {
+          console.log("logout success");
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
           setAdminId("");
@@ -123,6 +127,9 @@ const HeadAdminHomepage = () => {
       } catch (error) {
         console.error("Error logging out:", error);
       }
+    }
+    else {
+      console.log("no local token");
     }
   };
 

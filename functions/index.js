@@ -47,13 +47,13 @@ exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) =
 
 // Admin Handle
 exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
-  const { action, username, password,  statusToken, headAdmin } = data;
+  const { action, username, password,  statusToken, headAdmin, uid } = data;
   try {
     if (action === 'login') {
       // username, password
       const loginResponse = await Admin.login(username, password);
       if (loginResponse.status === 'success') {
-        return { success: true, statusToken: loginResponse.statusToken };
+        return { success: true, statusToken: loginResponse.statusToken, headAdmin:loginResponse.headAdmin };
       } else {
         return { success: false, message: loginResponse.message };
       }
@@ -95,6 +95,25 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
       const newAdmin = new Admin(uidNum, username, password, headAdmin);
       await newAdmin.createAdmin();
       return { success: true, message: "New admin created successfully!" };
+    }
+    else if (action === 'logout') {
+      console.log("start logout in index.js");
+      const logoutResponse = await Admimn.logout(statusToken);
+      if (logoutResponse.status === 'success') {
+        return { success: true, message: logoutResponse.message };
+      } else {
+        return { success: false, message: logoutResponse.message };
+      }
+    }
+    else if (action === 'delete') {
+      console.log("start delete in index.js");
+      const deleteResponse = await Admin.delete(uid);
+      if (deleteResponse.status === 'success') {
+        return { success: true, message: deleteResponse.message };
+      } else {
+        return { success: false, message: deleteResponse.message };
+      }
+
     }
   } catch (error) {
     console.error("Error handeling admin request.");

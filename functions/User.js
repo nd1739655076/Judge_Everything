@@ -24,6 +24,7 @@ class User {
     this.searchHistory = [];
     this.browseHistory = [];
     this.rateCommentHistory = [];
+    this.tagScores = [];
   }
 
   // helper
@@ -53,6 +54,7 @@ class User {
       searchHistory: null,
       browseHistory: null,
       rateCommentHistory: null,
+      tagScores : null
     });
   }
 
@@ -186,7 +188,7 @@ class User {
     const userDoc = await db.collection('User').doc(uid).get();
     if (userDoc.exists) {
       const userDocData = userDoc.data();
-      return { status: 'success', username: userDocData.username, uid: userDocData.id };
+      return { status: 'success', username: userDocData.username, uid: userDocData.id, userTagScore: userDocData.tagScores };
     } else {
       return { status: 'error', message: 'User not found' };
     }
@@ -273,35 +275,94 @@ class User {
   }
 
 
-    // action === 'recordBrowseHistory'
-    static async recordBrowseHistory(data) {
-      const { action, productId, uid } = data;
-      console.log("User.js recordBrowseHistory invoked");
-      console.log("uid:", uid, "product id:", productId);
-      const userRef = db.collection("User").doc(uid);
-      const userDoc = await userRef.get();
-      if (!userDoc.exists) {
-        console.log("User not found");
-        return { status: 'error', message: 'User not found' };
-      }      
-      const userData = userDoc.data();
-      const currentBrowseHistory = userData.browseHistory || [];
-      console.log("old hist:", currentBrowseHistory);
-      let updatedHistory;
-      if (!currentBrowseHistory.includes(productId)) {
-        updatedHistory = [productId, ...currentBrowseHistory];
-      } else {
-        updatedHistory = [
-          productId,
-          ...currentBrowseHistory.filter((id) => id !== productId)
-        ];
-      }
-      console.log("new hist:", updatedHistory);
-      await userRef.update({
-        browseHistory: updatedHistory
-      });
-      return { status: 'success', message: 'Browse history recorded successfully' }
+  // action === 'recordBrowseHistory'
+  static async recordBrowseHistory(data) {
+    const { action, productId, uid } = data;
+    console.log("User.js recordBrowseHistory invoked");
+    console.log("uid:", uid, "product id:", productId);
+    const userRef = db.collection("User").doc(uid);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+      console.log("User not found");
+      return { status: 'error', message: 'User not found' };
     }
+    const userData = userDoc.data();
+    const currentBrowseHistory = userData.browseHistory || [];
+    console.log("old hist:", currentBrowseHistory);
+    let updatedHistory;
+    if (!currentBrowseHistory.includes(productId)) {
+      updatedHistory = [productId, ...currentBrowseHistory];
+    } else {
+      updatedHistory = [
+        productId,
+        ...currentBrowseHistory.filter((id) => id !== productId)
+      ];
+    }
+    console.log("new hist:", updatedHistory);
+    await userRef.update({
+      browseHistory: updatedHistory
+    });
+    return { status: 'success', message: 'Browse history recorded successfully' }
+  }
+
+
+  static async updateTagScores(uid) {
+    const userRef = db.collection('User').doc(uid);
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      throw new Error('User not found');
+    }
+    const userData = userSnap.data();
+    const browseHistory = userData.browseHistory || [];
+    const rateCommentHistory = userData.rateCommentHistory || [];
+    const preferences = userData.preferences || [];
+    const recentBrowseHistory = browseHistory.slice(0, 10);
+    const recentRateCommentHistory = rateCommentHistory.slice(0, 10);
+    const newtagScores = {};
+
+    const updateTagScores = (tags, incrementValue) => {
+      tags.forEach(tag => {
+        if (!newtagScores[tag]) {
+          newtagScores[tag] = 0;
+        }
+        newtagScores[tag] += incrementValue;
+      });
+    };
+
+    for (const productId of recentBrowseHistory) {
+      const productRef = db.collection('ProductEntry').doc(productId);
+      const productSnap = await productRef.get();
+      if (productSnap.exists) {
+        const productData = productSnap.data();
+        const tags = productData.tagList || [];
+        updateTagScores(tags, 1);
+      }
+    }
+
+    for (const commentId of recentRateCommentHistory) {
+      const commentRef = db.collection('Comments').doc(commentId);
+      const commentSnap = await commentRef.get();
+      if (commentSnap.exists) {
+        const commentData = commentSnap.data();
+        const productId = commentData.productId;
+        const productRef = db.collection('ProductEntry').doc(productId);
+        const productSnap = await productRef.get();
+        if (productSnap.exists) {
+          const productData = productSnap.data();
+          const tags = productData.tagList || [];
+          updateTagScores(tags, 1);
+        }
+      }
+    }
+    updateTagScores(preferences, 3);
+
+    await userRef.update({
+      tagScores: newtagScores
+    });
+    return { status: 'success', message: 'Browse history recorded successfully' }
+  }
+
+
 }
 
 module.exports = User;

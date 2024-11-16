@@ -22,6 +22,7 @@ const Homepage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState("");
   const [username, setUsername] = useState("");
+  const [userTagScore, setUserTagScore] = useState("");
   const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
@@ -38,6 +39,7 @@ const Homepage = () => {
             setIsLoggedIn(true);
             setUserId(response.data.uid);
             setUsername(response.data.username);
+            setUserTagScore(response.data.tagScores)
           } else {
             setIsLoggedIn(false);
             localStorage.removeItem('authToken');
@@ -74,12 +76,21 @@ const Homepage = () => {
         console.error('Failed to initialize TagLibrary:', response.data.message);
       }
     };
-
+    const updatesUserTagScores = async () => {
+      const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+      const response = await handleUserRequest({ action: 'updateTags', uidNum: userId });
+      if (response.data.success) {
+        console.log('TagScore updated successfully:', response.data.message);
+      } else {
+        console.error('Failed to initialize TagLibrary:', response.data.message);
+      }
+    };
     //initializeTagLibrary();
     checkLoginStatus();
     setTimeGreeting();
+    updatesUserTagScores();
     fetchProducts();
-
+    
     const intervalId = setInterval(() => {
       checkLoginStatus();
       setTimeGreeting();
@@ -173,17 +184,31 @@ const Homepage = () => {
 
   const fetchProducts = async () => {
     try {
-      const productEntriesRef = collection(db, 'ProductEntry');
-      const productSnapshot = await getDocs(productEntriesRef);
-      const productList = productSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setProducts(productList); // Update the product list state
+      const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
+      const response = await handleProductEntryRequest({ action: 'fetchProducts' });
+
+      if (response.data.success) {
+        const scoredProducts = response.data.data.map((product) => {
+          let score = 0;
+          if (product.tagList) {
+            product.tagList.forEach((tag) => {
+              if (userTagScore[tag]) {
+                score += userTagScore[tag];
+              }
+            });
+          }
+          return { ...product, score };
+        });
+
+        scoredProducts.sort((a, b) => b.score - a.score);
+        setProducts(response.data.data);
+      } else {
+        console.error("Failed to fetch product list:", response.data.message);
+      }
     } catch (error) {
       console.error("Error fetching product list:", error);
     } finally {
-      setLoading(false); // Stop loading once the data is fetched
+      setLoading(false);
     }
   };
   const handleViewRatingDistribution = async (productId) => {
@@ -416,34 +441,38 @@ const Homepage = () => {
           <h2>The Products You May Like...</h2>
           <p>Change your preference in your account setting anytime!</p>
         </div>
-        <div className="recommendationEntriesGrid">
-          {products.length > 0 ? (
-            products.slice(0, 50).map(product => ( // Get the first 10 products
-              <div key={product.id} className="recommendationEntryCard">
-                <img src={product.productImage || "placeholder.jpg"} alt={product.productName} />
-                <h1>
-                  <Link to={`/product/${product.id}`} onClick={() => handleRecordBrowsing(product.id)}>
-                    {product.productName}
-                  </Link>
-                </h1>
-                <p style={{ whiteSpace: 'pre-line' }}>
-                  Average Rating:{"\n"}
-                  {product.averageScore?.average || "No ratings yet"}
-                </p>
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleViewRatingDistribution(product.id);
-                  }}
-                >
-                  View
-                </button>
-              </div>
-            ))
-          ) : (
-            <p>No products available</p>
-          )}
-        </div>
+        {isLoggedIn ? (
+          <div className="recommendationEntriesGrid">
+            {products.length > 0 ? (
+              products.slice(0, 50).map(product => ( // Get the first 10 products
+                <div key={product.id} className="recommendationEntryCard">
+                  <img src={product.productImage || "placeholder.jpg"} alt={product.productName} />
+                  <h1>
+                    <Link to={`/product/${product.id}`} onClick={() => handleRecordBrowsing(product.id)}>
+                      {product.productName}
+                    </Link>
+                  </h1>
+                  <p style={{ whiteSpace: 'pre-line' }}>
+                    Average Rating:{"\n"}
+                    {product.averageScore?.average || "No ratings yet"}
+                  </p>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleViewRatingDistribution(product.id);
+                    }}
+                  >
+                    View
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p>No products available</p>
+            )}
+          </div>
+        ) : (
+          <p>Please login to see recommendations</p>
+        )}
         <div className="recommendationLoadMore">
           <Link to="/ProductListing">
             <button>LOAD MORE ENTRIES</button>

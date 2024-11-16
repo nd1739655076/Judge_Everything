@@ -135,7 +135,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);
       if (loginStatusResponse.status === 'success') {
-        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid };
+        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid, tagScores: loginStatusResponse.userTagScore };
       } else {
         return { success: false, message: loginStatusResponse.message };
       }
@@ -190,6 +190,15 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: true, message: deleteResponse.message };
       } else {
         return { success: false, message: deleteResponse.message };
+      }
+    }
+    
+    else if (action === 'updateTags') {
+      const accountTagUpdate = await User.updateTagScores(uidNum);
+      if (accountTagUpdate.status === 'success') {
+        return { success: true, message: accountUpdateResponse.message };
+      } else {
+        return { success: false, message: accountUpdateResponse.message };
       }
     }
 

@@ -96,7 +96,7 @@ const ProductListing = () => {
       setSearchQuery(searchInput); // Update the search query
 
       // Save to search history
-      const updatedHistory = [searchInput, ...searchHistory.filter(term => term !== searchInput)].slice(0, 5); // Keep only the latest 5 unique entries
+      const updatedHistory = [searchInput, ...searchHistory.filter(term => term !== searchInput)].slice(0, 10); // Keep only the latest 5 unique entries
       setSearchHistory(updatedHistory);
       localStorage.setItem('searchHistory', JSON.stringify(updatedHistory)); // Save to local storage
     }
@@ -341,24 +341,30 @@ const ProductListing = () => {
         {loading ? (
           <p>Loading products...</p>
         ) : (
-          displayedProducts.map(product => (
-            <div key={product.id} className="product-card">
-              {showCheckboxes && (
-                <input
-                  type="checkbox"
-                  checked={selectedProducts.some(selected => selected.id === product.id)}
-                  onChange={() => handleSelectProduct(product)}
-                />
-              )}
-              <img src={product.productImage || 'default.jpg'} alt={product.productName} className="product-image" />
-              <h3 onClick={() => navigate(`/product/${product.id}`)}>{product.productName}</h3>
-              <p>{product.description || "No description available"}</p>
-              <p>Tags: {product.tagList || "No tag yet"}</p>
-              <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
-              <button onClick={() => navigate(`/product/${product.id}`)}>View</button>
-            </div>
-          ))
+          displayedProducts.length > 0 ? (
+            displayedProducts.map(product => (
+              <div key={product.id} className="product-card">
+                {showCheckboxes && (
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.some(selected => selected.id === product.id)}
+                    onChange={() => handleSelectProduct(product)}
+                  />
+                )}
+                <img src={product.productImage || 'default.jpg'} alt={product.productName} className="product-image" />
+                <h3 onClick={() => navigate(`/product/${product.id}`)}>{product.productName}</h3>
+                <p>{product.description || "No description available"}</p>
+                <p>Tags: {product.tagList || "No tag yet"}</p>
+                <p>Average Rating: {product.averageScore?.average || "No ratings yet"}</p>
+                <button onClick={() => navigate(`/product/${product.id}`)}>View</button>
+              </div>
+            ))
+          ) : (
+
+            <p>No products available in the current category.</p>
+          )
         )}
+
       </div>
       {showComparison && (
         <>

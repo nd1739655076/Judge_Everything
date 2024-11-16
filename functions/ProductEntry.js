@@ -278,6 +278,28 @@ class ProductEntry {
     }
 }
 
+static async getFlaggedProducts() {
+  try {
+    const flaggedProductsRef = db.collection('ProductEntry').where('flag', '==', 1);
+    const flaggedProductsSnapshot = await flaggedProductsRef.get();
+
+    if (flaggedProductsSnapshot.empty) {
+      return { success: true, data: [] }; // 如果没有产品被标记，返回空数组
+    }
+
+    const flaggedProducts = flaggedProductsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return { success: true, data: flaggedProducts };
+  } catch (error) {
+    console.error("Error fetching flagged products:", error);
+    return { success: false, message: "Failed to fetch flagged products" };
+  }
+}
+
+
   
 }
 

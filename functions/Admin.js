@@ -1,6 +1,8 @@
 const admin = require('firebase-admin');
 //const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+const ProductEntry = require('./ProductEntry');
 // const nodemailer = require('nodemailer');
 
 const db = admin.firestore();
@@ -163,6 +165,37 @@ class Admin {
     return { status: 'success', message: 'Admin account deleted successfully' }
   }
 
+  // 获取今天任务的完成情况
+  static async getTodayTasks(adminId) {
+    try {
+      const adminRef = db.collection('Admin').doc(adminId);
+      const adminDoc = await adminRef.get();
+      if (!adminDoc.exists) throw new Error("Admin not found");
+
+      const adminData = adminDoc.data();
+      const tasksCompleted = adminData.tasksCompleted || 0; // 获取今日已完成任务数
+      const dailyTasks = 20; // 每日任务目标
+
+      return { success: true, tasksCompleted, dailyTasks };
+    } catch (error) {
+      console.error("Error fetching today's tasks:", error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  // 获取待处理的报告队列
+  static async getReportQueue() {
+    try {
+      const flaggedProducts = await ProductEntry.getFlaggedProducts();
+      if (flaggedProducts.success) {
+        return { success: true, queue: flaggedProducts.data };
+      }
+      return { success: false, message: "Failed to fetch report queue" };
+    } catch (error) {
+      console.error("Error fetching report queue:", error);
+      return { success: false, message: error.message };
+    }
+  }
 }
 
 module.exports = Admin;

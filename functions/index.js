@@ -543,3 +543,22 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
     return { success: false, message: error.message }
   }
 });
+
+exports.handleAdminTasksRequest = functions.https.onCall(async (data, context) => {
+  const { adminId, action } = data;
+
+  try {
+    if (action === 'getTodayTasks') {
+      const tasks = await Admin.getTodayTasks(adminId);
+      return tasks;
+    } else if (action === 'getReportQueue') {
+      const queue = await Admin.getReportQueue();
+      return queue;
+    } else {
+      throw new Error("Invalid action");
+    }
+  } catch (error) {
+    console.error("Error handling admin tasks request:", error);
+    return { success: false, message: error.message };
+  }
+});

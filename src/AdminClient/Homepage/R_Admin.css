@@ -1,0 +1,25 @@
+.today-tasks {
+    margin: 20px;
+    font-size: 1.2em;
+    text-align: center;
+  }
+  
+  .report-queue {
+    margin: 20px;
+  }
+  
+  .report-item {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+  }
+  
+  .report-item img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin-right: 15px;
+  }
+  

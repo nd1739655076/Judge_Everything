@@ -49,7 +49,7 @@ const AdminLogin = () => {
           setErrorMessage("");
           setSuccessMessage("Login successful! Redirecting...");
           setTimeout(() => {
-            navigate("/admin/home");
+            navigate("/admin/regularHome");
           }, 500);
         } else {
           setErrorMessage(response.data.message);

@@ -23,6 +23,7 @@ const Homepage = () => {
   const [userId, setUserId] = useState("");
   const [username, setUsername] = useState("");
   const [userTagScore, setUserTagScore] = useState("");
+  const [userSubtagScore, setUserSubtagScore] = useState("");
   const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
@@ -39,7 +40,9 @@ const Homepage = () => {
             setIsLoggedIn(true);
             setUserId(response.data.uid);
             setUsername(response.data.username);
-            setUserTagScore(response.data.tagScores)
+            setUserTagScore(response.data.tagScores);
+            setUserSubtagScore(response.data.subtagScore);
+            console.log('userTagScore:', response.data.tagScores);
           } else {
             setIsLoggedIn(false);
             localStorage.removeItem('authToken');
@@ -88,18 +91,104 @@ const Homepage = () => {
     //initializeTagLibrary();
     checkLoginStatus();
     setTimeGreeting();
-    updatesUserTagScores();
-    fetchProducts();
+    //updatesUserTagScores();
+    //fetchProducts();
     
     const intervalId = setInterval(() => {
       checkLoginStatus();
       setTimeGreeting();
-    }, 5000);
+    }, 60000);
     return () => clearInterval(intervalId);
   }, []);
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
+  useEffect(() => {
+    const updatesUserTagScores = async () => {
+      if (userId) {
+        const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+        try {
+          const response = await handleUserRequest({ action: 'updateTags', uidNum: userId });
+          if (response.data.success) {
+            console.log('TagScore updated successfully:', response.data.message);
+          } else {
+            console.error('Failed to update TagScores:', response.data.message);
+          }
+        } catch (error) {
+          console.error('Error updating TagScores:', error);
+        }
+      }
+    };
+
+    if (isLoggedIn) {
+      updatesUserTagScores();
+    }
+  }, [isLoggedIn, userId, functions]);  
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (isLoggedIn) {
+        try {
+          const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
+          const response = await handleProductEntryRequest({ action: 'fetchProducts' });
+    
+          if (response.data.success) {
+            const scoredProducts = response.data.data.map((product, index) => {
+              console.log(`Processing product at index ${index}:`, product); // Log each product before processing
+              let score = 0;
+    
+              // Process tag scores
+              if (product.tagList) {
+                console.log(`Product "${product.productName}" has tags:`, product.tagList);
+                const tags = Array.isArray(product.tagList) ? product.tagList : [product.tagList];
+                console.log(`Tags array for product "${product.productName}":`, tags);
+                tags.forEach((tag, tagIndex) => {
+                  const tagScore = userTagScore[tag] || 0; // Get tag score or default to 0
+                  score += tagScore;
+                  console.log(
+                    `Product "${product.productName}": Processing tag at index ${tagIndex} - Tag: ${tag}, Tag Score: ${tagScore}, Current Score: ${score}`
+                  );
+                });
+              } else {
+                console.log(`Product "${product.productName}" has no tags.`); // Log if there are no tags
+              }
+    
+              // Process subtag scores
+              if (product.subtagList && Array.isArray(product.subtagList)) {
+                console.log(`Product "${product.productName}" has subtags:`, product.subtagList);
+                product.subtagList.forEach((subtag, subtagIndex) => {
+                  const subtagScore = userTagScore[subtag] || 0; // Get subtag score or default to 0
+                  score += subtagScore;
+                  console.log(
+                    `Product "${product.productName}": Processing subtag at index ${subtagIndex} - Subtag: ${subtag}, Subtag Score: ${subtagScore}, Current Score: ${score}`
+                  );
+                });
+              } else {
+                console.log(`Product "${product.productName}" has no subtags.`); // Log if there are no subtags
+              }
+    
+              console.log(`Final score for product "${product.productName}": ${score}`);
+              return { ...product, score };
+            });
+    
+            // Sort products by score in descending order
+            scoredProducts.sort((a, b) => b.score - a.score);
+            setProducts(scoredProducts);
+          } else {
+            console.error("Failed to fetch product list:", response.data.message);
+          }
+        } catch (error) {
+          console.error("Error fetching product list:", error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+
+    fetchProducts();
+  }, [isLoggedIn, userTagScore, functions]);
+
   const handleLogout = async () => {
     const localStatusToken = localStorage.getItem('authToken');
     if (localStatusToken) {

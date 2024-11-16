@@ -47,7 +47,7 @@ exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) =
 
 // Admin Handle
 exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
-  const { action, username, password,  statusToken } = data;
+  const { action, username, password,  statusToken, headAdmin } = data;
   try {
     if (action === 'login') {
       // username, password
@@ -73,7 +73,6 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
       }
     }
     else if (action === 'fetchAdmin') {
-      console.log("start fetch index.js");
       const fetchAdminResponse = await Admin.fetchAdmin();
       if (fetchAdminResponse.status === 'success') {
         return { success: true,
@@ -82,6 +81,20 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
       } else {
         return { success: false, message: fetchAdminResponse.message };
       }
+    }
+    else if (action === 'create') {
+      const adminDocRef = db.collection('Admin').where('username', '==', username);
+      const adminDoc = await adminDocRef.get();
+      if (!adminDoc.empty) {
+        console.log("admin already exist");
+        return { success: false, message: "Username exist" };
+      }
+      const newId = new Id();
+      const idResponse = await newId.generateId('admin', username);
+      const uidNum = idResponse.idNum;
+      const newAdmin = new Admin(uidNum, username, password, headAdmin);
+      await newAdmin.createAdmin();
+      return { success: true, message: "New admin created successfully!" };
     }
   } catch (error) {
     console.error("Error handeling admin request.");

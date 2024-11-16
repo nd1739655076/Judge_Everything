@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const db = admin.firestore();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-secret-key';
-// NOTE!! not tested!
+
 class Admin {
   constructor(uid, username, password, headAdmin) {
     this.uid = uid;
@@ -16,15 +16,15 @@ class Admin {
     this.headAdmin = headAdmin;
   }
 
-  // action === 'generate'
-  // NOTE!! not edited, may not work!
-  async generateUser() {
+  // action === 'create'
+  async createAdmin() {
     //const hashedPassword = await User.hashPassword(this.password);
     const userDocRef = db.collection('Admin').doc(this.uid);
     await userDocRef.set({
       uid: this.uid,
       username: this.username,
       password: this.password,
+      statusToken: "",
       headAdmin: this.headAdmin
     });
   }
@@ -123,34 +123,6 @@ class Admin {
     return { status: 'success', message: 'Admin logged out successfully' };
   }
 
-//   // action === 'getUserData'
-//   static async getUserData(uid) {
-//     const userDocRef = db.collection('User').doc(uid);
-//     const userDoc = await userDocRef.get();
-//     if (!userDoc.exists) {
-//       return { status: 'error', message: 'User not found' };
-//     }
-//     const userDocData = userDoc.data();
-//     return {
-//       status: 'success',
-//       data: {
-//         id: userDocData.id,
-//         username: userDocData.username,
-//         password: userDocData.password,
-//         email: userDocData.email,
-//         nickname: userDocData.nickname,
-//         preferences: userDocData.preferences,
-//         productProfileCreateHistory: userDocData.productProfileCreateHistory,
-//         followingList: userDocData.followingList,
-//         followers: userDocData.followers,
-//         conversationList: userDocData.conversationList,
-//         searchHistory: userDocData.searchHistory,
-//         browseHistory: userDocData.browseHistory,
-//         rateCommentHistory: userDocData.rateCommentHistory,
-//         profileImage: userDocData.profileImage || '',
-//       },
-//     };
-//   }
 
   // action === 'delete'
   static async delete(uid) {

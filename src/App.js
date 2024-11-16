@@ -22,6 +22,9 @@ import CreateProductEntry from './Components/HomePage/CreateProductEntry';
 import ProductEntry from './Components/ProductEntry/ProductEntry';
 import EditProduct from './Components/ProductEntry/EditProductEntry';
 import ProductListing from './Components/HomePage/ProductListing';
+// Admin Client
+import AdminLogin from './AdminClient/Login/AdminLogin';
+import HeadAdminHomePage from './AdminClient/Homepage/HeadAdminHomePage';
 
 function App() {
   return (
@@ -51,6 +54,11 @@ function App() {
           <Route path="/product/:productId" element={<ProductEntry />} />
           <Route path="/editproduct" element={<EditProduct />} />
           <Route path="/productListing" element={<ProductListing />} />
+
+          {/* Admin Client */}
+          <Route path="/admin" element={<AdminLogin />} />
+          <Route path="/headadmin/home" element={<HeadAdminHomePage />} />
+          {/* <Route path="/admin/home" element={<AdminHomePage />} /> */}
 
         </Routes>
       </Router>

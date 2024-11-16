@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'; //change later
-import './AdminHomePage.css';
+import './HeadAdminHomePage.css';
 
 import { Link } from 'react-router-dom';
 // icon import
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
 import { FaSearch, FaUser, FaBars, FaBell, FaCog, FaSignOutAlt } from 'react-icons/fa';
 
-const AdminHomepage = () => {
+const HeadAdminHomepage = () => {
 
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -183,6 +183,7 @@ const AdminHomepage = () => {
         const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
         try {
             const newHeadAdmin = (role === "true");
+            console.log("username:", newUsername, ",password:", password, ",head:", newHeadAdmin);
             const response = await handleAdminRequest({
                 action: 'create',
                 username: newUsername,
@@ -195,7 +196,7 @@ const AdminHomepage = () => {
                 setSuccessMessage("New admin account created successfully!");
                 setTimeout(() => {
                     closeModal();
-                }, 500);
+                }, 1000);
             } else {
                 setLoading(false);
                 console.error(`Could not create admin account: ${response.data.message}`);
@@ -404,4 +405,4 @@ const AdminHomepage = () => {
 
 };
 
-export default AdminHomepage;
+export default HeadAdminHomepage;

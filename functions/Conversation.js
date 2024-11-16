@@ -46,7 +46,7 @@ class Conversation {
     await user2Ref.update({
       conversationList: admin.firestore.FieldValue.arrayUnion(conversationId),
     });
-    ///await this.sendMessage(conversationId, senderId, 'Hi! I just followed you. Excited to chat!');
+    await this.sendMessage(conversationId, senderId, 'Hi! I just followed you. Excited to chat!');
   }
 
   // action === 'fetchUserConversation'
@@ -89,7 +89,7 @@ class Conversation {
     return users;
   }
 
-  // Method to send a message and insert it into the conversation's messageList
+  // action === 'sendMessage'
   static async sendMessage(conversationId, senderId, content) {
     const conversationDocRef = db.collection('Conversations').doc(conversationId);
     const message = {

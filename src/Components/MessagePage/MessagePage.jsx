@@ -163,7 +163,15 @@ const MessagePage = () => {
   }, [selectedConversationId, conversations]);
 
   const handleSend = async () => {
-    // Add your functionality here
+    if (!inputText.trim() || !selectedConversationId || !userId) return;
+    const sendMessage = httpsCallable(functions, 'handleConversationRequest');
+    await sendMessage({
+      action: 'sendMessage',
+      conversationId: selectedConversationId,
+      senderId: userId,
+      content: inputText.trim(),
+    });
+    setInputText('');
   };
   const handleSearch = async () => {
     if (!searchQuery) return;
@@ -202,8 +210,10 @@ const MessagePage = () => {
               onClick={() => setSelectedConversationId(conversation.id)}
             >
               <div className={styles.conversationInfo}>
-                <h3>{conversation.user1 === userId ? conversation.user2Name : conversation.user1Name}</h3>
-                <p>{conversation.lastMessage}</p>
+                <div className={styles.conversationName}>
+                  {conversation.user1 === userId ? conversation.user2Name : conversation.user1Name}
+                </div>
+                <div className={styles.conversationDate}>{conversation.lastMessage}</div>
               </div>
             </div>
           ))}
@@ -267,12 +277,11 @@ const MessagePage = () => {
             </div>
             <hr className={styles.separator} />
             <div className={styles.inputArea}>
-              <input
-                type="text"
+              <textarea
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder="Send message here..."
-                className={styles.messageInput}
+                className={styles.messageTextarea}
               />
               <button onClick={handleSend} className={styles.sendButton}>
                 Send

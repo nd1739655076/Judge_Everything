@@ -5,6 +5,7 @@
   padding: 80px 70px 80px 80px;
   min-height: 100vh;
   box-sizing: border-box;
+  gap: 20px; /* Added gap between panels */
 }
 .separator {
   border: none;
@@ -13,21 +14,21 @@
 }
 
 .backToHomePageButton {
-  position: absolute; /* Position relative to the right panel */
-  top: 30px; /* Distance from the top of the right panel */
-  right: 70px; /* Distance from the right side of the right panel */
+  position: absolute;
+  top: 30px;
+  right: 70px;
   padding: 8px 16px;
-  background-color: #007bff; /* Blue color */
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-size: 14px;
   font-weight: bold;
-  z-index: 10; /* Ensure it appears above other elements */
+  z-index: 10;
 }
 .backToHomePageButton:hover {
-  background-color: #0056b3; /* Darker blue on hover */
+  background-color: #0056b3;
 }
 
 .leftPanel {
@@ -35,53 +36,82 @@
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  width: 30%; /* Adjusted to be smaller */
+  width: 30%;
   min-width: 250px;
   box-sizing: border-box;
   height: 85vh;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
 }
 .conversationListTitle {
   font-size: 1.5rem;
   font-weight: bold;
   text-align: center;
   margin-bottom: 10px;
-  color:#007bff;
+  color: #007bff;
 }
 .conversationList {
   flex-grow: 1;
-  overflow-y: auto;
+  overflow-y: auto; /* Enable scrolling */
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  box-sizing: border-box;
   margin-bottom: 10px;
+  flex-direction: column;
+}
+.conversationItem {
+  display: flex;
+  align-items: flex-start;
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.3s;
+}
+.conversationInfo {
+  margin-left: 10px;
+  flex: 1;
+  flex-direction: column;
+}
+.conversationName {
+  color: #007bff;
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin-bottom: 5px;
+}
+.conversationName:hover {
+  color: #0056b3;
+}
+.conversationDate {
+  color: #888;
+  font-size: 0.85rem;
 }
 .searchUserArea {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-top: 0px; /* Move the section up as needed */
   width: 100%;
 }
 .searchInput {
-  width: 100%; /* Set the input width to 100% of the parent */
+  width: 100%;
   margin-top: 10px;
   padding: 10px;
   border-radius: 5px;
   border: 2px solid #007bff;
   outline: none;
   box-sizing: border-box;
+  font-family: 'Arial', sans-serif;
 }
 .searchButton {
-  width: 100%; /* Set the button width to match the input */
-  margin-top: 10px; /* Space between input and button */
-  padding: 10px; /* Adjust padding for consistent height */
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
   border-radius: 5px;
   background-color: #007bff;
   color: white;
   border: none;
   cursor: pointer;
-  font-size: 1rem; /* Adjust font size if needed */
+  font-size: 1rem;
 }
 .searchButton:hover {
   background-color: #0056b3;
@@ -90,22 +120,18 @@
   border: 3px solid #00aaff;
 }
 .searchResults {
-  position: relative;
   background-color: #ffffff;
   border: 1px solid #ccc;
   border-radius: 5px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  max-height: 150px; /* Set a maximum height for the box */
-  overflow-y: auto; /* Enable scrolling */
+  max-height: 150px;
+  overflow-y: auto;
   width: 100%;
-  padding: 10px;
   box-sizing: border-box;
-  z-index: 10; /* Ensure it appears above other elements */
-  margin-top: 10px; /* Add space between the button and the results */
-  padding-bottom: 20px; /* Ensure it appears above other elements */
+  margin-top: 10px;
 }
 .searchResultItem {
-  padding: 0px;
+  padding: 5px;
   border-bottom: 1px solid #eee;
   font-size: 0.9rem;
 }
@@ -118,42 +144,98 @@
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  width: 65%; /* Adjusted to be larger */
+  width: 65%;
   min-width: 350px;
   box-sizing: border-box;
   height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+.followUserName {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 10px;
+  color: #007bff;
+}
+.messageList {
+  display: flex;
+  flex-grow: 1; /* 让 messageList 占据剩余空间 */
+  flex-direction: column;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  box-sizing: border-box;
+  margin-bottom: 15px;
+}
+.message {
+  max-width: 70%; /* Limit the message width */
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  display: inline-block;
+}
+.leftMessage {
+  background-color: #b0b0b0;
+  color: #333;
+  align-self: flex-start;
+  border-radius: 10px;
+  padding: 10px;
+  max-width: 70%;
+  margin-bottom: 10px;
+}
+.rightMessage {
+  background-color: #007bff;
+  color: white;
+  align-self: flex-end;
+  border-radius: 10px;
+  padding: 10px;
+  max-width: 70%;
+  margin-bottom: 10px;
+}
+.messageContent {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.messageTimestamp {
+  font-size: 0.75rem;
+  color: #cccccc; /* A lighter gray for better visibility */
+  margin-top: 5px;
+  text-align: right; /* Align timestamp to the right of the message */
+  opacity: 0.9;
+}
+.inputArea {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px; /* Added margin to separate from the message list */
+  padding: 10px;
+  border-top: 1px solid #f0f0f0; /* Border to separate from messages */
+}
+.messageInput {
+  flex-grow: 1;
+  padding: 12px; /* Increased padding for a larger input field */
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  font-size: 1rem; /* Adjusted font size */
+  min-height: 50px; /* Increased height for a larger input field */
+  font-family: 'Arial', sans-serif !important;
+}
+.sendButton {
+  padding: 12px 16px; /* Increased padding for a bigger button */
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem; /* Adjusted font size */
+}
+.sendButton:hover {
+  background-color: #0056b3;
 }
 .noConversationSelected {
   color: #888;
   font-size: 1.2rem;
   text-align: center;
   margin-top: 20px;
-}
-.messageList {
-  max-height: 400px;
-  overflow-y: auto;
-  margin-bottom: 15px;
-  border-top: 1px solid #f0f0f0;
-  padding-top: 10px;
-}
-.inputArea {
-  display: flex;
-  gap: 10px;
-}
-.messageInput {
-  flex-grow: 1;
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-}
-.sendButton {
-  padding: 8px 12px;
-  border-radius: 5px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-.sendButton:hover {
-  background-color: #0056b3;
 }

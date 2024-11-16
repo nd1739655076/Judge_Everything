@@ -22,6 +22,8 @@ import ProductListing from './Components/HomePage/ProductListing';
 // AdminClient
 import AdminLogin from './AdminClient/Login/AdminLogin';
 import AdminHomepage from './AdminClient/Homepage/AdminHomePage';
+// regular admin client
+import R_Admin from './AdminClient/Homepage/R_Admin';
 
 function App() {
   return (
@@ -51,6 +53,7 @@ function App() {
         {/* AdminClient */}
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/home" element={<AdminHomepage />} />
+        <Route path="/admin/regularHome" element={<R_Admin />} />
       </Routes>
     </Router>
   );

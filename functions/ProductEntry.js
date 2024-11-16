@@ -29,6 +29,8 @@ class ProductEntry {
     };
     this.parametorList = new Array(10).fill(null);
     this.commentList = [];
+    this.flag = 0;
+    this.flaggedTime = admin.firestore.FieldValue.serverTimestamp();
     this.reportList = new Map();
   }
 
@@ -61,7 +63,9 @@ class ProductEntry {
       },
       commentList: this.commentList,
       createdAt: this.createdAt,
-      reportList: Object.fromEntries(this.reportList)
+      reportList: Object.fromEntries(this.reportList),
+      flag: this.flag,
+      flaggedTime: this.flaggedTime
     });
   }
   static async saveProductEntry(productData) {
@@ -155,20 +159,40 @@ class ProductEntry {
   }
 
   static async reportProduct(productId, reportReason, reporter) {
-    const productRef = db.collection('ProductEntry').doc(productId);
-
-    const reportData = {
-      reportReason,
-      reporter,
-      flags: 1,
-    };
-
-    // 将举报信息添加到 reportList 中
-    await productRef.update({
-      [`reportList.${productId}`]: admin.firestore.FieldValue.arrayUnion(reportData),
-    });
-
-    return { success: true, message: "Product reported successfully." };
+    try {
+      const productRef = db.collection('ProductEntry').doc(productId);
+      const productSnap = await productRef.get();
+  
+      if (!productSnap.exists) throw new Error("Product not found");
+  
+      const productData = productSnap.data();
+      const reportData = {
+        reportReason,
+        reporter,
+      };
+  
+      // Update reportList by adding the new report
+      await productRef.update({
+        reportList: admin.firestore.FieldValue.arrayUnion(reportData),
+      });
+  
+      // Check if the number of reports is significant compared to the number of comments
+      const reportCount = (productData.reportList || []).length + 1; // +1 for the new report
+      const commentCount = productData.commentList.length;
+  
+      // If the report count is at least half of the comment count, flag the product
+      if (reportCount >= Math.ceil(commentCount / 2)) {
+        await productRef.update({
+          flag: 1,
+          flaggedTime: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+  
+      return { success: true, message: "Product reported successfully." };
+    } catch (error) {
+      console.error("Error reporting product:", error);
+      return { success: false, message: `Failed to report product: ${error.message}` };
+    }
   }
 
   static async updateProductReportFlags(productId) {

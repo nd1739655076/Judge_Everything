@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import './AdminHomePage.css';
+import './HeadAdminHomePage.css';
 import './R_Admin.css';
 
 import { Link } from 'react-router-dom';
@@ -49,7 +49,7 @@ const AdminHomepage = () => {
       }
     };
 
-    
+
 
     const setTimeGreeting = () => {
       const now = new Date();
@@ -95,8 +95,8 @@ const AdminHomepage = () => {
     const handleAdminTasksRequest = httpsCallable(functions, 'handleAdminTasksRequest');
     try {
       const response = await handleAdminTasksRequest({ action: 'getReportQueue' });
-     
-console.log("API Response:", response);
+
+      console.log("API Response:", response);
       if (response.data.success) {
         setReportQueue(response.data.queue);
       }
@@ -171,7 +171,7 @@ console.log("API Response:", response);
               {greeting}!
             </div>
             <div className="currentUserStatusInfo">
-              <FaUser />  
+              <FaUser />
               <span className="admin-title">{isHeadAdmin ? "Head Admin" : "Admin"}</span>
               <span className="username">{username}</span>
               <FaSignOutAlt
@@ -229,10 +229,31 @@ console.log("API Response:", response);
           {reportQueue.length > 0 ? (
             reportQueue.map(product => (
               <div key={product.id} className="report-item">
-                <img src={product.productImage} alt={product.productName} />
-                <h3>{product.productName}</h3>
-                <p>{product.description}</p>
-                <p><strong>Creator:</strong> {product.creator}</p>
+                <img src={product.productImage} alt={product.productName} className="product-image" />
+                <div className="product-info">
+                  <div className="product-name"><strong>Product Name:</strong> {product.productName}</div>
+                  <div className="product-description"><strong>Description:</strong> {product.description}</div>
+                  <div className="product-creator"><strong>Creator:</strong> {product.creator}</div>
+                  <div className="product-comments"><strong>Comments:</strong> {product.commentList?.length || 0}</div>
+                  <div className="product-parameters">
+                    <strong>Parameters:</strong>
+                    {product.parametorList?.length > 0 ? (
+                      <ul>
+                        {product.parametorList.map((param, index) => (
+                          <li key={index}>{param || "N/A"}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>N/A</p>
+                    )}
+                  </div>
+                  <div className="product-tags">
+                    <strong>Tags:</strong> {Array.isArray(product.tagList) ? product.tagList.join(", ") : "N/A"}
+                  </div>
+                  <div className="product-subtags">
+                    <strong>Subtags:</strong> {Array.isArray(product.subtagList) ? product.subtagList.join(", ") : "N/A"}
+                  </div>
+                </div>
               </div>
             ))
           ) : (

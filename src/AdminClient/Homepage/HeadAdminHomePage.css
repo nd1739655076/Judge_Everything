@@ -1,0 +1,192 @@
+.admin-title {
+    font-weight: bold;
+}
+
+.admin-list-container {
+    padding-top: 20px;
+    padding-bottom: 0px;
+    max-width: 90%;
+    margin: auto;
+    font-family: Arial, sans-serif;
+  }
+
+  .admin-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .admin-list-container h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  
+  .admin-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    background-color: #fff;
+  }
+  
+  .admin-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+  }
+  
+  .admin-id {
+    font-weight: bold;
+  }
+  
+  .head-admin-role {
+    background-color: #e8e0ff;
+    color: #6b4ad5;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .admin-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .edit-btn,
+  .delete-btn,
+  .create-admin-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    color: #fff;
+    background-color: #333;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  
+  .delete-btn {
+    background-color: #333;
+  }
+
+/* Modal overlay to cover the entire screen */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+ 
+  .modal h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+  }
+
+  .modal-form input {
+    display: block;
+    width: 95%;
+    margin-bottom: 15px;
+    margin-right: 15px;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  .cancel-create-admin-btn {
+    background: #ccc;
+    color: #333;
+    border: none;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .confirm-create-admin-btn {
+    background: #13a1f9;
+    color: white;
+    border: none;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .admin-home-message {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .admin-home-message .errorMessage{
+    color: red;
+  }
+
+  .admin-home-message .successMessage{
+    color: green;
+  }
+
+  .admin-home-message .loadingMessage{
+    color: blue;
+  }
+
+  .role-selection label {
+    font-size: 16px;
+  }
+  
+  .role-selection {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .modal-form select {
+    display: block;
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    font-size: 16px;
+    color: #333;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    appearance: none; /* Remove default dropdown arrow for customization */
+    position: relative;
+  }
+
+  .modal-form select:hover {
+    border-color: #13a1f9;
+  }
+
+
+  

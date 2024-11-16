@@ -38,7 +38,7 @@ const HeadAdminHomepage = () => {
     setRePassword("");
     setRole("");
     setModalType(null)
-}; 
+  }; 
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -104,9 +104,7 @@ const HeadAdminHomepage = () => {
     setDropdownVisible(!isDropdownVisible);
   };
   const handleLogout = async () => {
-    console.log("start logout");
     const localStatusToken = localStorage.getItem('authToken');
-    console.log("localStatusToken:", localStatusToken);
     if (localStatusToken) {
       const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
       try {
@@ -114,9 +112,7 @@ const HeadAdminHomepage = () => {
           action: 'logout',
           statusToken: localStatusToken,
         });
-        console.log("response:", response);
         if (response.data.success) {
-          console.log("logout success");
           localStorage.removeItem('authToken');
           setIsLoggedIn(false);
           setAdminId("");
@@ -128,93 +124,124 @@ const HeadAdminHomepage = () => {
         console.error("Error logging out:", error);
       }
     }
-    else {
-      console.log("no local token");
+  };
+
+  const fetchAdmins = async () => {
+    setLoading(true);
+    const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
+    try {
+      const response = await handleAdminRequest({
+        action: 'fetchAdmin'
+      });
+      if (response.data.success) {
+        const adminList = response.data.adminList;
+        console.log("admin list:", adminList);
+        await setAdmins(adminList);
+        setTotalAdminPages(Math.ceil(adminList.length / 5));
+        setLoading(false);
+      } else {
+        console.error(`Could not fetch admins list: ${response.data.message}`);
+      }
+    } catch(error) {
+      console.error("Error fetching admins list: ", error);
+    }
+    setLoading(false);
+  };
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchAdmins();
+    } else {
+      setLoading(false);
+    }
+  }, [isLoggedIn]);
+
+  const handleCreateAdmin = async () => {
+    setErrorMessage("");
+    setSuccessMessage("");
+    setLoading(false);        
+    if (!newUsername.trim()) {
+      setErrorMessage("Please enter a username.");
+      return;
+    }
+    if (!password.trim()) {
+      setErrorMessage("Please enter a password.");
+      return;
+    }
+    if (!rePassword.trim()) {
+      setErrorMessage("Please re-enter the password.");
+      return;
+    }
+    if (!role.trim()) {
+      setErrorMessage("Please select an admin type.");
+      return;
+    }
+    if (password !== rePassword) {
+      setErrorMessage("Passwords do not match!");
+      return;
+    }
+    setLoading(true);
+    const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
+    try {
+      const newHeadAdmin = (role === "true");
+      const response = await handleAdminRequest({
+        action: 'create',
+        username: newUsername,
+        password: password,
+        headAdmin: newHeadAdmin
+      });
+      if (response.data.success) {
+        setLoading(false);
+        console.log("New admin account created successfully!");
+        setSuccessMessage("New admin account created successfully!");
+        setTimeout(() => {
+          closeModal();
+        }, 1000);
+        window.location.reload();
+      } else {
+        setLoading(false);
+        console.error(`Could not create admin account: ${response.data.message}`);
+        setErrorMessage(`Could not create admin account: ${response.data.message}`);
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error("Error creating admin account: ", error);
+      setErrorMessage(`Error creating admin account: ${error}`)
     }
   };
 
-    const fetchAdmins = async () => {
-        setLoading(true);
-        const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
-        try {
-            const response = await handleAdminRequest({
-                action: 'fetchAdmin'
-            });
-            if (response.data.success) {
-                const adminList = response.data.adminList;
-                console.log("admin list:", adminList);
-                await setAdmins(adminList);
-                setTotalAdminPages(Math.ceil(adminList.length / 5));
-                setLoading(false);
-            } else {
-                console.error(`Could not fetch admins list: ${response.data.message}`);
-            }
-        } catch(error) {
-            console.error("Error fetching admins list: ", error);
-        }
+  const handleDeleteAdmin = async (deleteAdminId) => {
+    setErrorMessage("");
+    setSuccessMessage("");
+    setLoading(true);
+    const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
+    try {
+      console.log("start delete admin ", deleteAdminId);
+      const response = await handleAdminRequest({
+        action: 'delete',
+        uid: deleteAdminId
+      });
+      if (response.data.success) {
         setLoading(false);
-    };
-    useEffect(() => {
-        if (isLoggedIn) {
-            fetchAdmins();
-        } else {
-            setLoading(false);
-        }
-    }, [isLoggedIn]);
-
-    const handleCreateAdmin = async () => {
+        console.log("Admin", deleteAdminId, " deleted successfully!");
         setErrorMessage("");
+        setSuccessMessage("Admin account successfully deleted!");
+        setTimeout(() => {
+          closeModal();
+        }, 1000);
+        window.location.reload();
+      } else {
+        setLoading(false);
         setSuccessMessage("");
-        setLoading(false);        
-        if (!newUsername.trim()) {
-            setErrorMessage("Please enter a username.");
-            return;
-        }
-        if (!password.trim()) {
-            setErrorMessage("Please enter a password.");
-            return;
-        }
-        if (!rePassword.trim()) {
-            setErrorMessage("Please re-enter the password.");
-            return;
-        }
-        if (!role.trim()) {
-            setErrorMessage("Please select an admin type.");
-            return;
-        }
-        if (password !== rePassword) {
-            setErrorMessage("Passwords do not match!");
-            return;
-        }
-        setLoading(true);
-        const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
-        try {
-            const newHeadAdmin = (role === "true");
-            console.log("username:", newUsername, ",password:", password, ",head:", newHeadAdmin);
-            const response = await handleAdminRequest({
-                action: 'create',
-                username: newUsername,
-                password: password,
-                headAdmin: newHeadAdmin
-            });
-            if (response.data.success) {
-                setLoading(false);
-                console.log("New admin account created successfully!");
-                setSuccessMessage("New admin account created successfully!");
-                setTimeout(() => {
-                    closeModal();
-                }, 1000);
-            } else {
-                setLoading(false);
-                console.error(`Could not create admin account: ${response.data.message}`);
-                setErrorMessage(`Could not create admin account: ${response.data.message}`);
-            }
-        } catch (error) {
-            setLoading(false);
-            console.error("Error creating admin account: ", error);
-            setErrorMessage(`Error creating admin account: ${error}`)
-        }
-    };
+        console.error(`Could not delete admin account: ${response.data.message}`);
+        setErrorMessage(`Could not delete admin account: ${response.data.message}`);
+      }
+    } catch (error) {
+      setLoading(false);
+      setSuccessMessage("");
+      console.error("Error deleting admin account: ", error);
+      setErrorMessage(`Error deleting admin account: ${error}`)
+    }
+  }
 
 
   return (
@@ -358,6 +385,28 @@ const HeadAdminHomepage = () => {
                             <button className="delete-btn" onClick={() => openModal("delete")}>Delete</button>
                         </div>
                         )}
+                      {/* Conditionally Render Modals */}
+                      {modalType === "delete" && (
+                          <div className="admin-modal-overlay">
+                            <div className="modal">
+                              <h3>Delete Admin Account</h3>        
+                              <p>Are you sure you want to delete {admin.id}: {admin.username}?</p>
+                              <div className="admin-home-message">
+                                {loading && <div className="loadingMessage">Loading...</div>}
+                                {errorMessage && <p className="errorMessage">{errorMessage}</p>}
+                                {successMessage && <p className="successMessage">{successMessage}</p>}
+                              </div>
+                              <div className="modal-actions">
+                                <button type="button" className="cancel-delete-admin-btn" onClick={closeModal}>
+                                  Cancel
+                                </button>
+                                <button type="button" className="confirm-delete-admin-btn"  onClick={() => handleDeleteAdmin(admin.id)}>
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                      )}
                     </div>
                     ))}
             </div>

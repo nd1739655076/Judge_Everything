@@ -97,8 +97,7 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
       return { success: true, message: "New admin created successfully!" };
     }
     else if (action === 'logout') {
-      console.log("start logout in index.js");
-      const logoutResponse = await Admimn.logout(statusToken);
+      const logoutResponse = await Admin.logout(statusToken);
       if (logoutResponse.status === 'success') {
         return { success: true, message: logoutResponse.message };
       } else {
@@ -106,7 +105,6 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
       }
     }
     else if (action === 'delete') {
-      console.log("start delete in index.js");
       const deleteResponse = await Admin.delete(uid);
       if (deleteResponse.status === 'success') {
         return { success: true, message: deleteResponse.message };

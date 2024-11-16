@@ -120,7 +120,7 @@ class Admin {
     }
     const uid = verificationResult.admin.uid;
     const userDocRef = db.collection('Admin').doc(uid);
-    await userDocRef.update({ statusToken: null });
+    await userDocRef.update({ statusToken: "" });
     return { status: 'success', message: 'Admin logged out successfully' };
   }
 
@@ -134,6 +134,11 @@ class Admin {
       return { status: 'error', message: 'Admin not found' };
     }
     await userDocRef.delete();
+    const idDocRef = db.collection('Id').doc(uid);
+    const idDoc = await idDocRef.get();
+    if (idDoc.exists) {
+      await idDocRef.delete();
+    }
     return { status: 'success', message: 'Admin account deleted successfully' }
   }
 

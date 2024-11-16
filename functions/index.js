@@ -485,6 +485,8 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
   }
 });
 
+
+
 // In your Firebase functions index.js
 exports.handleParameterRequest = functions.https.onCall(async (data, context) => {
   const { paramId } = data;
@@ -505,5 +507,39 @@ exports.handleParameterRequest = functions.https.onCall(async (data, context) =>
   } catch (error) {
     console.error(`Error fetching parameter with ID ${paramId}:`, error);
     throw new functions.https.HttpsError('internal', 'Failed to fetch parameter.');
+  }
+});
+
+
+// Admin Handle
+exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
+  const { action, username, password,  statusToken } = data;
+  try {
+    if (action === 'login') {
+      // username, password
+      const loginResponse = await Admin.login(username, password);
+      if (loginResponse.status === 'success') {
+        return { success: true, statusToken: loginResponse.statusToken };
+      } else {
+        return { success: false, message: loginResponse.message };
+      }
+    }
+    else if (action === 'checkLoginStatus') {
+      // statusToken
+      console.log("start status check in index.js");
+      const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
+      if (loginStatusResponse.status === 'success') {
+        return { success: true,
+          username: loginStatusResponse.username,
+          uid: loginStatusResponse.uid,
+          headAdmin: loginStatusResponse.headAdmin
+        };
+      } else {
+        return { success: false, message: loginStatusResponse.message };
+      }
+    }
+  } catch (error) {
+    console.error("Error handeling admin request.");
+    return { success: false, message: error.message }
   }
 });

@@ -1,0 +1,123 @@
+.admin-login-container {
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    width: 75%;
+    margin-top: 10%;
+    margin-bottom: auto;
+    background: #fff;
+    padding-top: 2%;
+    border-radius: 10px;
+  }
+
+.admin-login-inputs {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .admin-username-label {
+    display: flex;
+    align-items: center;
+    justify-content: first baseline;
+    margin: auto;
+    width: 480px;
+    margin-bottom: 1%;
+    font-size: 15px;
+    font-weight: 500;
+  }
+  
+  .admin-username-input {
+    display: flex;
+    align-items: center;
+    margin: auto;
+    width: 480px;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+  }
+
+  .admin-username-input input {
+    height: 50px;
+    width: 400px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 19px;
+  }
+
+  .admin-password-label {
+    display: flex;
+    align-items: center;
+    justify-content: first baseline;
+    margin: auto;
+    width: 480px;
+    margin-bottom: 1%;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .admin-password-input {
+    display: flex;
+    align-items: center;
+    margin: auto;
+    width: 480px;
+    height: auto;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+  }
+  .admin-password-input input {
+    height: 50px;
+    width: 400px;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 19px;
+  }
+
+  .admin-submit-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin: 60px auto;
+    margin-top: 2%;
+    margin-bottom: 2%;
+    width: 100%;
+  }
+
+  .admin-login-submit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 220px;
+    height: 59px;
+    color: #fff;
+    background: #13a1f9;
+    border-radius: 10px;
+    font-size: 19px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .admin-login-message {
+    font-size: 15px;
+    text-align: center;
+    padding-top: 1%;
+    margin: auto;
+    width: 480px;
+    margin-bottom: 0;
+    font-weight: 500;
+  }
+
+  .admin-login-message .successMessage {
+    color: green;
+    display: inline;
+  }
+  .admin-login-message .errorMessage {
+    color: red;
+    display: inline;
+  }
+  .admin-login-message .loadingMessage {
+    color: blue;
+    display: inline;
+  }

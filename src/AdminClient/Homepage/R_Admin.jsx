@@ -1,29 +1,30 @@
 import React, { useState, useEffect } from "react";
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore'; //change later
-import './AdminHomePage.css';
+import './HeadAdminHomePage.css';
+import './R_Admin.css';
 
 import { Link } from 'react-router-dom';
-// icon import
+// icon imports
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { FaSearch, FaUser, FaBars, FaBell, FaSignOutAlt, FaCog } from 'react-icons/fa';
 
 const AdminHomepage = () => {
-
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [adminId, setAdminId] = useState("");
   const [username, setUsername] = useState("");
   const [greeting, setGreeting] = useState("");
   const [isHeadAdmin, setIsHeadAdmin] = useState(false);
+  const [tasksCompleted, setTasksCompleted] = useState(0);
+  const [dailyTasks, setDailyTasks] = useState(20);
+  const [reportQueue, setReportQueue] = useState([]);
 
+  // Fetch login status and greeting
   useEffect(() => {
     const checkLoginStatus = async () => {
       const localStatusToken = localStorage.getItem('authToken');
       if (localStatusToken) {
-        console.log("local status token:", localStatusToken);
         const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
         try {
           const response = await handleAdminRequest({
@@ -31,42 +32,33 @@ const AdminHomepage = () => {
             statusToken: localStatusToken,
           });
           if (response.data.success) {
-            console.log("match");
             setIsLoggedIn(true);
             setAdminId(response.data.uid);
             setUsername(response.data.username);
             setIsHeadAdmin(response.data.headAdmin);
           } else {
-            console.log("not match");
-            console.log(response.data.message);
             setIsLoggedIn(false);
             localStorage.removeItem('authToken');
           }
         } catch (error) {
-          console.log("error verifying token");
           setIsLoggedIn(false);
           localStorage.removeItem('authToken');
         }
       } else {
-        console.log("no local token");
         setIsLoggedIn(false);
       }
     };
+
+
+
     const setTimeGreeting = () => {
       const now = new Date();
       const hour = now.getHours();
-      let currentGreeting = "Good ";
-      if (hour >= 5 && hour < 12) {
-        currentGreeting += "morning";
-      } else if (hour >= 12 && hour < 17) {
-        currentGreeting += "afternoon";
-      } else if (hour >= 17 && hour < 21) {
-        currentGreeting += "evening";
-      } else {
-        currentGreeting += "night";
-      }
-      setGreeting(currentGreeting);
+      const greetings = ["Good night", "Good morning", "Good afternoon", "Good evening"];
+      const index = hour >= 5 && hour < 12 ? 1 : hour >= 12 && hour < 17 ? 2 : hour >= 17 && hour < 21 ? 3 : 0;
+      setGreeting(greetings[index]);
     };
+
     checkLoginStatus();
     setTimeGreeting();
 
@@ -74,11 +66,49 @@ const AdminHomepage = () => {
       checkLoginStatus();
       setTimeGreeting();
     }, 10000);
+
     return () => clearInterval(intervalId);
   }, []);
+
+  // Fetch today's tasks and report queue
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchTodayTasks();
+      fetchReportQueue();
+    }
+  }, [isLoggedIn]);
+
+  const fetchTodayTasks = async () => {
+    const handleAdminTasksRequest = httpsCallable(functions, 'handleAdminTasksRequest');
+    try {
+      const response = await handleAdminTasksRequest({ adminId, action: 'getTodayTasks' });
+      if (response.data.success) {
+        setTasksCompleted(response.data.tasksCompleted);
+        setDailyTasks(response.data.dailyTasks);
+      }
+    } catch (error) {
+      console.error("Error fetching today's tasks:", error);
+    }
+  };
+
+  const fetchReportQueue = async () => {
+    const handleAdminTasksRequest = httpsCallable(functions, 'handleAdminTasksRequest');
+    try {
+      const response = await handleAdminTasksRequest({ action: 'getReportQueue' });
+
+      console.log("API Response:", response);
+      if (response.data.success) {
+        setReportQueue(response.data.queue);
+      }
+    } catch (error) {
+      console.error("Error fetching report queue:", error);
+    }
+  };
+
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
+
   const handleLogout = async () => {
     const localStatusToken = localStorage.getItem('authToken');
     if (localStatusToken) {
@@ -102,12 +132,7 @@ const AdminHomepage = () => {
     }
   };
 
-  const [loading, setLoading] = useState(true);
-  const db = getFirestore();
-
-
   return (
-
     <div className="homepage">
 
       {/* Top Bar */}
@@ -146,8 +171,8 @@ const AdminHomepage = () => {
               {greeting}!
             </div>
             <div className="currentUserStatusInfo">
-              <FaUser />  
-              <span className="admin-title">{isHeadAdmin ? ("Head Admin "):("Admin ")}</span>
+              <FaUser />
+              <span className="admin-title">{isHeadAdmin ? "Head Admin" : "Admin"}</span>
               <span className="username">{username}</span>
               <FaSignOutAlt
                 onClick={handleLogout}
@@ -174,15 +199,13 @@ const AdminHomepage = () => {
                   </li>
                 ) : (
                   <>
-                  {/* These links are not yet implemented! */}
                     <li>
                       <div className="notifcations">
-                        <a href="#"><FaBell /> Notifaction</a>
+                        <a href="#"><FaBell /> Notification</a>
                       </div>
                     </li>
                     <li>
                       <div className="settings">
-                        {/* <Link to="/accountSettings"><FaCog /> Your Account</Link> */}
                         <Link to="#"><FaCog /> Your Account</Link>
                       </div>
                     </li>
@@ -194,10 +217,52 @@ const AdminHomepage = () => {
         </div>
       </div>
 
+      {/* Main Content */}
+      <div className="main-content">
+        <div className="today-tasks">
+          <h2>Today's Tasks</h2>
+          <p>{tasksCompleted}/{dailyTasks}</p>
+        </div>
+
+        <div className="report-queue">
+          <h2>Report Queue</h2>
+          {reportQueue.length > 0 ? (
+            reportQueue.map(product => (
+              <div key={product.id} className="report-item">
+                <img src={product.productImage} alt={product.productName} className="product-image" />
+                <div className="product-info">
+                  <div className="product-name"><strong>Product Name:</strong> {product.productName}</div>
+                  <div className="product-description"><strong>Description:</strong> {product.description}</div>
+                  <div className="product-creator"><strong>Creator:</strong> {product.creator}</div>
+                  <div className="product-comments"><strong>Comments:</strong> {product.commentList?.length || 0}</div>
+                  <div className="product-parameters">
+                    <strong>Parameters:</strong>
+                    {product.parametorList?.length > 0 ? (
+                      <ul>
+                        {product.parametorList.map((param, index) => (
+                          <li key={index}>{param || "N/A"}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p>N/A</p>
+                    )}
+                  </div>
+                  <div className="product-tags">
+                    <strong>Tags:</strong> {Array.isArray(product.tagList) ? product.tagList.join(", ") : "N/A"}
+                  </div>
+                  <div className="product-subtags">
+                    <strong>Subtags:</strong> {Array.isArray(product.subtagList) ? product.subtagList.join(", ") : "N/A"}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p>No reports to review.</p>
+          )}
+        </div>
+      </div>
     </div>
-
   );
-
 };
 
 export default AdminHomepage;

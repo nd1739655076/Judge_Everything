@@ -1,0 +1,47 @@
+.report-queue {
+  margin-top: 20px;
+}
+
+.report-item {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.product-image {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  margin-right: 20px;
+  border-radius: 5px;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-info > div {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.product-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.product-description {
+  color: #555;
+  font-size: 14px;
+}
+
+.product-creator {
+  font-style: italic;
+  font-size: 14px;
+}

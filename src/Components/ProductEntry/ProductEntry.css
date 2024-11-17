@@ -583,3 +583,42 @@ button[type="submit"]:hover {
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
+
+.currentUserStatus .greeting {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4CAF50; /* 使用绿色强调 admin 状态 */
+    margin-right: 10px;
+}
+
+/* Back to Admin Homepage 按钮 */
+.admin-home-button {
+    background-color: #007BFF; /* 蓝色按钮 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-left: 10px;
+}
+
+.admin-home-button:hover {
+    background-color: #0056b3; /* 更深的蓝色 */
+}
+
+/* Admin Edit 按钮 */
+.admin-edit-button {
+    background-color: #FF9800; /* 橙色按钮 */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-left: 10px;
+}
+
+.admin-edit-button:hover {
+    background-color: #e68900; /* 更深的橙色 */
+}

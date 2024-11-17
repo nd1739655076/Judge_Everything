@@ -336,3 +336,36 @@ body {
   background-color: #0056b3;
 }
 
+.r-admin-product-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.r-admin-button {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.r-admin-button.go-to-product {
+  background-color: #007bff;
+  color: white;
+}
+
+.r-admin-button.go-to-product:hover {
+  background-color: #0056b3;
+}
+
+.r-admin-button.delete-product {
+  background-color: #dc3545;
+  color: white;
+}
+
+.r-admin-button.delete-product:hover {
+  background-color: #a71d2a;
+}
+

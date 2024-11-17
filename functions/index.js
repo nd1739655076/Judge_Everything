@@ -9,11 +9,14 @@ const db = admin.firestore();
 const bucket = admin.storage().bucket('judge-everything.appspot.com');
 
 const TagLibrary = require('./TagLibrary');
+
+const Admin = require('./Admin');
+
 const Id = require('./Id');
 const User = require('./User');
-const Comment = require('./Comment');
+const Conversation = require('./Conversation');
 const ProductEntry = require('./ProductEntry');
-const Admin = require('./Admin');
+const Comment = require('./Comment');
 
 // TagLibrary Handle
 exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
@@ -39,6 +42,88 @@ exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) =
   } catch (error) {
     console.error('Error handling TagLibrary request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle TagLibrary request.');
+  }
+});
+
+// Admin Handle
+exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
+  const { action, username, password,  statusToken, headAdmin, uid } = data;
+  try {
+    if (action === 'login') {
+      // username, password
+      const loginResponse = await Admin.login(username, password);
+      if (loginResponse.status === 'success') {
+        return { success: true, statusToken: loginResponse.statusToken, headAdmin:loginResponse.headAdmin };
+      } else {
+        return { success: false, message: loginResponse.message };
+      }
+    }
+    else if (action === 'checkLoginStatus') {
+      // statusToken
+      console.log("start status check in index.js");
+      const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
+      if (loginStatusResponse.status === 'success') {
+        return { success: true,
+          username: loginStatusResponse.username,
+          uid: loginStatusResponse.uid,
+          headAdmin: loginStatusResponse.headAdmin
+        };
+      } else {
+        return { success: false, message: loginStatusResponse.message };
+      }
+    }
+    else if (action === 'fetchAdmin') {
+      const fetchAdminResponse = await Admin.fetchAdmin();
+      if (fetchAdminResponse.status === 'success') {
+        return { success: true,
+          adminList: fetchAdminResponse.adminList
+        };
+      } else {
+        return { success: false, message: fetchAdminResponse.message };
+      }
+    }
+    else if (action === 'create') {
+      const adminDocRef = db.collection('Admin').where('username', '==', username);
+      const adminDoc = await adminDocRef.get();
+      if (!adminDoc.empty) {
+        console.log("admin already exist");
+        return { success: false, message: "Username exist" };
+      }
+      const newId = new Id();
+      const idResponse = await newId.generateId('admin', username);
+      const uidNum = idResponse.idNum;
+      const newAdmin = new Admin(uidNum, username, password, headAdmin);
+      await newAdmin.createAdmin();
+      return { success: true, message: "New admin created successfully!" };
+    }
+    else if (action === 'logout') {
+      const logoutResponse = await Admin.logout(statusToken);
+      if (logoutResponse.status === 'success') {
+        return { success: true, message: logoutResponse.message };
+      } else {
+        return { success: false, message: logoutResponse.message };
+      }
+    }
+    else if (action === 'delete') {
+      const deleteResponse = await Admin.delete(uid);
+      if (deleteResponse.status === 'success') {
+        return { success: true, message: deleteResponse.message };
+      } else {
+        return { success: false, message: deleteResponse.message };
+      }
+    }
+    else if (action === 'edit') {
+      console.log("start admin edit in index.js");
+      const deleteResponse = await Admin.edit(uid, username, password, headAdmin);
+      if (deleteResponse.status === 'success') {
+        return { success: true, message: deleteResponse.message };
+      } else {
+        return { success: false, message: deleteResponse.message };
+      }
+    }
+  } catch (error) {
+    console.error("Error handeling admin request.");
+    return { success: false, message: error.message }
   }
 });
 
@@ -135,7 +220,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);
       if (loginStatusResponse.status === 'success') {
-        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid, tagScores: loginStatusResponse.userTagScore, subtagScore: loginStatusResponse.userSubtagScore };
+        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid };
       } else {
         return { success: false, message: loginStatusResponse.message };
       }
@@ -171,18 +256,6 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       }
     }
     
-    else if (action === 'recordBrowseHistory') {
-      console.log("index.js action invoked")
-      const recordHistoryResponse = await User.recordBrowseHistory(data);
-      if (recordHistoryResponse.status === 'success') {
-        console.log("got success");
-        return { success: true, message: recordHistoryResponse.message };
-      } else {
-        console.log("got error");
-        return { success: false, message: recordHistoryResponse.message };
-      }    
-    }
-
     else if (action === 'delete') {
       // uidNum
       const deleteResponse = await User.delete(uidNum);
@@ -192,19 +265,56 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: deleteResponse.message };
       }
     }
-    
-    else if (action === 'updateTags') {
-      const accountTagUpdate = await User.updateTagScores(uidNum);
-      if (accountTagUpdate.status === 'success') {
-        return { success: true, message: accountTagUpdate.message };
+
+    else if (action === 'recordBrowseHistory') {
+      // productId, uid
+      const recordHistoryResponse = await User.recordBrowseHistory(data);
+      if (recordHistoryResponse.status === 'success') {
+        return { success: true, message: recordHistoryResponse.message };
       } else {
-        return { success: false, message: accountTagUpdate.message };
-      }
+        return { success: false, message: recordHistoryResponse.message };
+      }    
     }
 
   } catch (error) {
     console.error('Error handling User request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle user request.');
+  }
+});
+
+// Conversation Handle
+exports.handleConversationRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const { action, user1Id, user2Id, user1Name, user2Name, loginUserId,
+      searchString, conversationId, senderId, content } = data;
+
+    if (action === 'generate') {
+      await Conversation.generateConversation(user1Id, user2Id, user1Name, user2Name, senderId);
+      return { success: true, message: 'Conversation generated successfully' };
+    }
+
+    else if (action === 'fetchUserConversation') {
+      const response = await Conversation.fetchUserConversation(loginUserId);
+      return response;
+    }
+
+    else if (action === 'searchUsersByUsername') {
+      const users = await Conversation.searchUsersByUsername(searchString);
+      return { success: true, data: users };
+    }
+
+    else if (action === 'sendMessage') {
+      await Conversation.sendMessage(conversationId, senderId, content);
+    }
+
+    else if (action === 'setAllRead') {
+      await Conversation.setAllRead(conversationId, senderId);
+      return { success: true, message: 'Unread messages set to zero' };
+    }
+
+  } catch (error) {
+    console.error('Error handling conversation request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle conversation request');
   }
 });
 
@@ -231,6 +341,48 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
       const relatedProductsResponse = await ProductEntry.getRelatedProducts(productId);
       return relatedProductsResponse;
     }
+
+    else if (action === "edit") {
+      const { productId, updates } = data;
+    
+      if (!productId || !updates) {
+        throw new functions.https.HttpsError("invalid-argument", "Product ID and updates are required");
+      }
+    
+      const result = await ProductEntry.updateProduct(productId, updates);
+      return result;
+    }
+
+    else if (action === "delete") {
+      const { productId, commentId } = data;
+    
+      if (!productId || !commentId) {
+        throw new functions.https.HttpsError("invalid-argument", "Product ID and comment ID are required");
+      }
+    
+      const result = await ProductEntry.deleteComment(productId, commentId);
+      return result;
+    }
+
+    else if (action === "getReports") {
+      if (!productId) {
+          throw new functions.https.HttpsError("invalid-argument", "Product ID is required");
+      }
+      try {
+          const productDoc = await db.collection("ProductEntry").doc(productId).get();
+          if (!productDoc.exists) {
+              throw new functions.https.HttpsError("not-found", "Product not found");
+          }
+  
+          const productData = productDoc.data();
+          const reportList = productData.reportList || []; // 确保 reportList 存在
+  
+          return { success: true, reportList };
+      } catch (error) {
+          console.error("Error fetching reports:", error);
+          throw new functions.https.HttpsError("internal", "Failed to fetch reports");
+      }
+  }
     
   } catch (error) {
     console.error('Error handling product entry request:', error);
@@ -461,98 +613,6 @@ exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, con
   }
 });
 
-// Admin Handle
-exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
-  const { action, username, password,  statusToken } = data;
-  try {
-    if (action === 'login') {
-      // username, password
-      const loginResponse = await Admin.login(username, password);
-      if (loginResponse.status === 'success') {
-        return { success: true, statusToken: loginResponse.statusToken };
-      } else {
-        return { success: false, message: loginResponse.message };
-      }
-    }
-    else if (action === 'checkLoginStatus') {
-      // statusToken
-      console.log("start status check in index.js");
-      const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
-      if (loginStatusResponse.status === 'success') {
-        return { success: true,
-          username: loginStatusResponse.username,
-          uid: loginStatusResponse.uid,
-          headAdmin: loginStatusResponse.headAdmin
-        };
-      } else {
-        return { success: false, message: loginStatusResponse.message };
-      }
-    }
-  } catch (error) {
-    console.error("Error handeling admin request.");
-    return { success: false, message: error.message }
-  }
-});
-
-
-
-// In your Firebase functions index.js
-exports.handleParameterRequest = functions.https.onCall(async (data, context) => {
-  const { paramId } = data;
-
-  if (!paramId) {
-    throw new functions.https.HttpsError('invalid-argument', 'Parameter ID is required.');
-  }
-  try {
-    const parameterRef = db.collection('Parameters').doc(paramId);
-    const parameterDoc = await parameterRef.get();
-    if (!parameterDoc.exists) {
-      console.error(`Parameter with ID ${paramId} not found.`);
-      return { success: false, message: 'Parameter not found.' };
-    }
-    const parameterData = parameterDoc.data();
-    console.log(`Fetched parameter data for ID ${paramId}:`, parameterData);
-    return { success: true, parameter: parameterData };
-  } catch (error) {
-    console.error(`Error fetching parameter with ID ${paramId}:`, error);
-    throw new functions.https.HttpsError('internal', 'Failed to fetch parameter.');
-  }
-});
-
-
-// Admin Handle
-exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
-  const { action, username, password,  statusToken } = data;
-  try {
-    if (action === 'login') {
-      // username, password
-      const loginResponse = await Admin.login(username, password);
-      if (loginResponse.status === 'success') {
-        return { success: true, statusToken: loginResponse.statusToken };
-      } else {
-        return { success: false, message: loginResponse.message };
-      }
-    }
-    else if (action === 'checkLoginStatus') {
-      // statusToken
-      console.log("start status check in index.js");
-      const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
-      if (loginStatusResponse.status === 'success') {
-        return { success: true,
-          username: loginStatusResponse.username,
-          uid: loginStatusResponse.uid,
-          headAdmin: loginStatusResponse.headAdmin
-        };
-      } else {
-        return { success: false, message: loginStatusResponse.message };
-      }
-    }
-  } catch (error) {
-    console.error("Error handeling admin request.");
-    return { success: false, message: error.message }
-  }
-});
-
 exports.handleAdminTasksRequest = functions.https.onCall(async (data, context) => {
   const { adminId, action } = data;
 
@@ -569,5 +629,76 @@ exports.handleAdminTasksRequest = functions.https.onCall(async (data, context) =
   } catch (error) {
     console.error("Error handling admin tasks request:", error);
     return { success: false, message: error.message };
+  }
+});
+
+exports.handleParameterRequest = functions.https.onCall(async (data, context) => {
+  const { action, productId } = data;
+
+  if (!action) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Action is required."
+    );
+  }
+
+  try {
+    if (action === "getParameters") {
+      if (!productId) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Product ID is required."
+        );
+      }
+
+      // 从 Firestore 中获取参数
+      const parametersSnapshot = await db
+        .collection("Parameters")
+        .where("productId", "==", productId)
+        .get();
+
+      if (parametersSnapshot.empty) {
+        return { success: true, parameters: [] };
+      }
+
+      const parameters = parametersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return { success: true, parameters };
+    } else {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        `Unsupported action: ${action}`
+      );
+    }
+  } catch (error) {
+    console.error("Error in handleParameterRequest:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      "Failed to handle parameter request."
+    );
+  }
+});
+
+exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
+  try {
+    const { action, productId, commentId } = data;
+
+    if (action === 'getCommentsWithReplies') {
+      const response = await Comment.getCommentsWithReplies(productId);
+      return response;
+    }
+
+    if (action === 'deleteCommentWithReplies') {
+      const response = await Comment.deleteCommentWithReplies(productId, commentId);
+      return response;
+    }
+
+    throw new Error('Invalid action specified');
+  } catch (error) {
+    console.error('Error handling comment request:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to handle comment request.');
   }
 });

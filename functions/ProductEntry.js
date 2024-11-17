@@ -299,6 +299,57 @@ static async getFlaggedProducts() {
   }
 }
 
+// 更新产品信息
+static async updateProduct(productId, updates) {
+  try {
+    const productRef = db.collection("ProductEntry").doc(productId);
+    const productSnap = await productRef.get();
+
+    if (!productSnap.exists) {
+      throw new Error("Product not found");
+    }
+
+    // 进行产品字段更新
+    await productRef.update({
+      ...updates,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(), // 记录更新时间
+    });
+
+    return { success: true, message: "Product updated successfully" };
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return { success: false, message: `Failed to update product: ${error.message}` };
+  }
+}
+
+// 删除评论
+static async deleteComment(productId, commentId) {
+  try {
+    // 删除评论文档
+    const commentRef = db.collection("Comments").doc(commentId);
+    const commentSnap = await commentRef.get();
+
+    if (!commentSnap.exists) {
+      throw new Error("Comment not found");
+    }
+
+    await commentRef.delete();
+
+    // 从产品的评论列表中移除该评论
+    const productRef = db.collection("ProductEntry").doc(productId);
+    await productRef.update({
+      commentList: admin.firestore.FieldValue.arrayRemove(commentId),
+    });
+
+    return { success: true, message: "Comment deleted successfully" };
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    return { success: false, message: `Failed to delete comment: ${error.message}` };
+  }
+}
+
+
+
 
   
 }

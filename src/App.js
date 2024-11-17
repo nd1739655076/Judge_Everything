@@ -24,6 +24,7 @@ import AdminLogin from './AdminClient/Login/AdminLogin';
 import HeadAdminHomePage from './AdminClient/Homepage/HeadAdminHomePage';
 // regular admin client
 import R_Admin from './AdminClient/Homepage/R_Admin';
+import AdminEdit from './AdminClient/Homepage/AdminEdit';
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/headadmin/home" element={<HeadAdminHomePage />} />
         <Route path="/admin/regularHome" element={<R_Admin />} />
+        <Route path="/admin/edit/:productId" element={<AdminEdit />} />
       </Routes>
     </Router>
   );

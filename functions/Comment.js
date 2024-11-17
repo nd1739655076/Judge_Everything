@@ -48,24 +48,24 @@ class Comment {
 
     // 检查生成的 ID 是否为空
     if (!replyId) {
-        console.error("Generated replyId is invalid:", replyId);
-        throw new Error("Generated replyId is invalid");
+      console.error("Generated replyId is invalid:", replyId);
+      throw new Error("Generated replyId is invalid");
     }
     // 确定是否为主评论
     const parentReplies = !parentCommentId;
 
     const replyData = {
-        commentId: replyId,
-        content,
-        user: { uid: user.uid, username: user.username },
-        timestamp: new Date().toISOString(),
-        likes: [],
-        dislikes: [],
-        likeAmount: 0,
-        dislikeAmount: 0,
-        parentCommentId: parentCommentId || null, // 如果是主评论，parentCommentId为空
-        productId: productId, // 添加对应的 productId
-        parentReplies
+      commentId: replyId,
+      content,
+      user: { uid: user.uid, username: user.username },
+      timestamp: new Date().toISOString(),
+      likes: [],
+      dislikes: [],
+      likeAmount: 0,
+      dislikeAmount: 0,
+      parentCommentId: parentCommentId || null, // 如果是主评论，parentCommentId为空
+      productId: productId, // 添加对应的 productId
+      parentReplies
     };
 
     // 打印准备存储的回复数据
@@ -78,62 +78,62 @@ class Comment {
 
     // 更新父评论的 `replies` 字段
     if (parentCommentId) {
-        console.log("Updating parent comment replies, parentCommentId:", parentCommentId);
-        const parentCommentRef = db.collection('Comments').doc(parentCommentId);
+      console.log("Updating parent comment replies, parentCommentId:", parentCommentId);
+      const parentCommentRef = db.collection('Comments').doc(parentCommentId);
 
-        // 检查父评论是否有正确的路径
-        if (!parentCommentId) {
-            console.error("parentCommentId is invalid:", parentCommentId);
-            throw new Error("parentCommentId is invalid");
-        }
+      // 检查父评论是否有正确的路径
+      if (!parentCommentId) {
+        console.error("parentCommentId is invalid:", parentCommentId);
+        throw new Error("parentCommentId is invalid");
+      }
 
-        await parentCommentRef.update({
-            replies: admin.firestore.FieldValue.arrayUnion({
-                numbers: [replyId, parentCommentId],
-                content: content,
-                user: { uid: user.uid, username: user.username }
-            })
-        });
-        console.log(`Updated parent comment ${parentCommentId} with new reply ID: ${replyId}`);
+      await parentCommentRef.update({
+        replies: admin.firestore.FieldValue.arrayUnion({
+          numbers: [replyId, parentCommentId],
+          content: content,
+          user: { uid: user.uid, username: user.username }
+        })
+      });
+      console.log(`Updated parent comment ${parentCommentId} with new reply ID: ${replyId}`);
     }
 
     console.log(`Reply added with ID: ${replyId}, for product ID: ${productId}`);
-}
+  }
 
 
-static async getTopReplies({ commentId, limit = 3, startAfter = null }) {
-  const commentRef = db.collection('Comments').doc(commentId);
-  const commentSnap = await commentRef.get();
+  static async getTopReplies({ commentId, limit = 3, startAfter = null }) {
+    const commentRef = db.collection('Comments').doc(commentId);
+    const commentSnap = await commentRef.get();
 
-  if (!commentSnap.exists) {
+    if (!commentSnap.exists) {
       console.error(`Comment with ID ${commentId} does not exist.`);
       return [];
-  }
+    }
 
-  const repliesCollection = commentRef.collection('Replies');
-  let query = repliesCollection.orderBy('timestamp', 'asc').limit(limit);
+    const repliesCollection = commentRef.collection('Replies');
+    let query = repliesCollection.orderBy('timestamp', 'asc').limit(limit);
 
-  // If we have a startAfter document, start after it for pagination
-  if (startAfter) {
+    // If we have a startAfter document, start after it for pagination
+    if (startAfter) {
       const startDoc = await repliesCollection.doc(startAfter).get();
       if (startDoc.exists) {
-          query = query.startAfter(startDoc);
+        query = query.startAfter(startDoc);
       }
-  }
+    }
 
-  const repliesSnap = await query.get();
-  const replies = [];
-  repliesSnap.forEach((doc) => {
+    const repliesSnap = await query.get();
+    const replies = [];
+    repliesSnap.forEach((doc) => {
       replies.push({ ...doc.data(), commentId: doc.id });
-  });
+    });
 
-  return replies;
-}
+    return replies;
+  }
 
   // 处理点赞或反对逻辑
   static async handleLikeDislike({ commentId, productId, uid, isLike }) {
     const commentRef = db.collection('ProductEntry').doc(productId)
-                         .collection('Comments').doc(commentId);
+      .collection('Comments').doc(commentId);
     const commentDoc = await commentRef.get();
 
     if (!commentDoc.exists) throw new Error('Comment not found');
@@ -166,6 +166,72 @@ static async getTopReplies({ commentId, limit = 3, startAfter = null }) {
       dislikeAmount: newDislikes.length
     });
   }
+
+  // 获取评论及其子评论
+  static async getCommentsWithReplies(productId) {
+    try {
+      const commentsRef = db.collection('Comments').where('productId', '==', productId);
+      const commentsSnapshot = await commentsRef.get();
+
+      if (commentsSnapshot.empty) {
+        return { success: true, comments: [] }; // 如果没有评论，返回空数组
+      }
+
+      const comments = commentsSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // 获取每条评论的子评论
+      for (const comment of comments) {
+        const repliesRef = db.collection('Comments').where('parentCommentId', '==', comment.id);
+        const repliesSnapshot = await repliesRef.get();
+        comment.replies = repliesSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+      }
+
+      return { success: true, comments };
+    } catch (error) {
+      console.error('Error fetching comments with replies:', error);
+      return { success: false, message: 'Failed to fetch comments and replies.' };
+    }
+  }
+
+  static async deleteCommentWithReplies(productId, commentId) {
+    try {
+      const commentRef = db.collection('Comments').doc(commentId);
+      const commentSnap = await commentRef.get();
+  
+      if (!commentSnap.exists) {
+        throw new Error('Comment not found');
+      }
+  
+      // 删除子评论
+      const repliesRef = db.collection('Comments').where('parentCommentId', '==', commentId);
+      const repliesSnapshot = await repliesRef.get();
+  
+      for (const replyDoc of repliesSnapshot.docs) {
+        await replyDoc.ref.delete();
+      }
+  
+      // 删除主评论
+      await commentRef.delete();
+  
+      // 从产品的评论列表中移除该评论
+      const productRef = db.collection('ProductEntry').doc(productId);
+      await productRef.update({
+        commentList: admin.firestore.FieldValue.arrayRemove(commentId),
+      });
+  
+      return { success: true, message: 'Comment and its replies deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting comment and replies:', error);
+      return { success: false, message: `Failed to delete comment and replies: ${error.message}` };
+    }
+  }
+
 }
 
 module.exports = Comment;

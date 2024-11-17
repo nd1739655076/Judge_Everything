@@ -33,7 +33,7 @@ const R_Admin = () => {
   // Fetch login status and greeting
   useEffect(() => {
     const checkLoginStatus = async () => {
-      const localStatusToken = localStorage.getItem("authToken");
+      const localStatusToken = localStorage.getItem("adminAuthToken");
       if (localStatusToken) {
         const handleAdminRequest = httpsCallable(functions, "handleAdminRequest");
         try {
@@ -48,11 +48,11 @@ const R_Admin = () => {
             setIsHeadAdmin(response.data.headAdmin);
           } else {
             setIsLoggedIn(false);
-            localStorage.removeItem("authToken");
+            localStorage.removeItem("adminAuthToken");
           }
         } catch (error) {
           setIsLoggedIn(false);
-          localStorage.removeItem("authToken");
+          localStorage.removeItem("adminAuthToken");
         }
       } else {
         setIsLoggedIn(false);
@@ -116,8 +116,30 @@ const R_Admin = () => {
     setDropdownVisible(!isDropdownVisible);
   };
 
+  const handleDeleteProduct = async (productId) => {
+    const handleAdminTasksRequest = httpsCallable(functions, "handleAdminTasksRequest");
+    try {
+      const response = await handleAdminTasksRequest({
+        action: "deleteProduct",
+        productId,
+      });
+      if (response.data.success) {
+        alert("Product deleted successfully!");
+        // 更新报告队列
+        setReportQueue((prevQueue) =>
+          prevQueue.filter((product) => product.id !== productId)
+        );
+      } else {
+        alert("Failed to delete the product.");
+      }
+    } catch (error) {
+      console.error("Error deleting the product:", error);
+      alert("An error occurred while deleting the product.");
+    }
+  };
+
   const handleLogout = async () => {
-    const localStatusToken = localStorage.getItem("authToken");
+    const localStatusToken = localStorage.getItem("adminAuthToken");
     if (localStatusToken) {
       const handleAdminRequest = httpsCallable(functions, "handleAdminRequest");
       try {
@@ -126,7 +148,7 @@ const R_Admin = () => {
           statusToken: localStatusToken,
         });
         if (response.data.success) {
-          localStorage.removeItem("authToken");
+          localStorage.removeItem("adminAuthToken");
           setIsLoggedIn(false);
           setAdminId("");
           setUsername("");
@@ -321,6 +343,23 @@ const R_Admin = () => {
                   ? new Date(selectedProduct.flaggedTime.seconds * 1000).toLocaleString()
                   : "N/A"}
               </p>
+            </div>
+            <div className="r-admin-product-actions">
+              <button
+                className="r-admin-button go-to-product"
+                onClick={() => {
+                  closeModal(); // 关闭模态框
+                  window.location.href = `/admin/edit/${selectedProduct.id}`;
+                }}
+              >
+                Edit the Product
+              </button>
+              <button
+                className="r-admin-button delete-product"
+                onClick={() => handleDeleteProduct(selectedProduct.id)}
+              >
+                Delete the Product
+              </button>
             </div>
             <button onClick={closeModal} className="r-admin-close-button">
               Close

@@ -24,6 +24,8 @@ class User {
     this.searchHistory = [];
     this.browseHistory = [];
     this.rateCommentHistory = [];
+    this.tagScores = [];
+    this.subtagScores = [];
   }
 
   // helper
@@ -53,6 +55,8 @@ class User {
       searchHistory: null,
       browseHistory: null,
       rateCommentHistory: null,
+      tagScores : null,
+      subtagScores : null
     });
   }
 
@@ -186,7 +190,7 @@ class User {
     const userDoc = await db.collection('User').doc(uid).get();
     if (userDoc.exists) {
       const userDocData = userDoc.data();
-      return { status: 'success', username: userDocData.username, uid: userDocData.id };
+      return { status: 'success', username: userDocData.username, uid: userDocData.id, userTagScore: userDocData.tagScores, userSubtagScore: userDocData.subtagScores };
     } else {
       return { status: 'error', message: 'User not found' };
     }
@@ -273,35 +277,143 @@ class User {
   }
 
 
-    // action === 'recordBrowseHistory'
-    static async recordBrowseHistory(data) {
-      const { action, productId, uid } = data;
-      console.log("User.js recordBrowseHistory invoked");
-      console.log("uid:", uid, "product id:", productId);
-      const userRef = db.collection("User").doc(uid);
-      const userDoc = await userRef.get();
-      if (!userDoc.exists) {
-        console.log("User not found");
-        return { status: 'error', message: 'User not found' };
-      }      
-      const userData = userDoc.data();
-      const currentBrowseHistory = userData.browseHistory || [];
-      console.log("old hist:", currentBrowseHistory);
-      let updatedHistory;
-      if (!currentBrowseHistory.includes(productId)) {
-        updatedHistory = [productId, ...currentBrowseHistory];
-      } else {
-        updatedHistory = [
-          productId,
-          ...currentBrowseHistory.filter((id) => id !== productId)
-        ];
-      }
-      console.log("new hist:", updatedHistory);
-      await userRef.update({
-        browseHistory: updatedHistory
-      });
-      return { status: 'success', message: 'Browse history recorded successfully' }
+  // action === 'recordBrowseHistory'
+  static async recordBrowseHistory(data) {
+    const { action, productId, uid } = data;
+    console.log("User.js recordBrowseHistory invoked");
+    console.log("uid:", uid, "product id:", productId);
+    const userRef = db.collection("User").doc(uid);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+      console.log("User not found");
+      return { status: 'error', message: 'User not found' };
     }
+    const userData = userDoc.data();
+    const currentBrowseHistory = userData.browseHistory || [];
+    console.log("old hist:", currentBrowseHistory);
+    let updatedHistory;
+    if (!currentBrowseHistory.includes(productId)) {
+      updatedHistory = [productId, ...currentBrowseHistory];
+    } else {
+      updatedHistory = [
+        productId,
+        ...currentBrowseHistory.filter((id) => id !== productId)
+      ];
+    }
+    console.log("new hist:", updatedHistory);
+    await userRef.update({
+      browseHistory: updatedHistory
+    });
+    return { status: 'success', message: 'Browse history recorded successfully' }
+  }
+
+
+  static async updateTagScores(uid) {
+    const userRef = db.collection('User').doc(uid);
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      throw new Error('User not found');
+    }
+  
+    const userData = userSnap.data();
+    const browseHistory = userData.browseHistory || [];
+    const rateCommentHistory = userData.rateCommentHistory || [];
+    const preferences = userData.preferences || [];
+    const recentBrowseHistory = browseHistory.slice(0, 10);
+    const recentRateCommentHistory = rateCommentHistory.slice(0, 10);
+  
+    const newTagScores = {};
+    const newSubtagScores = {}; // Initialize subtag scores
+  
+    const updateTagScores = (tags, incrementValue, isSubtag = false) => {
+      tags.forEach(tag => {
+        if (isSubtag) {
+          if (!newSubtagScores[tag]) {
+            newSubtagScores[tag] = 0;
+          }
+          newSubtagScores[tag] += incrementValue;
+        } else {
+          if (!newTagScores[tag]) {
+            newTagScores[tag] = 0;
+          }
+          newTagScores[tag] += incrementValue;
+        }
+      });
+    };
+  
+    // Process recent browse history
+    for (const productId of recentBrowseHistory) {
+      try {
+        const productRef = db.collection('ProductEntry').doc(productId);
+        const productSnap = await productRef.get();
+        if (productSnap.exists) {
+          const productData = productSnap.data();
+  
+          // Update tag scores
+          const tags = productData.tagList ? [productData.tagList] : [];
+          updateTagScores(tags, 1);
+  
+          // Update subtag scores
+          const subtags = Array.isArray(productData.subtagList) ? productData.subtagList : [];
+          updateTagScores(subtags, 1, true);
+        } else {
+          console.warn(`Product with ID ${productId} not found`);
+        }
+      } catch (error) {
+        console.error(`Error fetching product with ID ${productId}:`, error);
+      }
+    }
+  
+    // Process recent rate comment history
+    for (const commentId of recentRateCommentHistory) {
+      try {
+        const commentRef = db.collection('Comments').doc(commentId);
+        const commentSnap = await commentRef.get();
+        if (commentSnap.exists) {
+          const commentData = commentSnap.data();
+          const productId = commentData.productId;
+          const productRef = db.collection('ProductEntry').doc(productId);
+          const productSnap = await productRef.get();
+          if (productSnap.exists) {
+            const productData = productSnap.data();
+  
+            // Update tag scores
+            const tags = productData.tagList ? [productData.tagList] : [];
+            updateTagScores(tags, 1);
+  
+            // Update subtag scores
+            const subtags = Array.isArray(productData.subtagList) ? productData.subtagList : [];
+            updateTagScores(subtags, 1, true);
+          } else {
+            console.warn(`Product with ID ${productId} from comment ${commentId} not found`);
+          }
+        } else {
+          console.warn(`Comment with ID ${commentId} not found`);
+        }
+      } catch (error) {
+        console.error(`Error fetching comment with ID ${commentId}:`, error);
+      }
+    }
+  
+    // Update tag scores using user preferences
+    updateTagScores(preferences, 3);
+  
+    // Update the user document with the new tag and subtag scores
+    try {
+      await userRef.update({
+        tagScores: newTagScores,
+        subtagScores: newSubtagScores // Add the subtag scores to the update
+      });
+      return { status: 'success', message: 'Tag and subtag scores updated successfully' };
+    } catch (error) {
+      console.error(`Error updating tag and subtag scores for user ${uid}:`, error);
+      throw new Error('Failed to update tag and subtag scores');
+    }
+  }
+  
+  
+
+
 }
 
 module.exports = User;

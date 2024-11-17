@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../firebase';
-import './HeadAdminHomePage.css';
-import './R_Admin.css';
+import { httpsCallable } from "firebase/functions";
+import { functions } from "../../firebase";
+import "./R_Admin.css";
+import { Link } from "react-router-dom";
+import Modal from "react-modal";
 
-import { Link } from 'react-router-dom';
-// icon imports
-import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaSignOutAlt, FaCog } from 'react-icons/fa';
+// Icon imports
+import {
+  FaSearch,
+  FaUser,
+  FaBars,
+  FaBell,
+  FaSignOutAlt,
+  FaCog,
+} from "react-icons/fa";
 
-const AdminHomepage = () => {
+Modal.setAppElement("#root");
+
+const R_Admin = () => {
   const [isDropdownVisible, setDropdownVisible] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [adminId, setAdminId] = useState("");
@@ -19,16 +27,18 @@ const AdminHomepage = () => {
   const [tasksCompleted, setTasksCompleted] = useState(0);
   const [dailyTasks, setDailyTasks] = useState(20);
   const [reportQueue, setReportQueue] = useState([]);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
 
   // Fetch login status and greeting
   useEffect(() => {
     const checkLoginStatus = async () => {
-      const localStatusToken = localStorage.getItem('authToken');
+      const localStatusToken = localStorage.getItem("authToken");
       if (localStatusToken) {
-        const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
+        const handleAdminRequest = httpsCallable(functions, "handleAdminRequest");
         try {
           const response = await handleAdminRequest({
-            action: 'checkLoginStatus',
+            action: "checkLoginStatus",
             statusToken: localStatusToken,
           });
           if (response.data.success) {
@@ -38,24 +48,23 @@ const AdminHomepage = () => {
             setIsHeadAdmin(response.data.headAdmin);
           } else {
             setIsLoggedIn(false);
-            localStorage.removeItem('authToken');
+            localStorage.removeItem("authToken");
           }
         } catch (error) {
           setIsLoggedIn(false);
-          localStorage.removeItem('authToken');
+          localStorage.removeItem("authToken");
         }
       } else {
         setIsLoggedIn(false);
       }
     };
 
-
-
     const setTimeGreeting = () => {
       const now = new Date();
       const hour = now.getHours();
       const greetings = ["Good night", "Good morning", "Good afternoon", "Good evening"];
-      const index = hour >= 5 && hour < 12 ? 1 : hour >= 12 && hour < 17 ? 2 : hour >= 17 && hour < 21 ? 3 : 0;
+      const index =
+        hour >= 5 && hour < 12 ? 1 : hour >= 12 && hour < 17 ? 2 : hour >= 17 && hour < 21 ? 3 : 0;
       setGreeting(greetings[index]);
     };
 
@@ -79,9 +88,9 @@ const AdminHomepage = () => {
   }, [isLoggedIn]);
 
   const fetchTodayTasks = async () => {
-    const handleAdminTasksRequest = httpsCallable(functions, 'handleAdminTasksRequest');
+    const handleAdminTasksRequest = httpsCallable(functions, "handleAdminTasksRequest");
     try {
-      const response = await handleAdminTasksRequest({ adminId, action: 'getTodayTasks' });
+      const response = await handleAdminTasksRequest({ adminId, action: "getTodayTasks" });
       if (response.data.success) {
         setTasksCompleted(response.data.tasksCompleted);
         setDailyTasks(response.data.dailyTasks);
@@ -92,11 +101,9 @@ const AdminHomepage = () => {
   };
 
   const fetchReportQueue = async () => {
-    const handleAdminTasksRequest = httpsCallable(functions, 'handleAdminTasksRequest');
+    const handleAdminTasksRequest = httpsCallable(functions, "handleAdminTasksRequest");
     try {
-      const response = await handleAdminTasksRequest({ action: 'getReportQueue' });
-
-      console.log("API Response:", response);
+      const response = await handleAdminTasksRequest({ action: "getReportQueue" });
       if (response.data.success) {
         setReportQueue(response.data.queue);
       }
@@ -110,16 +117,16 @@ const AdminHomepage = () => {
   };
 
   const handleLogout = async () => {
-    const localStatusToken = localStorage.getItem('authToken');
+    const localStatusToken = localStorage.getItem("authToken");
     if (localStatusToken) {
-      const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
+      const handleAdminRequest = httpsCallable(functions, "handleAdminRequest");
       try {
         const response = await handleAdminRequest({
-          action: 'logout',
+          action: "logout",
           statusToken: localStatusToken,
         });
         if (response.data.success) {
-          localStorage.removeItem('authToken');
+          localStorage.removeItem("authToken");
           setIsLoggedIn(false);
           setAdminId("");
           setUsername("");
@@ -132,81 +139,78 @@ const AdminHomepage = () => {
     }
   };
 
+  const openModal = (product) => {
+    setSelectedProduct(product);
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+    setSelectedProduct(null);
+  };
+
   return (
-    <div className="homepage">
-
-      {/* Top Bar */}
-      <div className="topbar">
-        <div className="contactinfo">
-          <FaPhone /> (225) 555-0118 | <FaEnvelope /> song748@purdue.edu
-        </div>
-        <div className="subscribeinfo">
-          Subscribe with email to get newest product information! 🎉
-        </div>
-        <div className="socialicons">
-          <p>Follow Us :</p>
-          <a href="#"><FaInstagram /></a>
-          <a href="#"><FaYoutube /></a>
-          <a href="#"><FaTwitter /></a>
-        </div>
-      </div>
-
+    <div className="r-admin-homepage">
       {/* Navigation Bar */}
-      <div className="navbar">
-        <div className="logoTitle">
+      <div className="r-admin-navbar">
+        <div className="r-admin-logoTitle">
           <h1>Judge Everything</h1>
         </div>
-        <div className="navlinks">
+        <div className="r-admin-navlinks">
           <a href="/admin/regularHome">Home</a>
           <a href="#">Todo List</a>
           <a href="#">Finished Tasks</a>
         </div>
-        <div className="searchbar">
+        <div className="r-admin-searchbar">
           <FaSearch />
           <input type="text" placeholder="Search" />
         </div>
         {isLoggedIn ? (
-          <div className="currentUserStatus">
-            <div className="greeting">
-              {greeting}!
-            </div>
-            <div className="currentUserStatusInfo">
+          <div className="r-admin-currentUserStatus">
+            <div className="r-admin-greeting">{greeting}!</div>
+            <div className="r-admin-currentUserStatusInfo">
               <FaUser />
-              <span className="admin-title">{isHeadAdmin ? "Head Admin" : "Admin"}</span>
-              <span className="username">{username}</span>
+              <span className="r-admin-admin-title">{isHeadAdmin ? "Head Admin" : "Admin"}</span>
+              <span className="r-admin-username">{username}</span>
               <FaSignOutAlt
                 onClick={handleLogout}
                 title="Logout"
-                className="logout-icon"
+                className="r-admin-logout-icon"
               />
             </div>
           </div>
         ) : (
-          <div className="login-prompt">
+          <div className="r-admin-login-prompt">
             <p>Please log in</p>
           </div>
         )}
-        <div className="menuContainer">
-          <FaBars className="menuicon" onClick={toggleDropdown} />
+        <div className="r-admin-menuContainer">
+          <FaBars className="r-admin-menuicon" onClick={toggleDropdown} />
           {isDropdownVisible && (
-            <div className="dropdownMenu">
+            <div className="r-admin-dropdownMenu">
               <ul>
                 {!isLoggedIn ? (
                   <li>
-                    <div className="adminauth">
-                      <Link to="/admin"><FaUser /> Login </Link>
+                    <div className="r-admin-adminauth">
+                      <Link to="/admin">
+                        <FaUser /> Login{" "}
+                      </Link>
                     </div>
                   </li>
                 ) : (
                   <>
                     <li>
-                      <div className="notifcations">
-                        <a href="#"><FaBell /> Notification</a>
+                      <div className="r-admin-notifcations">
+                        <a href="#">
+                          <FaBell /> Notification
+                        </a>
                       </div>
                     </li>
                     <li>
-                      <div className="settings">
-                        <Link to="#"><FaCog /> Your Account</Link>
+                      <div className="r-admin-settings">
+                        <Link to="#">
+                          <FaCog /> Your Account
+                        </Link>
                       </div>
                     </li>
                   </>
@@ -218,40 +222,34 @@ const AdminHomepage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="main-content">
-        <div className="today-tasks">
+      <div className="r-admin-main-content">
+        <div className="r-admin-today-tasks">
           <h2>Today's Tasks</h2>
-          <p>{tasksCompleted}/{dailyTasks}</p>
+          <p>
+            {tasksCompleted}/{dailyTasks}
+          </p>
         </div>
 
-        <div className="report-queue">
+        <div className="r-admin-report-queue">
           <h2>Report Queue</h2>
           {reportQueue.length > 0 ? (
-            reportQueue.map(product => (
-              <div key={product.id} className="report-item">
-                <img src={product.productImage} alt={product.productName} className="product-image" />
-                <div className="product-info">
-                  <div className="product-name"><strong>Product Name:</strong> {product.productName}</div>
-                  <div className="product-description"><strong>Description:</strong> {product.description}</div>
-                  <div className="product-creator"><strong>Creator:</strong> {product.creator}</div>
-                  <div className="product-comments"><strong>Comments:</strong> {product.commentList?.length || 0}</div>
-                  <div className="product-parameters">
-                    <strong>Parameters:</strong>
-                    {product.parametorList?.length > 0 ? (
-                      <ul>
-                        {product.parametorList.map((param, index) => (
-                          <li key={index}>{param || "N/A"}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>N/A</p>
-                    )}
+            reportQueue.map((product) => (
+              <div
+                key={product.id}
+                className="r-admin-report-item"
+                onClick={() => openModal(product)}
+              >
+                <img
+                  src={product.productImage}
+                  alt={product.productName}
+                  className="r-admin-product-image"
+                />
+                <div className="r-admin-product-info">
+                  <div className="r-admin-product-name">
+                    <strong>Product Name:</strong> {product.productName}
                   </div>
-                  <div className="product-tags">
-                    <strong>Tags:</strong> {Array.isArray(product.tagList) ? product.tagList.join(", ") : "N/A"}
-                  </div>
-                  <div className="product-subtags">
-                    <strong>Subtags:</strong> {Array.isArray(product.subtagList) ? product.subtagList.join(", ") : "N/A"}
+                  <div className="r-admin-product-description">
+                    <strong>Description:</strong> {product.description}
                   </div>
                 </div>
               </div>
@@ -261,8 +259,77 @@ const AdminHomepage = () => {
           )}
         </div>
       </div>
+
+      {/* Modal for Product Details */}
+      {selectedProduct && (
+        <Modal
+          isOpen={modalIsOpen}
+          onRequestClose={closeModal}
+          className="r-admin-modal"
+          overlayClassName="r-admin-modal-overlay"
+        >
+          <div className="r-admin-modal-content">
+            <div className="r-admin-modal-header">
+              <img
+                src={selectedProduct.productImage}
+                alt={selectedProduct.productName}
+                className="r-admin-modal-image"
+              />
+              <h2>{selectedProduct.productName}</h2>
+            </div>
+            <div className="r-admin-modal-section">
+              <p><strong>Description:</strong> {selectedProduct.description}</p>
+              <p><strong>Creator:</strong> {selectedProduct.creator}</p>
+            </div>
+            <div className="r-admin-modal-section">
+              <h3>Parameters</h3>
+              <ul>
+                {selectedProduct.parametorList.map((param, index) => (
+                  <li key={index}>{param || "N/A"}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="r-admin-modal-section">
+              <h3>Tags</h3>
+              <p>{selectedProduct.tagList}</p>
+              <h3>Subtags</h3>
+              <p>{selectedProduct.subtagList}</p>
+            </div>
+            <div className="r-admin-modal-section">
+              <h3>Comments</h3>
+              <p>{selectedProduct.commentList.length}</p>
+            </div>
+            <div className="r-admin-modal-section">
+              <h3>Reports</h3>
+              {selectedProduct.reportList && selectedProduct.reportList.length > 0 ? (
+                <ul>
+                  {selectedProduct.reportList.map((report, index) => (
+                    <li key={index}>
+                      <p><strong>Reporter:</strong> {report.reporter}</p>
+                      <p><strong>Reason:</strong> {report.reportReason}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No reports available</p>
+              )}
+            </div>
+            <div className="r-admin-modal-section">
+              <p>
+                <strong>Report Flag Created At:</strong>{" "}
+                {selectedProduct.flaggedTime
+                  ? new Date(selectedProduct.flaggedTime.seconds * 1000).toLocaleString()
+                  : "N/A"}
+              </p>
+            </div>
+            <button onClick={closeModal} className="r-admin-close-button">
+              Close
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
 
-export default AdminHomepage;
+export default R_Admin;

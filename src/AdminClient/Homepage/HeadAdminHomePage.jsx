@@ -27,8 +27,15 @@ const HeadAdminHomepage = () => {
   const [role, setRole] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [editUsername, setEditUsername] = useState(false);
+  const [editPassword, setEditPassword] = useState(false);
+  const [editRole, setEditRole] = useState(false);
   const [modalType, setModalType] = useState(null); // 'create', 'edit', 'delete', or null
-  const openModal = (type) => setModalType(type);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const openModal = (type, admin) => {
+    setModalType(type);
+    setSelectedAdmin(admin);
+  };
   const closeModal = () => {
     setLoading(false);
     setErrorMessage("");
@@ -37,12 +44,17 @@ const HeadAdminHomepage = () => {
     setPassword("");
     setRePassword("");
     setRole("");
-    setModalType(null)
+    setEditUsername(false);
+    setEditPassword(false);
+    setEditRole(false);
+    setModalType(null);
+    setSelectedAdmin(null);
   }; 
 
   useEffect(() => {
     const checkLoginStatus = async () => {
-      const localStatusToken = localStorage.getItem('authToken');
+      console.log("start status check");
+      const localStatusToken = localStorage.getItem('adminAuthToken');
       if (localStatusToken) {
         const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
         try {
@@ -51,23 +63,25 @@ const HeadAdminHomepage = () => {
             statusToken: localStatusToken,
           });
           if (response.data.success) {
+            console.log("check success");
             setIsLoggedIn(true);
             setAdminId(response.data.uid);
             setUsername(response.data.username);
             setIsHeadAdmin(response.data.headAdmin);
           } else {
+            console.log("check fail");
             console.log(response.data.message);
             setIsLoggedIn(false);
             setUsername("");
             setIsHeadAdmin(false);
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('adminAuthToken');
           }
         } catch (error) {
           console.log("error verifying token");
           setIsLoggedIn(false);
           setUsername("");
           setIsHeadAdmin(false);
-          localStorage.removeItem('authToken');
+          localStorage.removeItem('adminAuthToken');
         }
       } else {
         console.log("no local token");
@@ -104,7 +118,8 @@ const HeadAdminHomepage = () => {
     setDropdownVisible(!isDropdownVisible);
   };
   const handleLogout = async () => {
-    const localStatusToken = localStorage.getItem('authToken');
+    console.log("start logout");
+    const localStatusToken = localStorage.getItem('adminAuthToken');
     if (localStatusToken) {
       const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
       try {
@@ -113,7 +128,7 @@ const HeadAdminHomepage = () => {
           statusToken: localStatusToken,
         });
         if (response.data.success) {
-          localStorage.removeItem('authToken');
+          localStorage.removeItem('adminAuthToken');
           setIsLoggedIn(false);
           setAdminId("");
           setUsername("");
@@ -243,6 +258,66 @@ const HeadAdminHomepage = () => {
     }
   }
 
+  // const toggleEdit = () => {
+  //   setIsEditable(!isEditable);
+  //   if (!isEditable) {
+  //     setPassword("");
+  //   }
+  // };
+  const handleEditAdmin = async () => {
+    setErrorMessage("");
+    setSuccessMessage("");
+    setLoading(false);
+    if ((!editUsername) && (!editPassword) && (!editRole)) {
+      setErrorMessage("You have not made any modifications.");
+      return;
+    }
+    if ((editUsername) && (!newUsername.trim())) {
+      setErrorMessage("Please enter a new username or cancel changes.");
+      return;
+    }
+    if ((editPassword) && (!password.trim())) {
+      setErrorMessage("Please enter a new password or cancel changes.");
+      return;
+    }
+    if ((editRole) && (!role.trim())) {
+      setErrorMessage("Please select an admin type or cancel changes.");
+      return;
+    }
+    const updatedUsername = editUsername ? newUsername : selectedAdmin.username;
+    let updatedRole = editRole ? role : selectedAdmin.headAdmin;
+    const updatedPassword = editPassword ? password : null;
+    setLoading(true);
+    const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
+    console.log("Edit admin ", selectedAdmin.id, ",username:", updatedUsername, ",password:", updatedPassword, "headadmin: ", updatedRole);
+    try {
+      updatedRole = (updatedRole === "true");
+      const response = await handleAdminRequest({
+        action: 'edit',
+        uid: selectedAdmin.id,
+        username: updatedUsername,
+        password: updatedPassword,
+        headAdmin: updatedRole
+      });
+      if (response.data.success) {
+        setLoading(false);
+        console.log("Admin account information edited successfully!");
+        setSuccessMessage("Admin account information edited successfully!");
+        setTimeout(() => {
+          closeModal();
+        }, 1000);
+        window.location.reload();
+      } else {
+        setLoading(false);
+        console.error(`Could not edit admin account: ${response.data.message}`);
+        setErrorMessage(`Could not edit admin account: ${response.data.message}`);
+      }
+    } catch (error) {
+      setLoading(false);
+      console.error("Error editing admin account: ", error);
+      setErrorMessage(`Error editing admin account: ${error}`)
+    }
+  }
 
   return (
 
@@ -336,10 +411,10 @@ const HeadAdminHomepage = () => {
             <div className="admin-list-container">
                 <div className="admin-list-header">
                     <h2>Admin List</h2>
-                    <button className="create-admin-btn" onClick={() => openModal("create")}>
+                    <button className="create-admin-btn" onClick={() => openModal("create", null)}>
                         Create Admin Account
                     </button>
-                    {/* Conditionally Render Modals */}
+                    {/* Conditionally Render Create Modal */}
                     {modalType === "create" && (
                         <div className="admin-modal-overlay">
                         <div className="modal">
@@ -381,34 +456,127 @@ const HeadAdminHomepage = () => {
                         <div className="head-admin-role">Head Admin</div>
                         ) : (
                         <div className="admin-actions">
-                            <button className="edit-btn" onClick={() => openModal("edit")}>Edit</button>
-                            <button className="delete-btn" onClick={() => openModal("delete")}>Delete</button>
+                            <button className="edit-btn" onClick={() => openModal("edit", admin)}>Edit</button>
+                            <button className="delete-btn" onClick={() => openModal("delete", admin)}>Delete</button>
                         </div>
                         )}
-                      {/* Conditionally Render Modals */}
-                      {modalType === "delete" && (
-                          <div className="admin-modal-overlay">
-                            <div className="modal">
-                              <h3>Delete Admin Account</h3>        
-                              <p>Are you sure you want to delete {admin.id}: {admin.username}?</p>
-                              <div className="admin-home-message">
-                                {loading && <div className="loadingMessage">Loading...</div>}
-                                {errorMessage && <p className="errorMessage">{errorMessage}</p>}
-                                {successMessage && <p className="successMessage">{successMessage}</p>}
-                              </div>
-                              <div className="modal-actions">
-                                <button type="button" className="cancel-delete-admin-btn" onClick={closeModal}>
-                                  Cancel
-                                </button>
-                                <button type="button" className="confirm-delete-admin-btn"  onClick={() => handleDeleteAdmin(admin.id)}>
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                      )}
                     </div>
                     ))}
+                    {/* Conditionally Render Delete Modal */}
+                    {modalType === "delete" && (
+                      <div className="admin-modal-overlay">
+                        <div className="modal">
+                          <h3>Delete Admin Account</h3>        
+                          <p>Are you sure you want to delete {selectedAdmin.id}: {selectedAdmin.username}?</p>
+                          <div className="admin-home-message">
+                            {loading && <div className="loadingMessage">Loading...</div>}
+                            {errorMessage && <p className="errorMessage">{errorMessage}</p>}
+                            {successMessage && <p className="successMessage">{successMessage}</p>}
+                          </div>
+                          <div className="modal-actions">
+                            <button type="button" className="cancel-delete-admin-btn" onClick={closeModal}>
+                              Cancel
+                            </button>
+                            <button type="button" className="confirm-delete-admin-btn"  onClick={() => handleDeleteAdmin(selectedAdmin.id)}>
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Conditionally Render Edit Modal */}
+                    {modalType === "edit" && (
+                      <div className="admin-modal-overlay">
+                        <div className="modal">
+                          <h3>Edit Admin Account</h3>
+                          <form className="modal-form" onSubmit={(e) => e.preventDefault()}>
+                            <p>Admin ID: {selectedAdmin.id}</p>
+                            <div className="edit-admin-block">
+                              {editUsername ? (
+                                <>
+                                  <label>Username:</label>
+                                  <input
+                                  type="text"
+                                  placeholder="New Username"
+                                  required 
+                                  value={newUsername} 
+                                  onChange={(e) => setNewUsername(e.target.value)} />
+                                  <button className="cancel-edit-admin-field-btn" onClick={() => {setEditUsername(false); setNewUsername("");}}>
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <label>Username:</label>
+                                  <span className="current-username">{selectedAdmin.username}</span>
+                                  <button className="edit-admin-field-btn" onClick={() => {setEditUsername(true);}}>Edit</button>
+                                </>
+                              )}
+                            </div>
+                            <div className="edit-admin-block">
+                              {editPassword ? (
+                                <>
+                                  <label>Password:</label>
+                                  <input
+                                  type="password"
+                                  placeholder="New Password"
+                                  required
+                                  value={password}
+                                  onChange={(e) => setPassword(e.target.value)}
+                                  />
+                                  <button className="cancel-edit-admin-field-btn" onClick={() => {setEditPassword(false); setPassword("");}}>
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <label>Password:</label>
+                                  <span className="hidden-password">******</span> {/* Placeholder password */}
+                                  <button className="edit-admin-field-btn" onClick={() => {setEditPassword(true)}}>Edit</button>
+                                </>
+                              )}
+                            </div>
+                            <div className="edit-admin-block">
+                              {editRole ? (
+                                <>
+                                  <label>Role:</label>
+                                  <select required value={role} onChange={(e) => setRole(e.target.value)}>
+                                    <option value="">Select Role</option>
+                                    <option value="true">Head Admin</option>
+                                    <option value="false">Regular Admin</option>
+                                  </select>
+                                  <button className="cancel-edit-admin-field-btn" onClick={() => {setEditRole(false); setRole("");}}>
+                                    Cancel
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <label>Role:</label>
+                                  <span className="hidden-password">
+                                    {selectedAdmin.headAdmin ? ("Head Admin") : ("Regular Admin")}
+                                  </span>
+                                  <button className="edit-admin-field-btn" onClick={() => {setEditRole(true)}}>Edit</button>
+                                </>
+                              )}
+                            </div>
+                            <div className="admin-home-message">
+                              {loading && <div className="loadingMessage">Loading...</div>}
+                              {errorMessage && <p className="errorMessage">{errorMessage}</p>}
+                              {successMessage && <p className="successMessage">{successMessage}</p>}
+                            </div>
+                            <div className="modal-actions">
+                              <button type="button" className="cancel-edit-admin-btn" onClick={closeModal}>
+                                Cancel
+                              </button>
+                              <button type="button" className="confirm-edit-admin-btn"  onClick={() => handleEditAdmin()}>
+                                Edit
+                              </button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    )}
+                    
             </div>
             {/* Pagination */}
             <div className="paging">

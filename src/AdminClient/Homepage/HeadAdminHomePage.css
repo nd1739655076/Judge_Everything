@@ -184,7 +184,7 @@
     background-color: #f9f9f9;
     border: 1px solid #ccc;
     border-radius: 5px;
-    appearance: none; /* Remove default dropdown arrow for customization */
+    appearance: none;
     position: relative;
   }
 
@@ -192,5 +192,61 @@
     border-color: #13a1f9;
   }
 
+  .edit-admin-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-  
+  .edit-admin-block span {
+    display: block;
+    width: 240px;
+    margin-bottom: 15px;
+    margin-right: 15px;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    background-color: #ccc;
+    border-radius: 4px;
+  }
+
+  .edit-admin-block label {
+    display: block;
+    width: 110px;
+    margin-bottom: 15px;
+    margin-right: 0px;
+    padding: 8px;
+    font-size: 16px;
+    padding-right: 0px;
+  }
+  .edit-admin-block select {
+    display: block;
+    width: 270px;
+    margin-bottom: 15px;
+    margin-right: 15px;
+    padding: 8px;
+    font-size: 16px;
+  }
+
+  .edit-admin-block button {
+    width: 80px;
+    border: none;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    margin-left: 0px;
+    margin-right: 15px;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .edit-admin-block .cancel-edit-admin-field-btn {
+    background: #ccc;
+    color: #333;
+  }
+
+  .edit-admin-block .edit-admin-field-btn {
+    background: #13a1f9;
+    color: white;
+  }

@@ -45,7 +45,7 @@ const AdminLogin = () => {
         });
         setLoading(false);
         if (response.data.success) {
-          localStorage.setItem('authToken', response.data.statusToken);
+          localStorage.setItem('adminAuthToken', response.data.statusToken);
           console.log("status token:", response.data.statusToken);
           setErrorMessage("");
           setSuccessMessage("Login successful! Redirecting...");

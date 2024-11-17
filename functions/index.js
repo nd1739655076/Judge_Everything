@@ -111,7 +111,15 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
       } else {
         return { success: false, message: deleteResponse.message };
       }
-
+    }
+    else if (action === 'edit') {
+      console.log("start admin edit in index.js");
+      const deleteResponse = await Admin.edit(uid, username, password, headAdmin);
+      if (deleteResponse.status === 'success') {
+        return { success: true, message: deleteResponse.message };
+      } else {
+        return { success: false, message: deleteResponse.message };
+      }
     }
   } catch (error) {
     console.error("Error handeling admin request.");

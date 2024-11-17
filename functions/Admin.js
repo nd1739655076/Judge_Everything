@@ -164,8 +164,35 @@ class Admin {
       console.error("Error fetching admin list:", error);
       return { status: 'error', message: `Error fetching admin list:${error}` };
     }
-
   }
+
+  //action === 'edit'
+  static async edit(uid, username, password, headAdmin) {
+    console.log("Edit admin ", uid, ",username:", username, ",password:", password, "headadmin: ", headAdmin);
+    const adminDocRef = db.collection('Admin').doc(uid);
+    if (adminDocRef.empty) {
+      return { status: 'error', message: 'Admin not exist' };
+    }
+    if (password == null) {
+      await adminDocRef.update({
+        username: username,
+        headAdmin: headAdmin
+      });
+    } else {
+      await adminDocRef.update({
+        username: username,
+        password: password,
+        headAdmin: headAdmin
+      });
+    }
+    const IdDocRef = db.collection('Id').doc(uid);
+    if (!IdDocRef.empty) {
+      await IdDocRef.update({
+        username: username
+      });
+    }
+    return { status: 'success', message: 'Successfully edited admin account.' };
+  }  
 
 }
 

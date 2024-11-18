@@ -258,12 +258,6 @@ const HeadAdminHomepage = () => {
     }
   }
 
-  // const toggleEdit = () => {
-  //   setIsEditable(!isEditable);
-  //   if (!isEditable) {
-  //     setPassword("");
-  //   }
-  // };
   const handleEditAdmin = async () => {
     setErrorMessage("");
     setSuccessMessage("");
@@ -319,6 +313,46 @@ const HeadAdminHomepage = () => {
     }
   }
 
+  const [displaySearch, setDisplaySearch] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchResult, setSearchResult] = useState([]);
+  const [searchMesage, setSearchMessage] = useState("");
+
+  const handleSearch = async () => {
+    setDisplaySearch(true);
+    if (searchKeyword === "") {
+      setSearchMessage("Please enter a keyword for searching.");
+      return;
+    }
+    setSearchMessage("Seaching...");
+    
+    const filteredItems = admins.filter((admin) =>
+      admin.username.toLowerCase().includes(searchKeyword.toLowerCase()) 
+    );
+    // Sort matching items (a and b on each comparison) based on relevance
+    const sortedItems = filteredItems.sort((a, b) => {
+      const query = searchKeyword.toLowerCase(); 
+      const aName = a.username.toLowerCase();
+      const bName = b.username.toLowerCase();
+      // Exact match: score 2; Start with the query: score 1; otherwise: score 0
+      const aScore = (aName === query) ? (2) : (aName.startsWith(query) ? 1 : 0); 
+      const bScore = (bName === query) ? (2) : (bName.startsWith(query) ? 1 : 0);
+      if (aScore === bScore) {
+        return aName.localeCompare(bName);
+      }
+
+      return bScore - aScore;
+    });
+    await setSearchResult(sortedItems);
+    console.log("sorted items:", sortedItems);
+    if (sortedItems.length === 0) {
+      setSearchMessage("No accounts with provided keyword available.");
+    } else {
+      setSearchMessage("");
+    }
+    console.log("search result:", searchResult);
+  }
+
   return (
 
     <div className="homepage">
@@ -345,14 +379,23 @@ const HeadAdminHomepage = () => {
           <h1>Judge Everything</h1>
         </div>
         <div className="navlinks">
-          <a href="/admin/home">Home</a>
-          <a href="#">Admin List</a>
-          <a href="#">Flagged Products</a>
+          <a href="/headadmin/home">Admin List</a>
         </div>
-        <div className="searchbar">
-          <FaSearch />
-          <input type="text" placeholder="Search" />
+        <div>
+          <div  className="search-admin-account">
+            <div className="admin-account-searchbar">
+              <FaSearch />
+              <input type="text" placeholder="Search Admin Account"
+                value={searchKeyword} onChange={(e) => {setSearchKeyword(e.target.value)}} />
+            </div>
+            <button onClick={() =>{handleSearch()}}>Search</button>
+            {displaySearch && 
+              <button onClick={() => {setDisplaySearch(false); setSearchMessage(""); setSearchResult([]); setSearchKeyword("");}}>
+                Clear
+              </button>}
+          </div>
         </div>
+        
         {isLoggedIn ? (
           <div className="currentUserStatus">
             <div className="greeting">
@@ -406,6 +449,36 @@ const HeadAdminHomepage = () => {
           )}
         </div>
       </div>
+      {/* Search Result Section */}
+      {isHeadAdmin && displaySearch && <section className="admin-list">
+        <div className="admin-list-container">
+          <div className="admin-list-header">
+            <h2>Search Result</h2>
+          </div>              
+          {searchResult.length === 0 ? (
+            <div>
+              <p>{searchMesage}</p>
+            </div>
+          ) : (
+            searchResult.slice(0, 15).map((admin) => (
+              <div key={admin.id} className="admin-item">
+                <div className="admin-info">
+                  <span className="admin-id">{admin.id}</span>
+                  <span className="admin-username">{admin.username}</span>
+                </div>
+                {admin.headAdmin ? (
+                  <div className="head-admin-role">Head Admin</div>
+                  ) : (
+                  <div className="admin-actions">
+                    <button className="edit-btn" onClick={() => openModal("edit", admin)}>Edit</button>
+                    <button className="delete-btn" onClick={() => openModal("delete", admin)}>Delete</button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </section>}
         {/* Admin List Section */}
         {isHeadAdmin && <section className="admin-list">
             <div className="admin-list-container">

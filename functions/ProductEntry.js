@@ -348,6 +348,57 @@ static async deleteComment(productId, commentId) {
   }
 }
 
+static async deleteParameter(productId, parameterId) {
+  try {
+    const productRef = db.collection('ProductEntry').doc(productId);
+    const productSnap = await productRef.get();
+
+    if (!productSnap.exists) {
+      throw new Error('Product not found');
+    }
+
+    const productData = productSnap.data();
+    const updatedParameterList = productData.parametorList.filter(id => id !== parameterId);
+
+    // Update the product entry in the database
+    await productRef.update({ parametorList: updatedParameterList });
+
+    return { success: true, message: 'Parameter deleted successfully' };
+  } catch (error) {
+    console.error('Error deleting parameter:', error);
+    throw new Error('Failed to delete parameter');
+  }
+}
+
+static async addParameter(productId, parameterName) {
+  try {
+    const generateId = new Id();
+    const paramIdResult = await generateId.generateId('parameter', parameterName);
+    const newParameterId = paramIdResult.idNum;
+
+    const productRef = db.collection('ProductEntry').doc(productId);
+    const productSnap = await productRef.get();
+
+    if (!productSnap.exists) {
+      throw new Error('Product not found');
+    }
+
+    const productData = productSnap.data();
+    const updatedParameterList = [...(productData.parametorList || []), newParameterId];
+
+    // Update the product entry in the database
+    await productRef.update({ parametorList: updatedParameterList });
+
+    // Optionally, create a new Parameter document in the database
+    const newParameter = new Parameter(newParameterId, productId, parameterName);
+    await newParameter.save();
+
+    return { success: true, message: 'Parameter added successfully', parameterId: newParameterId };
+  } catch (error) {
+    console.error('Error adding parameter:', error);
+    throw new Error('Failed to add parameter');
+  }
+}
 
 
 

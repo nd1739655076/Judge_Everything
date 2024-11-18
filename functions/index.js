@@ -354,7 +354,7 @@ exports.handleConversationRequest = functions.https.onCall(async (data, context)
 // ProductEntry Handle
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, productId } = data;
+    const { action, productId, parameterId, parameterName } = data;
 
     if (action === 'generate') {
       const productEntryResponse = await ProductEntry.saveProductEntry(data);
@@ -394,6 +394,23 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
       }
 
       const result = await ProductEntry.deleteComment(productId, commentId);
+      return result;
+    }
+
+
+    else if (action === 'addParameter') {
+      if (!productId || !parameterName) {
+        throw new functions.https.HttpsError('invalid-argument', 'Product ID and parameter name are required');
+      }
+      const result = await ProductEntry.addParameter(productId, parameterName);
+      return result;
+    }
+
+    else if (action === 'deleteParameter') {
+      if (!productId || !parameterId) {
+        throw new functions.https.HttpsError('invalid-argument', 'Product ID and parameter ID are required');
+      }
+      const result = await ProductEntry.deleteParameter(productId, parameterId);
       return result;
     }
 

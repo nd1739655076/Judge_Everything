@@ -4,7 +4,7 @@ import { httpsCallable } from "firebase/functions";
 import { functions } from "../../firebase";
 import styles from "./AdminEdit.module.css"; // Import modular CSS
 import Modal from "react-modal"; // 引入 React Modal
-
+import { getFirestore, doc, getDoc} from 'firebase/firestore';
 
 const AdminEdit = () => {
     const { productId } = useParams();
@@ -20,9 +20,15 @@ const AdminEdit = () => {
     const [reportDetails, setReportDetails] = useState({});
     const [comments, setComments] = useState([]);
     const [imageFile, setImageFile] = useState(null);
-    const [currentImage, setCurrentImage] = useState("");
+    const [currentImage, setCurrentImage] = useState(productData?.productImage || ''); 
     const [notificationModalOpen, setNotificationModalOpen] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState("");
+    const [showAddParameter, setShowAddParameter] = useState(false);
+    const [newParameterName, setNewParameterName] = useState("");
+    const [imageError, setImageError] = useState("");
+    const db = getFirestore();
+    
+
     // Fetch product details
     // Fetch product details
     const fetchProductDetails = async () => {
@@ -42,10 +48,16 @@ const AdminEdit = () => {
                 });
 
                 if (product.parameters) {
-                    setParameters([
-                        ...product.parameters,
-                        ...new Array(10 - product.parameters.length).fill({ paramName: "", paramId: null, isNew: true }),
-                    ]);
+                    const paramRefs = product.parametorList || [];
+                const paramPromises = paramRefs.map(async (paramId) => {
+                    const paramRef = doc(db, 'Parameters', paramId);
+                    const paramSnap = await getDoc(paramRef);
+                    return paramSnap.exists() ? { paramId, ...paramSnap.data() } : null;
+                });
+                const parametersData = (await Promise.all(paramPromises)).filter(Boolean);
+
+                setProductData({ ...product, comments });
+                setParameters(parametersData);
                 } else {
                     setParameters(new Array(10).fill({ paramName: "", paramId: null, isNew: true }));
                 }
@@ -132,37 +144,44 @@ const AdminEdit = () => {
 
     const handleParameterChange = (index, value) => {
         setParameters((prevParameters) => {
-            // 创建一个新数组来更新状态，确保不可变性
+            console.log(`Previous parameters at index ${index}:`, prevParameters[index]); // Log the parameter before the update
+
+            // Create a new array to update the state, ensuring immutability
             const updatedParameters = [...prevParameters];
             updatedParameters[index] = {
-                ...updatedParameters[index], // 确保保持原参数的其他字段
-                paramName: value, // 更新指定索引的参数名称
+                ...updatedParameters[index], // Keep other fields of the parameter unchanged
+                paramName: value, // Update the parameter name at the specified index
             };
+
+            console.log(`Updated parameter at index ${index}:`, updatedParameters[index]); // Log the parameter after the update
+            console.log(`Full updated parameters array:`, updatedParameters); // Log the entire updated parameters array
+
             return updatedParameters;
         });
     };
 
-    const handleAddParameter = async () => {
-        try {
-            const generateId = httpsCallable(functions, "generateId");
-            const response = await generateId({ type: "parameter" });
-            if (response.data.success) {
-                const newParameterId = response.data.idNum; // 使用idNum作为新ID
-                const updatedParameters = [...parameters];
-                updatedParameters.push({
-                    paramId: newParameterId,
-                    paramName: "",
-                    isNew: true,
-                });
-                setParameters(updatedParameters);
-            } else {
-                setErrorMessage("Failed to generate a new parameter ID.");
-            }
-        } catch (error) {
-            console.error("Error generating parameter ID:", error);
-            setErrorMessage("Failed to add new parameter.");
-        }
-    };
+
+    /* const handleAddParameter = async () => {
+         try {
+             const generateId = httpsCallable(functions, "generateId");
+             const response = await generateId({ type: "parameter" });
+             if (response.data.success) {
+                 const newParameterId = response.data.idNum; // 使用idNum作为新ID
+                 const updatedParameters = [...parameters];
+                 updatedParameters.push({
+                     paramId: newParameterId,
+                     paramName: "",
+                     isNew: true,
+                 });
+                 setParameters(updatedParameters);
+             } else {
+                 setErrorMessage("Failed to generate a new parameter ID.");
+             }
+         } catch (error) {
+             console.error("Error generating parameter ID:", error);
+             setErrorMessage("Failed to add new parameter.");
+         }
+     };*/
 
     // Fetch creator name
     const fetchCreatorName = async (creatorId) => {
@@ -376,17 +395,77 @@ const AdminEdit = () => {
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setCurrentImage(reader.result); // 预览图片
-                setImageFile(file); // 保存图片文件以便上传
-            };
-            reader.readAsDataURL(file);
+        const allowedTypes = ["image/jpeg", "image/png"];
+      
+        if (file && !allowedTypes.includes(file.type)) {
+          setImageError("Invalid file type. Please upload a JPEG or PNG image.");
+          e.target.value = null; // Reset the input value
+        } else {
+          setImageError(""); // Clear any previous error messages
+          setImageFile(file);
         }
-    };
+      };
 
+    const handleDeleteParameter = async (index) => {
+        const parameterToDelete = parameters[index];
+      
+        if (!parameterToDelete || !parameterToDelete.paramId) {
+          alert("Invalid parameter selected for deletion.");
+          return;
+        }
+      
+        try {
+          const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
+          const response = await handleProductEntryRequest({
+            action: "deleteParameter",
+            productId: productId, // Replace with your product ID
+            parameterId: parameterToDelete.paramId
+          });
+      
+          if (response.data.success) {
+            alert("Parameter deleted successfully!");
+            // Update the local state to remove the deleted parameter
+            setParameters((prevParameters) => prevParameters.filter((_, i) => i !== index));
+          } else {
+            console.error("Failed to delete parameter:", response.data.message);
+            alert("Failed to delete parameter. Please try again.");
+          }
+        } catch (error) {
+          console.error("Error deleting parameter:", error);
+          alert("An error occurred while deleting the parameter.");
+        }
+      };
+      
 
+    const handleConfirmAddParameter = async () => {
+        if (!newParameterName.trim()) {
+          alert("Please enter a valid parameter name.");
+          return;
+        }
+      
+        try {
+          const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
+          const response = await handleProductEntryRequest({
+            action: "addParameter",
+            productId: productId, // Replace with your product ID
+            parameterName: newParameterName
+          });
+      
+          if (response.data.success) {
+            alert("Parameter added successfully!");
+            setParameters([...parameters, { paramName: newParameterName }]); // Update local state
+            setShowAddParameter(false); // Hide the input box and button
+            setNewParameterName(""); // Clear the input
+          } else {
+            console.error("Failed to add parameter:", response.data.message);
+            alert("Failed to add parameter. Please try again.");
+          }
+        } catch (error) {
+          console.error("Error adding parameter:", error);
+          alert("An error occurred while adding the parameter.");
+        }
+      };
+      
     const handleUpdateProduct = async () => {
         const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest");
         const handleParameterRequest = httpsCallable(functions, "handleParameterRequest");
@@ -401,31 +480,26 @@ const AdminEdit = () => {
             // 1. 上传新图片（如果存在）
             let productImage = currentImage;
             if (imageFile) {
-                try {
-                    const base64Image = await new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => resolve(reader.result.split(",")[1]);
-                        reader.onerror = (err) => reject(err);
-                        reader.readAsDataURL(imageFile);
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                  const base64Image = reader.result.split(',')[1]; // Get base64 part
+                  
+                  const handleImageRequest = httpsCallable(functions, 'handleImageRequest');
+                  try {
+                    const imageResponse = await handleImageRequest({
+                      action: 'upload',
+                      base64: base64Image,
+                      filename: imageFile.name,
+                      productId: productId
                     });
-
-                    const uploadResponse = await handleImageUpload({
-                        action: "uploadImage",
-                        base64: base64Image,
-                        productId: productId,
-                    });
-
-                    if (uploadResponse.data.success) {
-                        productImage = uploadResponse.data.imageUrl; // 更新图片 URL
-                    } else {
-                        throw new Error(uploadResponse.data.message || "Failed to upload image.");
-                    }
-                } catch (uploadError) {
-                    console.error("Error uploading image:", uploadError);
-                    setErrorMessage("Failed to upload image. Please try again.");
-                    return; // 退出以避免后续处理
-                }
-            }
+                    console.log('Image uploaded:', imageResponse);
+                  } catch (error) {
+                    console.error('Error uploading image:', error);
+                    
+                  }
+                };
+                reader.readAsDataURL(imageFile);
+              }
 
             // 2. 更新现有参数并添加新参数
             const newParameters = parameters.filter((param) => param.isNew && param.paramName.trim());
@@ -678,17 +752,56 @@ const AdminEdit = () => {
                     </div>
                     <div className={styles.section}>
                         <h2>Parameters</h2>
-                        {[...Array(10)].map((_, index) => (
+                        {parameters.slice(0, 10).map((param, index) => (
                             <div key={index} className={styles.parameterItem}>
                                 <input
                                     type="text"
-                                    value={parameters[index]?.paramName || ""}
+                                    value={param.paramName || ""}
                                     onChange={(e) => handleParameterChange(index, e.target.value)}
                                     className={styles.input}
                                     placeholder={`Parameter ${index + 1}`}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteParameter(index)}
+                                    className={styles.deleteButton}
+                                >
+                                    Delete
+                                </button>
                             </div>
                         ))}
+
+                        {/* Add Parameter Button */}
+{parameters.length < 10 && (
+  <div className={styles.addParameterContainer}>
+    <button
+      type="button"
+      onClick={() => setShowAddParameter(true)}
+      className={styles.addButton}
+    >
+      Add Parameter
+    </button>
+
+    {showAddParameter && (
+      <div className={styles.addParameterForm}>
+        <input
+          type="text"
+          value={newParameterName}
+          onChange={(e) => setNewParameterName(e.target.value)}
+          placeholder="Enter parameter name"
+          className={styles.parameterInput}
+        />
+        <button
+          type="button"
+          onClick={handleConfirmAddParameter}
+          className={styles.confirmButton}
+        >
+          Confirm
+        </button>
+      </div>
+    )}
+  </div>
+)}
                     </div>
                     <div className={styles.section}>
                         <h2>Report Details</h2>

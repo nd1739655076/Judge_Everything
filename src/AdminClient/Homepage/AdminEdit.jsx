@@ -72,6 +72,39 @@ const AdminEdit = () => {
         }
     };
 
+    const handleDenyReportRequest = async () => {
+        const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest");
+    
+        try {
+            setErrorMessage(""); // 清空错误信息
+            setSuccessMessage(""); // 清空成功信息
+    
+            const response = await handleProductEntryRequest({
+                action: "edit",
+                productId,
+                updates: {
+                    flag: 0, // 更新 flag 为 0
+                    reportList: [], // 清空 reportList
+                    isLocked: false, // 解锁产品
+                    lockedBy: null, // 清除锁定用户
+                },
+            });
+    
+            if (response.data.success) {
+                setSuccessMessage("Report request denied successfully!");
+                setTimeout(() => {
+                    navigate("/admin/regularHome"); // 跳转到管理员主页
+                }, 1500); // 延迟 1.5 秒后跳转，方便用户看到成功消息
+            } else {
+                setErrorMessage(`Error: ${response.data.message}`);
+            }
+        } catch (error) {
+            console.error("Error denying report request:", error);
+            setErrorMessage("Failed to deny report request. Please try again.");
+        }
+    };
+    
+
     const handleParameterChange = (index, value) => {
         const updatedParameters = [...parameters];
         updatedParameters[index] = {
@@ -402,8 +435,8 @@ const AdminEdit = () => {
         }
     };
 
-      // 发送通知逻辑
-      const handleSendNotification = async () => {
+    // 发送通知逻辑
+    const handleSendNotification = async () => {
         const handleUserRequest = httpsCallable(functions, "handleUserRequest");
         try {
             const response = await handleUserRequest({
@@ -422,8 +455,8 @@ const AdminEdit = () => {
         }
     };
 
-       // 关闭弹窗
-       const handleCloseModal = () => {
+    // 关闭弹窗
+    const handleCloseModal = () => {
         setNotificationModalOpen(false);
     };
 
@@ -591,7 +624,10 @@ const AdminEdit = () => {
                     </div>
 
                     <div className={styles.actions}>
-                        <button className={`${styles.button} ${styles.denyButton}`}>
+                        <button
+                            onClick={handleDenyReportRequest}
+                            className={`${styles.button} ${styles.denyButton}`}
+                        >
                             Deny Report Request
                         </button>
                         <button

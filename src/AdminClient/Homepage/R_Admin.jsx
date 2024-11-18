@@ -29,6 +29,7 @@ const R_Admin = () => {
   const [reportQueue, setReportQueue] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [imageError, setImageError] = useState("");
 
   // Fetch login status and greeting
   useEffect(() => {

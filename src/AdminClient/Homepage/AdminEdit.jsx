@@ -32,21 +32,23 @@ const AdminEdit = () => {
             const product = response.data.data.find((p) => p.id === productId);
 
             if (product) {
-                setProductData(product); // 设置产品数据
+                setProductData(product);
                 setEditFields({
                     productName: product.productName || "",
                     description: product.description || "",
                     tagList: product.tagList || "",
                     subtagList: product.subtagList || [],
-                }); // 初始化输入框
-                setParameters(product.parameters || []); // 初始化参数
-                setCurrentImage(product.productImage || ""); // 初始化图片
-                fetchReports(product.id); // 加载报告
-                fetchComments(product.id); // 加载评论
+                });
 
-                // Fetch creator's username
-                if (product.creator) {
-                    fetchCreatorName(product.creator); // 通过creatorId获取username
+                const paramResponse = await httpsCallable(functions, "handleParameterRequest")({
+                    action: "getParametersByProductId",
+                    productId,
+                });
+
+                if (paramResponse.data.success) {
+                    setParameters(paramResponse.data.parameters);
+                } else {
+                    console.error("Failed to fetch parameters");
                 }
             } else {
                 setErrorMessage("Product not found.");
@@ -107,11 +109,11 @@ const AdminEdit = () => {
 
     const handleParameterChange = (index, value) => {
         const updatedParameters = [...parameters];
-        updatedParameters[index] = {
-            ...updatedParameters[index],
-            paramName: value,
-            isNew: !updatedParameters[index].paramId, // 只有没有ID时才标记为新参数
-        };
+        if (index < updatedParameters.length) {
+            updatedParameters[index].paramName = value;
+        } else {
+            updatedParameters.push({ paramName: value, isNew: true });
+        }
         setParameters(updatedParameters);
     };
 
@@ -337,12 +339,13 @@ const AdminEdit = () => {
         const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest");
         const handleParameterRequest = httpsCallable(functions, "handleParameterRequest");
         const handleImageUpload = httpsCallable(functions, "handleImageUpload");
-
+    
         try {
+            // 清空错误和成功消息
             setErrorMessage("");
             setSuccessMessage("");
-
-            // 上传新图片（如果有）
+    
+            // 1. 上传新图片（如果存在）
             let productImage = currentImage;
             if (imageFile) {
                 try {
@@ -352,13 +355,13 @@ const AdminEdit = () => {
                         reader.onerror = (err) => reject(err);
                         reader.readAsDataURL(imageFile);
                     });
-
+    
                     const uploadResponse = await handleImageUpload({
                         action: "uploadImage",
                         base64: base64Image,
                         productId: productId,
                     });
-
+    
                     if (uploadResponse.data.success) {
                         productImage = uploadResponse.data.imageUrl; // 更新图片 URL
                     } else {
@@ -366,15 +369,18 @@ const AdminEdit = () => {
                     }
                 } catch (uploadError) {
                     console.error("Error uploading image:", uploadError);
-                    setErrorMessage("Failed to upload image.");
-                    return;
+                    setErrorMessage("Failed to upload image. Please try again.");
+                    return; // 退出以避免后续处理
                 }
             }
-
-            // 添加新参数（如果有）
-            const newParameters = parameters.filter((param) => param.isNew && param.paramName);
-            const newParameterIds = [];
+    
+            // 2. 更新现有参数并添加新参数
+            const newParameters = parameters.filter((param) => param.isNew && param.paramName.trim());
+            const existingParameters = parameters.filter((param) => !param.isNew && param.paramId);
+            const newParameterIds = []; // 存储新增参数的 ID
+    
             try {
+                // 添加新参数
                 const addParameterPromises = newParameters.map((param) =>
                     handleParameterRequest({
                         action: "addParameter",
@@ -382,30 +388,47 @@ const AdminEdit = () => {
                         paramName: param.paramName,
                     })
                 );
-                const responses = await Promise.all(addParameterPromises);
-
-                responses.forEach((response, index) => {
+    
+                const addResponses = await Promise.all(addParameterPromises);
+    
+                addResponses.forEach((response, index) => {
                     if (response.data.success) {
-                        newParameterIds.push(response.data.paramId); // 新增参数 ID
+                        newParameterIds.push(response.data.paramId); // 存储成功新增的参数 ID
                     } else {
                         console.error(`Failed to add parameter: ${newParameters[index].paramName}`);
                     }
                 });
+    
+                // 更新现有参数
+                const updateParameterPromises = existingParameters.map((param) =>
+                    handleParameterRequest({
+                        action: "updateParameter",
+                        paramId: param.paramId,
+                        updates: { paramName: param.paramName },
+                    })
+                );
+    
+                const updateResponses = await Promise.all(updateParameterPromises);
+    
+                if (!updateResponses.every((response) => response.data.success)) {
+                    setErrorMessage("Failed to update some parameters. Please try again.");
+                    return;
+                }
             } catch (paramError) {
-                console.error("Error adding new parameters:", paramError);
-                setErrorMessage("Failed to add new parameters.");
+                console.error("Error updating parameters:", paramError);
+                setErrorMessage("Failed to update parameters. Please try again.");
                 return;
             }
-
+    
             // 整合所有参数 ID
             const updatedParameterList = [
-                ...parameters.filter((param) => !param.isNew).map((param) => param.paramId),
+                ...existingParameters.map((param) => param.paramId),
                 ...newParameterIds,
             ];
-
-            // 更新产品信息
+    
+            // 3. 更新产品信息
             try {
-                const response = await handleProductEntryRequest({
+                const productUpdateResponse = await handleProductEntryRequest({
                     action: "edit",
                     productId,
                     updates: {
@@ -414,26 +437,26 @@ const AdminEdit = () => {
                         parametorList: updatedParameterList, // 更新后的参数列表
                     },
                 });
-
-                if (response.data.success) {
-                    // 更新成功后设置弹窗内容
+    
+                if (productUpdateResponse.data.success) {
+                    // 成功信息
                     setSuccessMessage("Product updated successfully!");
-                    setNotificationMessage(
-                        `Hello ${creatorName}! Since there are certain amount of report requests for the product "${editFields.productName}" you created, we checked and edited your product entry. You can go to your product entry page to see the newest modification. Thank you for using Judge Everything,\nAdmin.`
-                    );
-                    setNotificationModalOpen(true); // 打开通知弹窗
+                    setTimeout(() => {
+                        navigate("/admin/regularHome"); // 跳转到主页
+                    }, 1500); // 延迟跳转
                 } else {
-                    setErrorMessage(`Error: ${response.data.message}`);
+                    setErrorMessage(productUpdateResponse.data.message || "Failed to update product.");
                 }
             } catch (updateError) {
                 console.error("Error updating product:", updateError);
-                setErrorMessage("Failed to update product.");
+                setErrorMessage("An unexpected error occurred while updating the product.");
             }
         } catch (error) {
             console.error("Unexpected error in handleUpdateProduct:", error);
-            setErrorMessage("An unexpected error occurred while updating the product.");
+            setErrorMessage("An unexpected error occurred. Please try again.");
         }
     };
+    
 
     // 发送通知逻辑
     const handleSendNotification = async () => {
@@ -595,24 +618,18 @@ const AdminEdit = () => {
                     </div>
                     <div className={styles.section}>
                         <h2>Parameters</h2>
-                        {parameters.map((param, index) => (
+                        {[...Array(10)].map((_, index) => (
                             <div key={index} className={styles.parameterItem}>
                                 <input
                                     type="text"
-                                    value={param.paramName}
+                                    value={parameters[index]?.paramName || ""}
                                     onChange={(e) => handleParameterChange(index, e.target.value)}
                                     className={styles.input}
                                     placeholder={`Parameter ${index + 1}`}
                                 />
                             </div>
                         ))}
-                        <button onClick={handleAddParameter} className={styles.addButton}>
-                            Add Parameter
-                        </button>
                     </div>
-
-
-
                     <div className={styles.section}>
                         <h2>Report Details</h2>
                         {renderReports()}

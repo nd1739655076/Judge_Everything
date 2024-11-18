@@ -633,7 +633,7 @@ exports.handleAdminTasksRequest = functions.https.onCall(async (data, context) =
 });
 
 exports.handleParameterRequest = functions.https.onCall(async (data, context) => {
-  const { action, productId } = data;
+  const { action, productId, paramId, updates } = data;
 
   if (!action) {
     throw new functions.https.HttpsError(
@@ -643,7 +643,24 @@ exports.handleParameterRequest = functions.https.onCall(async (data, context) =>
   }
 
   try {
-    if (action === "getParameters") {
+    if (action === "getParameterById") {
+      // 获取单个参数详细信息
+      if (!paramId) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Parameter ID is required."
+        );
+      }
+
+      const paramDoc = await db.collection("Parameters").doc(paramId).get();
+
+      if (!paramDoc.exists) {
+        return { success: false, message: "Parameter not found." };
+      }
+
+      return { success: true, parameter: { id: paramDoc.id, ...paramDoc.data() } };
+    } else if (action === "getParametersByProductId") {
+      // 根据 Product ID 获取其所有参数
       if (!productId) {
         throw new functions.https.HttpsError(
           "invalid-argument",
@@ -651,7 +668,6 @@ exports.handleParameterRequest = functions.https.onCall(async (data, context) =>
         );
       }
 
-      // 从 Firestore 中获取参数
       const parametersSnapshot = await db
         .collection("Parameters")
         .where("productId", "==", productId)
@@ -667,6 +683,30 @@ exports.handleParameterRequest = functions.https.onCall(async (data, context) =>
       }));
 
       return { success: true, parameters };
+    } else if (action === "deleteParameter") {
+      // 删除指定的参数
+      if (!paramId) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Parameter ID is required for deletion."
+        );
+      }
+
+      await db.collection("Parameters").doc(paramId).delete();
+
+      return { success: true, message: "Parameter deleted successfully." };
+    } else if (action === "updateParameter") {
+      // 更新指定的参数
+      if (!paramId || !updates) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Parameter ID and updates are required for updating."
+        );
+      }
+
+      await db.collection("Parameters").doc(paramId).update(updates);
+
+      return { success: true, message: "Parameter updated successfully." };
     } else {
       throw new functions.https.HttpsError(
         "invalid-argument",
@@ -681,6 +721,7 @@ exports.handleParameterRequest = functions.https.onCall(async (data, context) =>
     );
   }
 });
+
 
 exports.handleProductLock = functions.https.onCall(async (data, context) => {
   const { action, productId, adminId } = data;

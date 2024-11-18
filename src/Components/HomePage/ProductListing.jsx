@@ -159,7 +159,7 @@ const ProductListing = () => {
               try {
                 console.log(`Fetching parameter with ID: ${paramId}`);  // 打印当前正在请求的 paramId
 
-                const response = await handleParameterRequest({ paramId });
+                const response = await handleParameterRequest({ action: "getParameterById", paramId });
 
                 console.log(`Parameter fetch response for ID ${paramId}:`, response);  // 打印参数请求的响应
 

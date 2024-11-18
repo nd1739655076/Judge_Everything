@@ -682,23 +682,45 @@ exports.handleParameterRequest = functions.https.onCall(async (data, context) =>
   }
 });
 
-exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
+exports.handleProductLock = functions.https.onCall(async (data, context) => {
+  const { action, productId, adminId } = data;
+
+  if (!productId || !adminId) {
+    return { success: false, message: "Missing productId or adminId." };
+  }
+
+  const productRef = db.collection("ProductEntry").doc(productId);
+
   try {
-    const { action, productId, commentId } = data;
+    if (action === "lock") {
+      const product = await productRef.get();
+      if (product.exists && product.data().isLocked) {
+        return {
+          success: false,
+          message: "This product is already locked by another admin.",
+          lockedBy: product.data().lockedBy,
+        };
+      }
 
-    if (action === 'getCommentsWithReplies') {
-      const response = await Comment.getCommentsWithReplies(productId);
-      return response;
+      // Lock the product
+      await productRef.update({
+        isLocked: true,
+        lockedBy: adminId,
+      });
+
+      return { success: true, message: "Product locked successfully." };
+    } else if (action === "unlock") {
+      await productRef.update({
+        isLocked: false,
+        lockedBy: "",
+      });
+
+      return { success: true, message: "Product unlocked successfully." };
+    } else {
+      return { success: false, message: "Invalid action." };
     }
-
-    if (action === 'deleteCommentWithReplies') {
-      const response = await Comment.deleteCommentWithReplies(productId, commentId);
-      return response;
-    }
-
-    throw new Error('Invalid action specified');
   } catch (error) {
-    console.error('Error handling comment request:', error);
-    throw new functions.https.HttpsError('internal', 'Failed to handle comment request.');
+    console.error("Error handling product lock:", error);
+    return { success: false, message: "Failed to handle product lock." };
   }
 });

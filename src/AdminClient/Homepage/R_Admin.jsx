@@ -102,10 +102,16 @@ const R_Admin = () => {
 
   const fetchReportQueue = async () => {
     const handleAdminTasksRequest = httpsCallable(functions, "handleAdminTasksRequest");
+
     try {
       const response = await handleAdminTasksRequest({ action: "getReportQueue" });
       if (response.data.success) {
-        setReportQueue(response.data.queue);
+        const updatedQueue = response.data.queue.map((product) => ({
+          ...product,
+          isLocked: product.isLocked || false,
+          lockedBy: product.lockedBy || "",
+        }));
+        setReportQueue(updatedQueue);
       }
     } catch (error) {
       console.error("Error fetching report queue:", error);
@@ -115,6 +121,32 @@ const R_Admin = () => {
   const toggleDropdown = () => {
     setDropdownVisible(!isDropdownVisible);
   };
+
+  const handleEditProduct = async (product) => {
+    const handleProductLock = httpsCallable(functions, "handleProductLock");
+
+    try {
+      const response = await handleProductLock({
+        productId: product.id,
+        adminId: adminId, // 当前登录管理员的 ID
+        action: "lock",
+      });
+
+      if (response.data.success) {
+        // 成功锁定，跳转到编辑页面
+        window.location.href = `/admin/edit/${product.id}`;
+      } else {
+        // 如果已被锁定，显示提示信息
+        alert(
+          `Another admin (${response.data.lockedBy}) is working on this report. Please try again later.`
+        );
+      }
+    } catch (error) {
+      console.error("Error locking product:", error);
+      alert("An error occurred while trying to lock the product.");
+    }
+  };
+
 
   const handleDeleteProduct = async (productId) => {
     const handleAdminTasksRequest = httpsCallable(functions, "handleAdminTasksRequest");
@@ -258,8 +290,13 @@ const R_Admin = () => {
             reportQueue.map((product) => (
               <div
                 key={product.id}
-                className="r-admin-report-item"
-                onClick={() => openModal(product)}
+                className={`r-admin-report-item ${product.isLocked ? "locked-product" : ""
+                  }`}
+                onClick={() =>
+                  product.isLocked
+                    ? alert(`This product is locked by ${product.lockedBy}.`)
+                    : openModal(product)
+                }
               >
                 <img
                   src={product.productImage}
@@ -347,10 +384,7 @@ const R_Admin = () => {
             <div className="r-admin-product-actions">
               <button
                 className="r-admin-button go-to-product"
-                onClick={() => {
-                  closeModal(); // 关闭模态框
-                  window.location.href = `/admin/edit/${selectedProduct.id}`;
-                }}
+                onClick={() => handleEditProduct(selectedProduct)}
               >
                 Edit the Product
               </button>

@@ -30,30 +30,46 @@ const AdminEdit = () => {
         try {
             const response = await handleProductEntryRequest({ action: "fetchProducts" });
             const product = response.data.data.find((p) => p.id === productId);
-    
+
             if (product) {
                 setProductData(product);
-    
+
                 setEditFields({
                     productName: product.productName || "",
                     description: product.description || "",
                     tagList: product.tagList || "",
                     subtagList: product.subtagList || [],
                 });
-    
+
+                if (product.parameters) {
+                    setParameters([
+                        ...product.parameters,
+                        ...new Array(10 - product.parameters.length).fill({ paramName: "", paramId: null, isNew: true }),
+                    ]);
+                } else {
+                    setParameters(new Array(10).fill({ paramName: "", paramId: null, isNew: true }));
+                }
+
+                if (product.productImage) {
+                    setCurrentImage(product.productImage); // 设置当前图片
+                } else {
+                    setCurrentImage(""); // 或者设置默认图片路径
+                }
+
+
                 if (product.reportList) {
                     // Ensure fetchReports is called with productId
                     await fetchReports(productId);
                 } else {
                     setReportDetails({});
                 }
-    
+
                 if (product.creator) {
                     fetchCreatorName(product.creator);
                 } else {
                     setCreatorName("Unknown Creator");
                 }
-    
+
                 fetchComments(product.id);
             } else {
                 setErrorMessage("Product not found.");
@@ -65,8 +81,8 @@ const AdminEdit = () => {
             setIsLoading(false);
         }
     };
-    
-    
+
+
 
 
 
@@ -83,11 +99,11 @@ const AdminEdit = () => {
 
     const handleDenyReportRequest = async () => {
         const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest");
-    
+
         try {
             setErrorMessage(""); // 清空错误信息
             setSuccessMessage(""); // 清空成功信息
-    
+
             const response = await handleProductEntryRequest({
                 action: "edit",
                 productId,
@@ -98,7 +114,7 @@ const AdminEdit = () => {
                     lockedBy: null, // 清除锁定用户
                 },
             });
-    
+
             if (response.data.success) {
                 setSuccessMessage("Report request denied successfully!");
                 setTimeout(() => {
@@ -112,16 +128,18 @@ const AdminEdit = () => {
             setErrorMessage("Failed to deny report request. Please try again.");
         }
     };
-    
+
 
     const handleParameterChange = (index, value) => {
-        const updatedParameters = [...parameters];
-        if (index < updatedParameters.length) {
-            updatedParameters[index].paramName = value;
-        } else {
-            updatedParameters.push({ paramName: value, isNew: true });
-        }
-        setParameters(updatedParameters);
+        setParameters((prevParameters) => {
+            // 创建一个新数组来更新状态，确保不可变性
+            const updatedParameters = [...prevParameters];
+            updatedParameters[index] = {
+                ...updatedParameters[index], // 确保保持原参数的其他字段
+                paramName: value, // 更新指定索引的参数名称
+            };
+            return updatedParameters;
+        });
     };
 
     const handleAddParameter = async () => {
@@ -178,7 +196,7 @@ const AdminEdit = () => {
     const fetchCommentUsernames = async (comments) => {
         const handleUserRequest = httpsCallable(functions, "handleUserRequest");
         const userIds = new Set();
-    
+
         // 收集所有用户 ID
         comments.forEach((comment) => {
             userIds.add(comment.userId);
@@ -188,7 +206,7 @@ const AdminEdit = () => {
                 });
             }
         });
-    
+
         const idToUsername = {};
         const fetchPromises = [...userIds].map(async (id) => {
             try {
@@ -203,9 +221,9 @@ const AdminEdit = () => {
                 idToUsername[id] = "Unknown User";
             }
         });
-    
+
         await Promise.all(fetchPromises);
-    
+
         // 更新 comments 和 replies 的 username 字段
         comments.forEach((comment) => {
             comment.user = { username: idToUsername[comment.userId] || "Unknown User" };
@@ -215,11 +233,11 @@ const AdminEdit = () => {
                 });
             }
         });
-    
+
         return comments;
     };
-    
-    
+
+
     // Fetch report details
     const fetchReports = async (productId) => {
         const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest");
@@ -239,59 +257,29 @@ const AdminEdit = () => {
             setErrorMessage("Failed to fetch reports.");
         }
     };
-    
-    
+
+
 
     // Fetch comments
     const fetchComments = async (productId) => {
-        const handleAdminCommentRequest = httpsCallable(functions, "handleAdminCommentRequest");
+        const handleCommentRequest = httpsCallable(functions, "handleCommentRequest");
         try {
-            console.log("Fetching comments for productId:", productId); // 调试日志
-            const response = await handleAdminCommentRequest({
-                action: "getCommentsWithReplies",
-                productId,
-            });
-    
+            const response = await handleCommentRequest({ action: "getCommentsWithReplies", productId });
             if (response.data.success) {
-                const comments = response.data.comments || [];
-    
-                // 提取所有 userId（包括评论和回复中的）
-                const userIds = new Set();
-                comments.forEach((comment) => {
-                    userIds.add(comment.userId); // 评论作者的 userId
-                    if (comment.replies) {
-                        comment.replies.forEach((reply) => userIds.add(reply.userId)); // 回复作者的 userId
-                    }
-                });
-    
-                // 使用 fetchUsernames 获取用户名映射
-                const userIdMap = await fetchUsernames([...userIds]);
-    
-                // 将用户名更新到评论和回复中
-                comments.forEach((comment) => {
-                    comment.user = { username: userIdMap[comment.userId] || "Unknown User" }; // 评论作者
-                    if (comment.replies) {
-                        comment.replies.forEach((reply) => {
-                            reply.user = { username: userIdMap[reply.userId] || "Unknown User" }; // 回复作者
-                        });
-                    }
-                });
-    
-                setComments(comments); // 更新评论状态
-            } else {
-                console.error("Failed to fetch comments:", response.data.message);
+                const updatedComments = await fetchCommentUsernames(response.data.comments || []);
+                setComments(updatedComments); // 确保用户信息正确映射
             }
         } catch (error) {
             console.error("Error fetching comments:", error);
         }
     };
-    
-    
+
+
     // Delete comment
     const deleteComment = async (commentId) => {
-        const handleAdminCommentRequest = httpsCallable(functions, "handleAdminCommentRequest");
+        const handleCommentRequest = httpsCallable(functions, "handleCommentRequest");
         try {
-            const response = await handleAdminCommentRequest({
+            const response = await handleCommentRequest({
                 action: "deleteCommentWithReplies",
                 productId,
                 commentId,
@@ -307,14 +295,14 @@ const AdminEdit = () => {
     const fetchUsernames = async (reportDetails) => {
         const handleUserRequest = httpsCallable(functions, "handleUserRequest");
         const userIds = new Set();
-    
+
         // 收集所有需要查询的用户 ID
         Object.values(reportDetails).forEach((details) => {
             details.reporters.forEach((reporter) => {
                 userIds.add(reporter.id);
             });
         });
-    
+
         const idToUsername = {};
         const fetchPromises = [...userIds].map(async (id) => {
             try {
@@ -329,25 +317,25 @@ const AdminEdit = () => {
                 idToUsername[id] = "Unknown User";
             }
         });
-    
+
         await Promise.all(fetchPromises);
-    
+
         // 更新 reportDetails 中的 username 字段
         Object.values(reportDetails).forEach((details) => {
             details.reporters.forEach((reporter) => {
                 reporter.username = idToUsername[reporter.id] || "Unknown User";
             });
         });
-    
+
         return reportDetails;
     };
-    
+
     // Render report details
     const renderReports = () => {
         if (!reportDetails || Object.keys(reportDetails).length === 0) {
             return <p>No reports found for this product.</p>;
         }
-    
+
         return Object.keys(reportDetails).map((reason) => (
             <div key={reason} className={styles.reportSection}>
                 <h3>{reason}</h3>
@@ -417,26 +405,27 @@ const AdminEdit = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setImageFile(file);
             const reader = new FileReader();
-            reader.onload = () => {
-                setCurrentImage(reader.result); // Preview the new image
+            reader.onloadend = () => {
+                setCurrentImage(reader.result); // 预览图片
+                setImageFile(file); // 保存图片文件以便上传
             };
             reader.readAsDataURL(file);
         }
     };
+
 
     const handleUpdateProduct = async () => {
         const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest");
         const handleParameterRequest = httpsCallable(functions, "handleParameterRequest");
         const handleImageUpload = httpsCallable(functions, "handleImageUpload");
         const generateId = httpsCallable(functions, "generateId");
-    
+
         try {
             // 清空错误和成功消息
             setErrorMessage("");
             setSuccessMessage("");
-    
+
             // 1. 上传新图片（如果存在）
             let productImage = currentImage;
             if (imageFile) {
@@ -447,13 +436,13 @@ const AdminEdit = () => {
                         reader.onerror = (err) => reject(err);
                         reader.readAsDataURL(imageFile);
                     });
-    
+
                     const uploadResponse = await handleImageUpload({
                         action: "uploadImage",
                         base64: base64Image,
                         productId: productId,
                     });
-    
+
                     if (uploadResponse.data.success) {
                         productImage = uploadResponse.data.imageUrl; // 更新图片 URL
                     } else {
@@ -465,12 +454,12 @@ const AdminEdit = () => {
                     return; // 退出以避免后续处理
                 }
             }
-    
+
             // 2. 更新现有参数并添加新参数
             const newParameters = parameters.filter((param) => param.isNew && param.paramName.trim());
             const existingParameters = parameters.filter((param) => !param.isNew && param.paramId);
             const newParameterIds = []; // 存储新增参数的 ID
-    
+
             try {
                 // 添加新参数
                 const addParameterPromises = newParameters.map(async (param) => {
@@ -478,11 +467,11 @@ const AdminEdit = () => {
                         type: "parameter",
                         name: param.paramName, // 使用参数名称作为 `name`
                     });
-    
+
                     if (!idResponse.data.idNum) {
                         throw new Error("Failed to generate parameter ID.");
                     }
-    
+
                     const paramId = idResponse.data.idNum; // 新生成的参数 ID
                     const addResponse = await handleParameterRequest({
                         action: "addParameter",
@@ -490,16 +479,16 @@ const AdminEdit = () => {
                         productId,
                         paramName: param.paramName,
                     });
-    
+
                     if (addResponse.data.success) {
                         newParameterIds.push(paramId); // 存储成功新增的参数 ID
                     } else {
                         console.error(`Failed to add parameter: ${param.paramName}`);
                     }
                 });
-    
+
                 await Promise.all(addParameterPromises);
-    
+
                 // 更新现有参数
                 const updateParameterPromises = existingParameters.map((param) =>
                     handleParameterRequest({
@@ -508,9 +497,9 @@ const AdminEdit = () => {
                         updates: { paramName: param.paramName },
                     })
                 );
-    
+
                 const updateResponses = await Promise.all(updateParameterPromises);
-    
+
                 if (!updateResponses.every((response) => response.data.success)) {
                     setErrorMessage("Failed to update some parameters. Please try again.");
                     return;
@@ -520,13 +509,13 @@ const AdminEdit = () => {
                 setErrorMessage("Failed to update parameters. Please try again.");
                 return;
             }
-    
+
             // 整合所有参数 ID
             const updatedParameterList = [
                 ...existingParameters.map((param) => param.paramId),
                 ...newParameterIds,
             ];
-    
+
             // 3. 更新产品信息
             try {
                 const productUpdateResponse = await handleProductEntryRequest({
@@ -538,7 +527,7 @@ const AdminEdit = () => {
                         parametorList: updatedParameterList, // 更新后的参数列表
                     },
                 });
-    
+
                 if (productUpdateResponse.data.success) {
                     // 更新成功后设置弹窗内容
                     setSuccessMessage("Product updated successfully!");
@@ -558,8 +547,8 @@ const AdminEdit = () => {
             setErrorMessage("An unexpected error occurred. Please try again.");
         }
     };
-    
-    
+
+
 
     // 发送通知逻辑
     const handleSendNotification = async () => {
@@ -642,11 +631,7 @@ const AdminEdit = () => {
                     <div className={styles.imageSection}>
                         <h2>Current Image</h2>
                         {currentImage ? (
-                            <img
-                                src={currentImage}
-                                alt="Product"
-                                className={styles.productImage}
-                            />
+                            <img src={currentImage} alt="Product" className={styles.productImage} />
                         ) : (
                             <p>No image available</p>
                         )}

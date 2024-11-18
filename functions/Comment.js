@@ -172,32 +172,33 @@ class Comment {
     try {
       const commentsRef = db.collection('Comments').where('productId', '==', productId);
       const commentsSnapshot = await commentsRef.get();
-
+  
       if (commentsSnapshot.empty) {
-        return { success: true, comments: [] }; // 如果没有评论，返回空数组
+        return { success: true, comments: [] }; // 返回空数组
       }
-
+  
       const comments = commentsSnapshot.docs.map(doc => ({
-        id: doc.id,
+        commentId: doc.id, // 改为前端期望的键名
         ...doc.data(),
       }));
-
+  
       // 获取每条评论的子评论
       for (const comment of comments) {
-        const repliesRef = db.collection('Comments').where('parentCommentId', '==', comment.id);
+        const repliesRef = db.collection('Comments').where('parentCommentId', '==', comment.commentId);
         const repliesSnapshot = await repliesRef.get();
         comment.replies = repliesSnapshot.docs.map(doc => ({
-          id: doc.id,
+          commentId: doc.id, // 同样修改为前端期望的键名
           ...doc.data(),
         }));
       }
-
+  
       return { success: true, comments };
     } catch (error) {
       console.error('Error fetching comments with replies:', error);
       return { success: false, message: 'Failed to fetch comments and replies.' };
     }
   }
+  
 
   static async deleteCommentWithReplies(productId, commentId) {
     try {

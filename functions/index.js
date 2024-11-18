@@ -121,6 +121,37 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: deleteResponse.message };
       }
     }
+    else if (action === 'fetchCommentsAndReplies') {
+      // 新增逻辑：获取指定产品的评论和回复
+      if (!productId) {
+        return { success: false, message: 'Product ID is required.' };
+      }
+
+      const commentsRef = db.collection('Comments').where('productId', '==', productId);
+      const commentsSnapshot = await commentsRef.get();
+
+      if (commentsSnapshot.empty) {
+        return { success: true, comments: [] }; // 如果没有评论，返回空数组
+      }
+
+      const comments = commentsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // 获取每条评论的子评论
+      for (const comment of comments) {
+        const repliesRef = db.collection('Comments').where('parentCommentId', '==', comment.id);
+        const repliesSnapshot = await repliesRef.get();
+        comment.replies = repliesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+      }
+
+      return { success: true, comments };
+    }
+    
   } catch (error) {
     console.error("Error handeling admin request.");
     return { success: false, message: error.message }

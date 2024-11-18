@@ -193,48 +193,20 @@ const AdminEdit = () => {
     };
 
     // Fetch usernames for reporters
-    const fetchCommentUsernames = async (comments) => {
-        const handleUserRequest = httpsCallable(functions, "handleUserRequest");
-        const userIds = new Set();
-
-        // 收集所有用户 ID
+    const fetchCommentUsernames = (comments) => {
         comments.forEach((comment) => {
-            userIds.add(comment.userId);
+            if (!comment.user || !comment.user.username) {
+                comment.user = { username: "Unknown User" };
+            }
             if (comment.replies) {
                 comment.replies.forEach((reply) => {
-                    userIds.add(reply.userId);
+                    if (!reply.user || !reply.user.username) {
+                        reply.user = { username: "Unknown User" };
+                    }
                 });
             }
         });
-
-        const idToUsername = {};
-        const fetchPromises = [...userIds].map(async (id) => {
-            try {
-                const response = await handleUserRequest({ action: "getUserData", uidNum: id });
-                if (response.data.success) {
-                    idToUsername[id] = response.data.data.username || "Unknown User";
-                } else {
-                    idToUsername[id] = "Unknown User";
-                }
-            } catch (error) {
-                console.error(`Error fetching username for ID ${id}:`, error);
-                idToUsername[id] = "Unknown User";
-            }
-        });
-
-        await Promise.all(fetchPromises);
-
-        // 更新 comments 和 replies 的 username 字段
-        comments.forEach((comment) => {
-            comment.user = { username: idToUsername[comment.userId] || "Unknown User" };
-            if (comment.replies) {
-                comment.replies.forEach((reply) => {
-                    reply.user = { username: idToUsername[reply.userId] || "Unknown User" };
-                });
-            }
-        });
-
-        return comments;
+        return comments; // This function is now synchronous
     };
 
 

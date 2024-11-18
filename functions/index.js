@@ -22,22 +22,22 @@ const Comment = require('./Comment');
 exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action } = data;
-    
+
     if (action === 'initializeTagLibrary') {
       // action
       const initializeResponse = await TagLibrary.initializeTagLibrary();
       if (initializeResponse.status === 'success') {
         return { success: true, message: initializeResponse.message };
       }
-    } 
-    
+    }
+
     else if (action === 'getTagLibrary') {
       // action
       const getTagLibraryResponse = await TagLibrary.getTagLibrary();
       if (getTagLibraryResponse.status === 'success') {
         return { success: true, tagList: getTagLibraryResponse.tagList };
       }
-    } 
+    }
 
   } catch (error) {
     console.error('Error handling TagLibrary request:', error);
@@ -47,13 +47,13 @@ exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) =
 
 // Admin Handle
 exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
-  const { action, username, password,  statusToken, headAdmin, uid } = data;
+  const { action, username, password, statusToken, headAdmin, uid } = data;
   try {
     if (action === 'login') {
       // username, password
       const loginResponse = await Admin.login(username, password);
       if (loginResponse.status === 'success') {
-        return { success: true, statusToken: loginResponse.statusToken, headAdmin:loginResponse.headAdmin };
+        return { success: true, statusToken: loginResponse.statusToken, headAdmin: loginResponse.headAdmin };
       } else {
         return { success: false, message: loginResponse.message };
       }
@@ -63,7 +63,8 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
       console.log("start status check in index.js");
       const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
       if (loginStatusResponse.status === 'success') {
-        return { success: true,
+        return {
+          success: true,
           username: loginStatusResponse.username,
           uid: loginStatusResponse.uid,
           headAdmin: loginStatusResponse.headAdmin
@@ -75,7 +76,8 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
     else if (action === 'fetchAdmin') {
       const fetchAdminResponse = await Admin.fetchAdmin();
       if (fetchAdminResponse.status === 'success') {
-        return { success: true,
+        return {
+          success: true,
           adminList: fetchAdminResponse.adminList
         };
       } else {
@@ -151,7 +153,7 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
 
       return { success: true, comments };
     }
-    
+
   } catch (error) {
     console.error("Error handeling admin request.");
     return { success: false, message: error.message }
@@ -286,7 +288,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: accountUpdateResponse.message };
       }
     }
-    
+
     else if (action === 'delete') {
       // uidNum
       const deleteResponse = await User.delete(uidNum);
@@ -304,7 +306,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: true, message: recordHistoryResponse.message };
       } else {
         return { success: false, message: recordHistoryResponse.message };
-      }    
+      }
     }
 
   } catch (error) {
@@ -375,46 +377,46 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
 
     else if (action === "edit") {
       const { productId, updates } = data;
-    
+
       if (!productId || !updates) {
         throw new functions.https.HttpsError("invalid-argument", "Product ID and updates are required");
       }
-    
+
       const result = await ProductEntry.updateProduct(productId, updates);
       return result;
     }
 
     else if (action === "delete") {
       const { productId, commentId } = data;
-    
+
       if (!productId || !commentId) {
         throw new functions.https.HttpsError("invalid-argument", "Product ID and comment ID are required");
       }
-    
+
       const result = await ProductEntry.deleteComment(productId, commentId);
       return result;
     }
 
     else if (action === "getReports") {
       if (!productId) {
-          throw new functions.https.HttpsError("invalid-argument", "Product ID is required");
+        throw new functions.https.HttpsError("invalid-argument", "Product ID is required");
       }
       try {
-          const productDoc = await db.collection("ProductEntry").doc(productId).get();
-          if (!productDoc.exists) {
-              throw new functions.https.HttpsError("not-found", "Product not found");
-          }
-  
-          const productData = productDoc.data();
-          const reportList = productData.reportList || []; // 确保 reportList 存在
-  
-          return { success: true, reportList };
+        const productDoc = await db.collection("ProductEntry").doc(productId).get();
+        if (!productDoc.exists) {
+          throw new functions.https.HttpsError("not-found", "Product not found");
+        }
+
+        const productData = productDoc.data();
+        const reportList = productData.reportList || []; // 确保 reportList 存在
+
+        return { success: true, reportList };
       } catch (error) {
-          console.error("Error fetching reports:", error);
-          throw new functions.https.HttpsError("internal", "Failed to fetch reports");
+        console.error("Error fetching reports:", error);
+        throw new functions.https.HttpsError("internal", "Failed to fetch reports");
       }
-  }
-    
+    }
+
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
@@ -488,10 +490,10 @@ exports.handleImageRequest = functions.https.onCall(async (data, context) => {
         imageUrl: imageUrl,
       };
     }
-    
+
   } catch (error) {
-      console.error('Error uploading image and deleting old image:', error);
-      throw new functions.https.HttpsError('internal', 'Failed to upload image and store metadata');
+    console.error('Error uploading image and deleting old image:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to upload image and store metadata');
   }
 });
 
@@ -533,7 +535,7 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
           commentList: admin.firestore.FieldValue.arrayUnion(commentId)
         });
         console.log("Comment added to ProductEntry's commentList.");
-            
+
         // Step 3: save history in user's info
         const userRef = db.collection('User').doc(user.uid);
         const userDoc = await userRef.get();
@@ -604,14 +606,36 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
     else if (action === 'getTopReplies') {
       // 获取按时间排序的前几条回复
       const recentReplies = await Comment.getTopReplies({
-          commentId, 
-          limit: data.limit || 3, 
-          startAfter: data.startAfter || null // 添加分页参数
+        commentId,
+        limit: data.limit || 3,
+        startAfter: data.startAfter || null // 添加分页参数
       });
       return { success: true, replies: recentReplies };
-  } else {
+    } else if (action === 'getCommentsWithReplies') {
+      // 检查必需字段
+      if (!productId) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing productId for fetching comments');
+      }
+
+      // 调用 comment.js 中的静态方法
+      const comments = await Comment.getCommentsWithReplies(productId);
+      return comments; // 返回结果
+    } else if (action === 'deleteCommentWithReplies') {
+      // 检查必需字段
+      if (!productId || !commentId) {
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          'Missing productId or commentId for deleting comment'
+        );
+      }
+
+      // 调用 comment.js 中的静态方法
+      const result = await Comment.deleteCommentWithReplies(productId, commentId);
+      return result; // 返回删除结果
+    }
+    else {
       throw new Error("Invalid action specified");
-  }
+    }
 
   } catch (error) {
     console.error('Error handling comment request:', error);

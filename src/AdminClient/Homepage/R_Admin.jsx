@@ -4,6 +4,8 @@ import { functions } from "../../firebase";
 import "./R_Admin.css";
 import { Link } from "react-router-dom";
 import Modal from "react-modal";
+import { useNavigate } from "react-router-dom";
+
 
 // Icon imports
 import {
@@ -30,6 +32,7 @@ const R_Admin = () => {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [imageError, setImageError] = useState("");
+  const navigate = useNavigate();
 
   // Fetch login status and greeting
   useEffect(() => {
@@ -154,16 +157,18 @@ const R_Admin = () => {
     try {
       const response = await handleAdminTasksRequest({
         action: "deleteProduct",
-        productId,
+        productId, // 传递产品 ID
       });
+  
       if (response.data.success) {
         alert("Product deleted successfully!");
-        // 更新报告队列
+        // 更新 UI：移除已删除的产品
         setReportQueue((prevQueue) =>
           prevQueue.filter((product) => product.id !== productId)
         );
+        navigate("/admin/regularHome");
       } else {
-        alert("Failed to delete the product.");
+        alert(`Failed to delete the product: ${response.data.message}`);
       }
     } catch (error) {
       console.error("Error deleting the product:", error);

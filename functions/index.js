@@ -686,7 +686,7 @@ exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, con
 });
 
 exports.handleAdminTasksRequest = functions.https.onCall(async (data, context) => {
-  const { adminId, action } = data;
+  const { adminId, action, productId} = data;
 
   try {
     if (action === 'getTodayTasks') {
@@ -695,6 +695,43 @@ exports.handleAdminTasksRequest = functions.https.onCall(async (data, context) =
     } else if (action === 'getReportQueue') {
       const queue = await Admin.getReportQueue();
       return queue;
+    }
+    else if (action === 'deleteProduct') {
+      if (!productId) {
+        throw new Error("Product ID is required for deletion.");
+      }
+
+      // Step 1: 删除产品相关的评论
+      const commentsSnapshot = await db
+        .collection("Comments")
+        .where("productId", "==", productId)
+        .get();
+
+      const deleteCommentPromises = commentsSnapshot.docs.map((doc) =>
+        doc.ref.delete()
+      );
+      await Promise.all(deleteCommentPromises);
+
+      console.log(`Deleted ${deleteCommentPromises.length} comments for product ${productId}`);
+
+      // Step 2: 删除产品的参数
+      const parametersSnapshot = await db
+        .collection("Parameters")
+        .where("productId", "==", productId)
+        .get();
+
+      const deleteParameterPromises = parametersSnapshot.docs.map((doc) =>
+        doc.ref.delete()
+      );
+      await Promise.all(deleteParameterPromises);
+
+      console.log(`Deleted ${deleteParameterPromises.length} parameters for product ${productId}`);
+
+      // Step 3: 删除产品文档
+      await db.collection("ProductEntry").doc(productId).delete();
+      console.log(`Deleted product ${productId}`);
+
+      return { success: true, message: "Product deleted successfully." };
     } else {
       throw new Error("Invalid action");
     }

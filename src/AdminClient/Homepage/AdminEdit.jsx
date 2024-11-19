@@ -4,13 +4,17 @@ import { httpsCallable } from "firebase/functions";
 import { functions } from "../../firebase";
 import styles from "./AdminEdit.module.css"; // Import modular CSS
 import Modal from "react-modal"; // 引入 React Modal
-import { getFirestore, doc, getDoc} from 'firebase/firestore';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 const AdminEdit = () => {
     const { productId } = useParams();
     const navigate = useNavigate();
     const [productData, setProductData] = useState(null);
+    const [adminId, setAdminId] = useState("");
     const [isLoading, setIsLoading] = useState(true);
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [greeting, setGreeting] = useState("");
+    const [isHeadAdmin, setIsHeadAdmin] = useState(false);
     const [editFields, setEditFields] = useState({});
     const [tagLibrary, setTagLibrary] = useState([]);
     const [parameters, setParameters] = useState([]);
@@ -20,17 +24,64 @@ const AdminEdit = () => {
     const [reportDetails, setReportDetails] = useState({});
     const [comments, setComments] = useState([]);
     const [imageFile, setImageFile] = useState(null);
-    const [currentImage, setCurrentImage] = useState(productData?.productImage || ''); 
+    const [currentImage, setCurrentImage] = useState(productData?.productImage || '');
     const [notificationModalOpen, setNotificationModalOpen] = useState(false);
     const [notificationMessage, setNotificationMessage] = useState("");
     const [showAddParameter, setShowAddParameter] = useState(false);
     const [newParameterName, setNewParameterName] = useState("");
     const [imageError, setImageError] = useState("");
     const db = getFirestore();
-    
+
 
     // Fetch product details
     // Fetch product details
+    useEffect(() => {
+        const checkLoginStatus = async () => {
+          const localStatusToken = localStorage.getItem("adminAuthToken");
+          if (localStatusToken) {
+            const handleAdminRequest = httpsCallable(functions, "handleAdminRequest");
+            try {
+              const response = await handleAdminRequest({
+                action: "checkLoginStatus",
+                statusToken: localStatusToken,
+              });
+              if (response.data.success) {
+                setAdminId(response.data.uid);
+                setIsHeadAdmin(response.data.headAdmin);
+              } else {
+                setIsLoggedIn(false);
+                localStorage.removeItem("adminAuthToken");
+              }
+            } catch (error) {
+              setIsLoggedIn(false);
+              localStorage.removeItem("adminAuthToken");
+            }
+          } else {
+            setIsLoggedIn(false);
+          }
+        };
+    
+        const setTimeGreeting = () => {
+          const now = new Date();
+          const hour = now.getHours();
+          const greetings = ["Good night", "Good morning", "Good afternoon", "Good evening"];
+          const index =
+            hour >= 5 && hour < 12 ? 1 : hour >= 12 && hour < 17 ? 2 : hour >= 17 && hour < 21 ? 3 : 0;
+          setGreeting(greetings[index]);
+        };
+    
+        checkLoginStatus();
+        setTimeGreeting();
+    
+        const intervalId = setInterval(() => {
+          checkLoginStatus();
+          setTimeGreeting();
+        }, 10000);
+    
+        return () => clearInterval(intervalId);
+      }, []);
+
+
     const fetchProductDetails = async () => {
         const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest");
         try {
@@ -49,15 +100,15 @@ const AdminEdit = () => {
 
                 if (product.parameters) {
                     const paramRefs = product.parametorList || [];
-                const paramPromises = paramRefs.map(async (paramId) => {
-                    const paramRef = doc(db, 'Parameters', paramId);
-                    const paramSnap = await getDoc(paramRef);
-                    return paramSnap.exists() ? { paramId, ...paramSnap.data() } : null;
-                });
-                const parametersData = (await Promise.all(paramPromises)).filter(Boolean);
+                    const paramPromises = paramRefs.map(async (paramId) => {
+                        const paramRef = doc(db, 'Parameters', paramId);
+                        const paramSnap = await getDoc(paramRef);
+                        return paramSnap.exists() ? { paramId, ...paramSnap.data() } : null;
+                    });
+                    const parametersData = (await Promise.all(paramPromises)).filter(Boolean);
 
-                setProductData({ ...product, comments });
-                setParameters(parametersData);
+                    setProductData({ ...product, comments });
+                    setParameters(parametersData);
                 } else {
                     setParameters(new Array(10).fill({ paramName: "", paramId: null, isNew: true }));
                 }
@@ -396,76 +447,76 @@ const AdminEdit = () => {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         const allowedTypes = ["image/jpeg", "image/png"];
-      
+
         if (file && !allowedTypes.includes(file.type)) {
-          setImageError("Invalid file type. Please upload a JPEG or PNG image.");
-          e.target.value = null; // Reset the input value
+            setImageError("Invalid file type. Please upload a JPEG or PNG image.");
+            e.target.value = null; // Reset the input value
         } else {
-          setImageError(""); // Clear any previous error messages
-          setImageFile(file);
+            setImageError(""); // Clear any previous error messages
+            setImageFile(file);
         }
-      };
+    };
 
     const handleDeleteParameter = async (index) => {
         const parameterToDelete = parameters[index];
-      
+
         if (!parameterToDelete || !parameterToDelete.paramId) {
-          alert("Invalid parameter selected for deletion.");
-          return;
+            alert("Invalid parameter selected for deletion.");
+            return;
         }
-      
+
         try {
-          const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
-          const response = await handleProductEntryRequest({
-            action: "deleteParameter",
-            productId: productId, // Replace with your product ID
-            parameterId: parameterToDelete.paramId
-          });
-      
-          if (response.data.success) {
-            alert("Parameter deleted successfully!");
-            // Update the local state to remove the deleted parameter
-            setParameters((prevParameters) => prevParameters.filter((_, i) => i !== index));
-          } else {
-            console.error("Failed to delete parameter:", response.data.message);
-            alert("Failed to delete parameter. Please try again.");
-          }
+            const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
+            const response = await handleProductEntryRequest({
+                action: "deleteParameter",
+                productId: productId, // Replace with your product ID
+                parameterId: parameterToDelete.paramId
+            });
+
+            if (response.data.success) {
+                alert("Parameter deleted successfully!");
+                // Update the local state to remove the deleted parameter
+                setParameters((prevParameters) => prevParameters.filter((_, i) => i !== index));
+            } else {
+                console.error("Failed to delete parameter:", response.data.message);
+                alert("Failed to delete parameter. Please try again.");
+            }
         } catch (error) {
-          console.error("Error deleting parameter:", error);
-          alert("An error occurred while deleting the parameter.");
+            console.error("Error deleting parameter:", error);
+            alert("An error occurred while deleting the parameter.");
         }
-      };
-      
+    };
+
 
     const handleConfirmAddParameter = async () => {
         if (!newParameterName.trim()) {
-          alert("Please enter a valid parameter name.");
-          return;
+            alert("Please enter a valid parameter name.");
+            return;
         }
-      
+
         try {
-          const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
-          const response = await handleProductEntryRequest({
-            action: "addParameter",
-            productId: productId, // Replace with your product ID
-            parameterName: newParameterName
-          });
-      
-          if (response.data.success) {
-            alert("Parameter added successfully!");
-            setParameters([...parameters, { paramName: newParameterName }]); // Update local state
-            setShowAddParameter(false); // Hide the input box and button
-            setNewParameterName(""); // Clear the input
-          } else {
-            console.error("Failed to add parameter:", response.data.message);
-            alert("Failed to add parameter. Please try again.");
-          }
+            const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
+            const response = await handleProductEntryRequest({
+                action: "addParameter",
+                productId: productId, // Replace with your product ID
+                parameterName: newParameterName
+            });
+
+            if (response.data.success) {
+                alert("Parameter added successfully!");
+                setParameters([...parameters, { paramName: newParameterName }]); // Update local state
+                setShowAddParameter(false); // Hide the input box and button
+                setNewParameterName(""); // Clear the input
+            } else {
+                console.error("Failed to add parameter:", response.data.message);
+                alert("Failed to add parameter. Please try again.");
+            }
         } catch (error) {
-          console.error("Error adding parameter:", error);
-          alert("An error occurred while adding the parameter.");
+            console.error("Error adding parameter:", error);
+            alert("An error occurred while adding the parameter.");
         }
-      };
-      
+    };
+
     const handleUpdateProduct = async () => {
         const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest");
         const handleParameterRequest = httpsCallable(functions, "handleParameterRequest");
@@ -482,24 +533,24 @@ const AdminEdit = () => {
             if (imageFile) {
                 const reader = new FileReader();
                 reader.onloadend = async () => {
-                  const base64Image = reader.result.split(',')[1]; // Get base64 part
-                  
-                  const handleImageRequest = httpsCallable(functions, 'handleImageRequest');
-                  try {
-                    const imageResponse = await handleImageRequest({
-                      action: 'upload',
-                      base64: base64Image,
-                      filename: imageFile.name,
-                      productId: productId
-                    });
-                    console.log('Image uploaded:', imageResponse);
-                  } catch (error) {
-                    console.error('Error uploading image:', error);
-                    
-                  }
+                    const base64Image = reader.result.split(',')[1]; // Get base64 part
+
+                    const handleImageRequest = httpsCallable(functions, 'handleImageRequest');
+                    try {
+                        const imageResponse = await handleImageRequest({
+                            action: 'upload',
+                            base64: base64Image,
+                            filename: imageFile.name,
+                            productId: productId
+                        });
+                        console.log('Image uploaded:', imageResponse);
+                    } catch (error) {
+                        console.error('Error uploading image:', error);
+
+                    }
                 };
                 reader.readAsDataURL(imageFile);
-              }
+            }
 
             // 2. 更新现有参数并添加新参数
             const newParameters = parameters.filter((param) => param.isNew && param.paramName.trim());
@@ -578,7 +629,7 @@ const AdminEdit = () => {
                     // 更新成功后设置弹窗内容
                     setSuccessMessage("Product updated successfully!");
                     setNotificationMessage(
-                        `Hello ${creatorName}! Since there are certain amount of report requests for the product "${editFields.productName}" you created, we checked and edited your product entry. You can go to your product entry page to see the newest modification. Thank you for using Judge Everything,\nAdmin.`
+                        `Hello ${creatorName}! Since there are certain amount of report requests for the product "${editFields.productName}" you created, we checked and edited your product entry. You can go to your product entry page to see the newest modification. Thank you for using Judge Everything,\n\nSincerely,\n${adminId}.`
                     );
                     setNotificationModalOpen(true); // 打开通知弹窗
                 } else {
@@ -628,21 +679,24 @@ const AdminEdit = () => {
             onRequestClose={handleCloseModal}
             className={styles.modal}
             overlayClassName={styles.modalOverlay}
+            ariaHideApp={false} // Optional: Hide accessibility warnings during development
         >
-            <h2>Send Notification</h2>
-            <textarea
-                value={notificationMessage}
-                onChange={(e) => setNotificationMessage(e.target.value)}
-                rows="6"
-                className={styles.notificationTextarea}
-            />
-            <div className={styles.modalActions}>
-                <button onClick={handleSendNotification} className={styles.sendButton}>
-                    Send Notification
-                </button>
-                <button onClick={handleCloseModal} className={styles.closeButton}>
-                    Close
-                </button>
+            <div>
+                <h2 className={styles.modalHeader}>Send Notification</h2>
+                <textarea
+                    value={notificationMessage}
+                    onChange={(e) => setNotificationMessage(e.target.value)}
+                    placeholder="Type your message here..."
+                    className={styles.notificationTextarea}
+                />
+                <div className={styles.modalActions}>
+                    <button onClick={handleSendNotification} className={styles.sendButton}>
+                        Send
+                    </button>
+                    <button onClick={handleCloseModal} className={styles.closeButton}>
+                        Close
+                    </button>
+                </div>
             </div>
         </Modal>
     );
@@ -677,19 +731,21 @@ const AdminEdit = () => {
                     <div className={styles.imageSection}>
                         <h2>Current Image</h2>
                         {currentImage ? (
-                            <img src={currentImage} alt="Product" className={styles.productImage} />
+                            <img src={currentImage} alt="Product" className={styles.imagePreview} />
                         ) : (
                             <p>No image available</p>
                         )}
-                        <label className={styles.changeImageButton}>
-                            Change Picture
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageChange}
-                                className={styles.imageInput}
-                            />
+                        <label htmlFor="fileInput" className={styles.fileInputLabel}>
+                            Choose File
                         </label>
+                        <input
+                            id="fileInput"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageChange}
+                            className={styles.fileInput}
+                        />
+                        {imageError && <p className={styles.imageError}>{imageError}</p>}
                     </div>
                     <div className={styles.section}>
                         {renderProductScore()}
@@ -750,7 +806,7 @@ const AdminEdit = () => {
                             className={styles.input}
                         />
                     </div>
-                    <div className={styles.section}>
+                    <div className={styles.parameterSection}>
                         <h2>Parameters</h2>
                         {parameters.slice(0, 10).map((param, index) => (
                             <div key={index} className={styles.parameterItem}>
@@ -758,7 +814,7 @@ const AdminEdit = () => {
                                     type="text"
                                     value={param.paramName || ""}
                                     onChange={(e) => handleParameterChange(index, e.target.value)}
-                                    className={styles.input}
+                                    className={styles.parameterInput}
                                     placeholder={`Parameter ${index + 1}`}
                                 />
                                 <button
@@ -771,37 +827,36 @@ const AdminEdit = () => {
                             </div>
                         ))}
 
-                        {/* Add Parameter Button */}
-{parameters.length < 10 && (
-  <div className={styles.addParameterContainer}>
-    <button
-      type="button"
-      onClick={() => setShowAddParameter(true)}
-      className={styles.addButton}
-    >
-      Add Parameter
-    </button>
+                        {parameters.length < 10 && (
+                            <div className={styles.addParameterContainer}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddParameter(true)}
+                                    className={styles.addButton}
+                                >
+                                    Add Parameter
+                                </button>
 
-    {showAddParameter && (
-      <div className={styles.addParameterForm}>
-        <input
-          type="text"
-          value={newParameterName}
-          onChange={(e) => setNewParameterName(e.target.value)}
-          placeholder="Enter parameter name"
-          className={styles.parameterInput}
-        />
-        <button
-          type="button"
-          onClick={handleConfirmAddParameter}
-          className={styles.confirmButton}
-        >
-          Confirm
-        </button>
-      </div>
-    )}
-  </div>
-)}
+                                {showAddParameter && (
+                                    <div className={styles.addParameterForm}>
+                                        <input
+                                            type="text"
+                                            value={newParameterName}
+                                            onChange={(e) => setNewParameterName(e.target.value)}
+                                            placeholder="Enter parameter name"
+                                            className={styles.parameterInput}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleConfirmAddParameter}
+                                            className={styles.confirmButton}
+                                        >
+                                            Confirm
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <div className={styles.section}>
                         <h2>Report Details</h2>

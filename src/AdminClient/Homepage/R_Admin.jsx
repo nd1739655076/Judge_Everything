@@ -166,7 +166,7 @@ const R_Admin = () => {
         setReportQueue((prevQueue) =>
           prevQueue.filter((product) => product.id !== productId)
         );
-        navigate("/admin/regularHome");
+        closeModal();
       } else {
         alert(`Failed to delete the product: ${response.data.message}`);
       }

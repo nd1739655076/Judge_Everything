@@ -67,7 +67,8 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
           success: true,
           username: loginStatusResponse.username,
           uid: loginStatusResponse.uid,
-          headAdmin: loginStatusResponse.headAdmin
+          headAdmin: loginStatusResponse.headAdmin,
+          
         };
       } else {
         return { success: false, message: loginStatusResponse.message };
@@ -253,7 +254,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);
       if (loginStatusResponse.status === 'success') {
-        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid };
+        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid, tagScores: loginStatusResponse.userTagScore, subtagScore: loginStatusResponse.userSubtagScore};
       } else {
         return { success: false, message: loginStatusResponse.message };
       }
@@ -306,6 +307,15 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: true, message: recordHistoryResponse.message };
       } else {
         return { success: false, message: recordHistoryResponse.message };
+      }
+    }
+
+    else if (action === 'updateTags') {
+      const accountTagUpdate = await User.updateTagScores(uidNum);
+      if (accountTagUpdate.status === 'success') {
+        return { success: true, message: accountTagUpdate.message };
+      } else {
+        return { success: false, message: accountTagUpdate.message };
       }
     }
 

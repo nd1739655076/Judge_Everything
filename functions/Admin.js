@@ -168,7 +168,6 @@ class Admin {
 
   //action === 'edit'
   static async edit(uid, username, password, headAdmin) {
-    console.log("Edit admin ", uid, ",username:", username, ",password:", password, "headadmin: ", headAdmin);
     const adminDocRef = db.collection('Admin').doc(uid);
     if (adminDocRef.empty) {
       return { status: 'error', message: 'Admin not exist' };
@@ -188,7 +187,7 @@ class Admin {
     const IdDocRef = db.collection('Id').doc(uid);
     if (!IdDocRef.empty) {
       await IdDocRef.update({
-        username: username
+        name: username
       });
     }
     return { status: 'success', message: 'Successfully edited admin account.' };

@@ -7,7 +7,8 @@ import './HeadAdminHomePage.css';
 import { Link } from 'react-router-dom';
 // icon import
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { RiDeleteBinFill } from "react-icons/ri";
 
 const HeadAdminHomepage = () => {
 
@@ -150,7 +151,6 @@ const HeadAdminHomepage = () => {
       });
       if (response.data.success) {
         const adminList = response.data.adminList;
-        console.log("admin list:", adminList);
         await setAdmins(adminList);
         setTotalAdminPages(Math.ceil(adminList.length / 5));
         setLoading(false);
@@ -230,7 +230,6 @@ const HeadAdminHomepage = () => {
     setLoading(true);
     const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
     try {
-      console.log("start delete admin ", deleteAdminId);
       const response = await handleAdminRequest({
         action: 'delete',
         uid: deleteAdminId
@@ -283,9 +282,8 @@ const HeadAdminHomepage = () => {
     const updatedPassword = editPassword ? password : null;
     setLoading(true);
     const handleAdminRequest = httpsCallable(functions, 'handleAdminRequest');
-    console.log("Edit admin ", selectedAdmin.id, ",username:", updatedUsername, ",password:", updatedPassword, "headadmin: ", updatedRole);
     try {
-      updatedRole = (updatedRole === "true");
+      updatedRole = (updatedRole === "true") || (updatedRole === true);
       const response = await handleAdminRequest({
         action: 'edit',
         uid: selectedAdmin.id,
@@ -344,13 +342,11 @@ const HeadAdminHomepage = () => {
       return bScore - aScore;
     });
     await setSearchResult(sortedItems);
-    console.log("sorted items:", sortedItems);
     if (sortedItems.length === 0) {
       setSearchMessage("No accounts with provided keyword available.");
     } else {
       setSearchMessage("");
     }
-    console.log("search result:", searchResult);
   }
 
   return (
@@ -430,16 +426,36 @@ const HeadAdminHomepage = () => {
                   </li>
                 ) : (
                   <>
-                  {/* These links are not yet implemented! */}
                     <li>
-                      <div className="notifcations">
-                        <a href="#"><FaBell /> Notifaction</a>
+                      <div>
+                        <a
+                          onClick={() =>
+                            openModal("delete", {
+                              id: adminId,
+                              username: username,
+                              headAdmin: isHeadAdmin,
+                            })
+                          }
+                        >
+                          <RiDeleteBinFill />
+                          Delete Account
+                        </a>
                       </div>
                     </li>
                     <li>
-                      <div className="settings">
-                        {/* <Link to="/accountSettings"><FaCog /> Your Account</Link> */}
-                        <Link to="#"><FaCog /> Your Account</Link>
+                      <div>
+                        <a
+                          onClick={() =>
+                            openModal("edit", {
+                              id: adminId,
+                              username: username,
+                              headAdmin: isHeadAdmin,
+                            })
+                          }
+                        >
+                          <FaCog />
+                          Edit Account
+                        </a>
                       </div>
                     </li>
                   </>

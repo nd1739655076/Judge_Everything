@@ -31,7 +31,9 @@ const R_Admin = () => {
   const [reportQueue, setReportQueue] = useState([]);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [deleteConfirmationModalOpen, setDeleteConfirmationModalOpen] = useState(false);
   const [imageError, setImageError] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
   const navigate = useNavigate();
 
   // Fetch login status and greeting
@@ -151,6 +153,61 @@ const R_Admin = () => {
     }
   };
 
+  const openDeleteConfirmationModal = (product) => {
+    closeModal();
+    setSelectedProduct(product);
+    setDeleteConfirmationModalOpen(true);
+  };
+
+  const closeDeleteConfirmationModal = () => {
+    setDeleteConfirmationModalOpen(false);
+    setSelectedProduct(null);
+    setNotificationMessage("");
+  };
+
+
+  const handleSendNotificationAndDelete = async () => {
+    const handleUserRequest = httpsCallable(functions, "handleUserRequest");
+    const handleAdminTasksRequest = httpsCallable(functions, "handleAdminTasksRequest");
+
+    try {
+      // Step 1: Send Notification
+      const notificationResponse = await handleUserRequest({
+        action: "handleNotification",
+        uid: selectedProduct.creator,
+        notification: {
+          sender: adminId, // 当前管理员 ID
+          content: notificationMessage,
+        },
+      });
+
+      if (notificationResponse.data.success) {
+        alert("Notification sent successfully!");
+
+        // Step 2: Delete Product
+        const deleteResponse = await handleAdminTasksRequest({
+          action: "deleteProduct",
+          productId: selectedProduct.id,
+        });
+
+        if (deleteResponse.data.success) {
+          alert("Product deleted successfully!");
+          // 更新 UI：从队列中移除已删除的产品
+          setReportQueue((prevQueue) =>
+            prevQueue.filter((product) => product.id !== selectedProduct.id)
+          );
+          closeDeleteConfirmationModal();
+        } else {
+          alert(`Failed to delete the product: ${deleteResponse.data.message}`);
+        }
+      } else {
+        alert("Failed to send notification.");
+      }
+    } catch (error) {
+      console.error("Error sending notification or deleting the product:", error);
+      alert("An error occurred while processing your request.");
+    }
+  };
 
   const handleDeleteProduct = async (productId) => {
     const handleAdminTasksRequest = httpsCallable(functions, "handleAdminTasksRequest");
@@ -159,7 +216,7 @@ const R_Admin = () => {
         action: "deleteProduct",
         productId, // 传递产品 ID
       });
-  
+
       if (response.data.success) {
         alert("Product deleted successfully!");
         // 更新 UI：移除已删除的产品
@@ -396,7 +453,8 @@ const R_Admin = () => {
               </button>
               <button
                 className="r-admin-button delete-product"
-                onClick={() => handleDeleteProduct(selectedProduct.id)}
+                onClick={() => openDeleteConfirmationModal(selectedProduct)}
+                //onClick={() => handleDeleteProduct(selectedProduct.id)}
               >
                 Delete the Product
               </button>
@@ -407,6 +465,38 @@ const R_Admin = () => {
           </div>
         </Modal>
       )}
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteConfirmationModalOpen}
+        onRequestClose={closeDeleteConfirmationModal}
+        className="r-admin-modal"
+        overlayClassName="r-admin-modal-overlay"
+      >
+        <div className="r-admin-modal-content">
+          <h2>Confirm Delete</h2>
+          <p>Are you sure you want to delete the product "{selectedProduct?.productName}"?</p>
+          <textarea
+            value={notificationMessage}
+            onChange={(e) => setNotificationMessage(e.target.value)}
+            placeholder="Send a notification to the creator explaining the reason for deletion..."
+            className="r-admin-notification-textarea"
+          />
+          <div className="r-admin-modal-actions">
+            <button
+              onClick={handleSendNotificationAndDelete}
+              className="r-admin-button confirm-delete"
+            >
+              Send Notification & Delete
+            </button>
+            <button
+              onClick={closeDeleteConfirmationModal}
+              className="r-admin-button cancel-delete"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

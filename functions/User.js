@@ -55,8 +55,8 @@ class User {
       searchHistory: null,
       browseHistory: null,
       rateCommentHistory: null,
-      tagScores : null,
-      subtagScores : null
+      tagScores: null,
+      subtagScores: null
     });
   }
 
@@ -314,17 +314,17 @@ class User {
     if (!userSnap.exists) {
       throw new Error('User not found');
     }
-  
+
     const userData = userSnap.data();
     const browseHistory = userData.browseHistory || [];
     const rateCommentHistory = userData.rateCommentHistory || [];
     const preferences = userData.preferences || [];
     const recentBrowseHistory = browseHistory.slice(0, 10);
     const recentRateCommentHistory = rateCommentHistory.slice(0, 10);
-  
+
     const newTagScores = {};
     const newSubtagScores = {}; // Initialize subtag scores
-  
+
     const updateTagScores = (tags, incrementValue, isSubtag = false) => {
       tags.forEach(tag => {
         if (isSubtag) {
@@ -340,7 +340,7 @@ class User {
         }
       });
     };
-  
+
     // Process recent browse history
     for (const productId of recentBrowseHistory) {
       try {
@@ -348,11 +348,11 @@ class User {
         const productSnap = await productRef.get();
         if (productSnap.exists) {
           const productData = productSnap.data();
-  
+
           // Update tag scores
           const tags = productData.tagList ? [productData.tagList] : [];
           updateTagScores(tags, 1);
-  
+
           // Update subtag scores
           const subtags = Array.isArray(productData.subtagList) ? productData.subtagList : [];
           updateTagScores(subtags, 1, true);
@@ -363,7 +363,7 @@ class User {
         console.error(`Error fetching product with ID ${productId}:`, error);
       }
     }
-  
+
     // Process recent rate comment history
     for (const commentId of recentRateCommentHistory) {
       try {
@@ -376,11 +376,11 @@ class User {
           const productSnap = await productRef.get();
           if (productSnap.exists) {
             const productData = productSnap.data();
-  
+
             // Update tag scores
             const tags = productData.tagList ? [productData.tagList] : [];
             updateTagScores(tags, 1);
-  
+
             // Update subtag scores
             const subtags = Array.isArray(productData.subtagList) ? productData.subtagList : [];
             updateTagScores(subtags, 1, true);
@@ -394,10 +394,10 @@ class User {
         console.error(`Error fetching comment with ID ${commentId}:`, error);
       }
     }
-  
+
     // Update tag scores using user preferences
     updateTagScores(preferences, 3);
-  
+
     // Update the user document with the new tag and subtag scores
     try {
       await userRef.update({
@@ -410,8 +410,85 @@ class User {
       throw new Error('Failed to update tag and subtag scores');
     }
   }
+
+  // action === 'handleNotification'
+  static async handleNotification(uid, notification) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+
+      const userData = userDoc.data();
+      const currentNotifications = userData.notifications || [];
+      const newNotification = {
+        sender: notification.sender, // Admin ID
+        time: admin.firestore.Timestamp.now(), // Current time
+        content: notification.content, // Message content
+        isNew: true, // 标记为新通知
+      };
+
+      currentNotifications.push(newNotification); // Add the new notification
+      await userRef.update({
+        notifications: currentNotifications,
+      });
+
+      return { status: 'success', message: 'Notification added successfully' };
+    } catch (error) {
+      console.error('Error handling user notification:', error);
+      return { status: 'error', message: 'Failed to handle notification' };
+    }
+  }
+
+  static async deleteNotification(uid, index) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
   
+      const userData = userDoc.data();
+      const currentNotifications = userData.notifications || [];
   
+      if (index < 0 || index >= currentNotifications.length) {
+        return { status: 'error', message: 'Invalid notification index' };
+      }
+  
+      currentNotifications.splice(index, 1); // 删除指定索引的通知
+      await userRef.update({
+        notifications: currentNotifications,
+      });
+  
+      return { status: 'success', message: 'Notification deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return { status: 'error', message: 'Failed to delete notification' };
+    }
+  }
+
+  static async clearNotifications(uid) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+  
+      await userRef.update({
+        notifications: [], // 清空通知列表
+      });
+  
+      return { status: 'success', message: 'All notifications cleared successfully' };
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+      return { status: 'error', message: 'Failed to clear notifications' };
+    }
+  }
+
+
+
 
 
 }

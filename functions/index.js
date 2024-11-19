@@ -154,6 +154,16 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
 
       return { success: true, comments };
     }
+    else if (action === 'handleNotification') {
+      const { uid, notification } = data;
+      const result = await Admin.handleNotification(uid, notification);
+  
+      if (result.status === 'success') {
+          return { success: true, message: result.message };
+      } else {
+          return { success: false, message: result.message };
+      }
+  }
 
   } catch (error) {
     console.error("Error handeling admin request.");
@@ -318,6 +328,17 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: accountTagUpdate.message };
       }
     }
+
+    else if (action === 'handleNotification') {
+      const { uid, notification } = data;
+      const result = await User.handleNotification(uid, notification);
+  
+      if (result.status === 'success') {
+          return { success: true, message: result.message };
+      } else {
+          return { success: false, message: result.message };
+      }
+  }
 
   } catch (error) {
     console.error('Error handling User request:', error);

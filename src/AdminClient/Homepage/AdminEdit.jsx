@@ -37,49 +37,49 @@ const AdminEdit = () => {
     // Fetch product details
     useEffect(() => {
         const checkLoginStatus = async () => {
-          const localStatusToken = localStorage.getItem("adminAuthToken");
-          if (localStatusToken) {
-            const handleAdminRequest = httpsCallable(functions, "handleAdminRequest");
-            try {
-              const response = await handleAdminRequest({
-                action: "checkLoginStatus",
-                statusToken: localStatusToken,
-              });
-              if (response.data.success) {
-                setAdminId(response.data.uid);
-                setIsHeadAdmin(response.data.headAdmin);
-              } else {
+            const localStatusToken = localStorage.getItem("adminAuthToken");
+            if (localStatusToken) {
+                const handleAdminRequest = httpsCallable(functions, "handleAdminRequest");
+                try {
+                    const response = await handleAdminRequest({
+                        action: "checkLoginStatus",
+                        statusToken: localStatusToken,
+                    });
+                    if (response.data.success) {
+                        setAdminId(response.data.uid);
+                        setIsHeadAdmin(response.data.headAdmin);
+                    } else {
+                        setIsLoggedIn(false);
+                        localStorage.removeItem("adminAuthToken");
+                    }
+                } catch (error) {
+                    setIsLoggedIn(false);
+                    localStorage.removeItem("adminAuthToken");
+                }
+            } else {
                 setIsLoggedIn(false);
-                localStorage.removeItem("adminAuthToken");
-              }
-            } catch (error) {
-              setIsLoggedIn(false);
-              localStorage.removeItem("adminAuthToken");
             }
-          } else {
-            setIsLoggedIn(false);
-          }
         };
-    
+
         const setTimeGreeting = () => {
-          const now = new Date();
-          const hour = now.getHours();
-          const greetings = ["Good night", "Good morning", "Good afternoon", "Good evening"];
-          const index =
-            hour >= 5 && hour < 12 ? 1 : hour >= 12 && hour < 17 ? 2 : hour >= 17 && hour < 21 ? 3 : 0;
-          setGreeting(greetings[index]);
+            const now = new Date();
+            const hour = now.getHours();
+            const greetings = ["Good night", "Good morning", "Good afternoon", "Good evening"];
+            const index =
+                hour >= 5 && hour < 12 ? 1 : hour >= 12 && hour < 17 ? 2 : hour >= 17 && hour < 21 ? 3 : 0;
+            setGreeting(greetings[index]);
         };
-    
+
         checkLoginStatus();
         setTimeGreeting();
-    
+
         const intervalId = setInterval(() => {
-          checkLoginStatus();
-          setTimeGreeting();
+            checkLoginStatus();
+            setTimeGreeting();
         }, 10000);
-    
+
         return () => clearInterval(intervalId);
-      }, []);
+    }, []);
 
 
     const fetchProductDetails = async () => {
@@ -171,7 +171,7 @@ const AdminEdit = () => {
                 action: "edit",
                 productId,
                 updates: {
-                    flag: 0, // 更新 flag 为 0
+                    flag: 0, // 更新 flag 为 
                     reportList: [], // 清空 reportList
                     isLocked: false, // 解锁产品
                     lockedBy: null, // 清除锁定用户
@@ -647,30 +647,77 @@ const AdminEdit = () => {
 
 
 
-    // 发送通知逻辑
     const handleSendNotification = async () => {
         const handleUserRequest = httpsCallable(functions, "handleUserRequest");
+        const handleAdminRequest = httpsCallable(functions, "handleAdminRequest");
+        const handleProductEntryRequest = httpsCallable(functions, "handleProductEntryRequest"); // 用于直接编辑产品数据
+    
         try {
-            const response = await handleUserRequest({
-                action: "sendNotification",
-                creatorId: productData.creator,
-                message: notificationMessage,
+            // Step 1: Send Notification to User
+            const userNotificationResponse = await handleUserRequest({
+                action: "handleNotification",
+                uid: productData.creator, // User ID
+                notification: {
+                    sender: adminId, // Replace with admin's ID
+                    content: notificationMessage,
+                    isNew: true,
+                },
             });
-            if (response.data.success) {
-                alert("Notification sent successfully!");
+    
+            if (userNotificationResponse.data.success) {
+                // Step 2: Send Notification to Admin
+                const adminNotificationResponse = await handleAdminRequest({
+                    action: "handleNotification",
+                    uid: adminId, // Replace with admin's ID
+                    notification: {
+                        receiver: productData.creator, // User ID
+                        content: notificationMessage,
+                    },
+                });
+    
+                if (adminNotificationResponse.data.success) {
+                    alert("Notification sent successfully to both User and Admin!");
+    
+                    // Step 3: Unlock Product by editing ProductEntry directly
+                    const unlockResponse = await handleProductEntryRequest({
+                        action: "edit",
+                        productId: productData.id,
+                        updates: {
+                            flag: 0,
+                            reportList:[],
+                            reportedBy:[],
+                            isLocked: false, // 解锁产品
+                            lockedBy: null, // 清除锁定用户
+                        },
+                    });
+                    if (unlockResponse.data.success) {
+                        alert("Product unlocked successfully!");
+    
+                        // Step 4: Navigate to Admin Homepage
+                        setTimeout(() => {
+                            navigate("/admin/regularHome");
+                        }, 1500); // 延迟跳转，方便用户查看消息
+                    } else {
+                        alert(`Failed to unlock product: ${unlockResponse.data.message}`);
+                    }
+                } else {
+                    alert("Failed to send notification to Admin.");
+                }
             } else {
-                alert("Failed to send notification.");
+                alert("Failed to send notification to User.");
             }
         } catch (error) {
-            console.error("Error sending notification:", error);
-            alert("An error occurred while sending the notification.");
+            console.error("Error handling notification or unlocking product:", error);
+            alert("An error occurred during the process.");
         }
     };
-
-    // 关闭弹窗
+    
     const handleCloseModal = () => {
         setNotificationModalOpen(false);
+        setNotificationMessage("");
     };
+    
+
 
 
     const renderNotificationModal = () => (
@@ -679,7 +726,7 @@ const AdminEdit = () => {
             onRequestClose={handleCloseModal}
             className={styles.modal}
             overlayClassName={styles.modalOverlay}
-            ariaHideApp={false} // Optional: Hide accessibility warnings during development
+            ariaHideApp={false}
         >
             <div>
                 <h2 className={styles.modalHeader}>Send Notification</h2>

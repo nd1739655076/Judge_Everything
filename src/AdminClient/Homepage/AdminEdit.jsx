@@ -98,7 +98,7 @@ const AdminEdit = () => {
                     subtagList: product.subtagList || [],
                 });
 
-                if (product.parameters) {
+                if (product.parametorList) {
                     const paramRefs = product.parametorList || [];
                     const paramPromises = paramRefs.map(async (paramId) => {
                         const paramRef = doc(db, 'Parameters', paramId);

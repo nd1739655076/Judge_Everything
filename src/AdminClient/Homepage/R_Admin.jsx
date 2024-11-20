@@ -138,7 +138,7 @@ const R_Admin = () => {
         action: "lock",
       });
 
-      if (response.data.success) {
+      if (response.data.success || response.data.lockedBy === adminId) {
         // 成功锁定，跳转到编辑页面
         window.location.href = `/admin/edit/${product.id}`;
       } else {
@@ -356,9 +356,7 @@ const R_Admin = () => {
                 className={`r-admin-report-item ${product.isLocked ? "locked-product" : ""
                   }`}
                 onClick={() =>
-                  product.isLocked
-                    ? alert(`This product is locked by ${product.lockedBy}.`)
-                    : openModal(product)
+                    openModal(product)
                 }
               >
                 <img

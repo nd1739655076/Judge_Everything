@@ -176,26 +176,55 @@ const Notification = () => {
     };
 
     const handleDeleteNotifications = async () => {
-        const handleUserRequest = httpsCallable(functions, "handleUserRequest");
+        if (selectedToDelete.length === 0) {
+            // 如果没有选中任何复选框，直接退出删除模式
+            setDeleteMode(false);
+            setErrorMessage("No notifications selected to delete."); // 设置错误提示
+            return;
+        }
+    
         const includesUnread = selectedToDelete.some(
-            (index) => notifications[index].isNew
+            (index) => notifications[index]?.isNew
         );
+    
         if (includesUnread) {
+            // 有未读通知时，弹出确认浮窗
             setShowWarning(true);
             return;
         }
-
-        for (let index of selectedToDelete) {
-            await handleUserRequest({
-                action: "deleteNotification",
-                uid,
-                index,
-            });
-        }
-        fetchNotifications();
-        setDeleteMode(false);
-        setSelectedToDelete([]);
+    
+        // 没有未读通知时，直接删除
+        deleteNotifications();
     };
+    
+
+    const deleteNotifications = async () => {
+        const handleUserRequest = httpsCallable(functions, "handleUserRequest");
+        try {
+            const response = await handleUserRequest({
+                action: "deleteNotifications",
+                uid,
+                indices: selectedToDelete, // 传递选中需要删除的通知索引
+            });
+
+            if (response.data.success) {
+                // 删除成功后，更新通知状态
+                setNotifications((prevNotifications) =>
+                    prevNotifications.filter(
+                        (_, index) => !selectedToDelete.includes(index)
+                    )
+                );
+                setSelectedToDelete([]);
+                setDeleteMode(false);
+            } else {
+                setErrorMessage(response.data.message || "Failed to delete notifications.");
+            }
+        } catch (error) {
+            console.error("Error deleting notifications:", error);
+            setErrorMessage("Error deleting notifications.");
+        }
+    };
+
 
     const performDeleteNotifications = async () => {
         const handleUserRequest = httpsCallable(functions, "handleUserRequest");
@@ -225,60 +254,45 @@ const Notification = () => {
 
     const handleClearNotifications = async () => {
         const includesUnread = notifications.some((notif) => notif.isNew);
+
         if (includesUnread) {
+            // 显示未读通知的清除确认浮窗
             setShowWarning(true);
-            setClearAll(true);
+            setClearAll(true); // 标记为清除所有
             return;
         }
-        const handleUserRequest = httpsCallable(functions, "handleUserRequest");
-        await handleUserRequest({
-            action: "clearNotifications",
-            uid,
-        });
-        setNotifications([]);
+
+        // 没有未读通知时，直接清除
+        clearNotifications();
     };
 
-    const confirmClearAll = async () => {
-        const handleUserRequest = httpsCallable(functions, "handleUserRequest");
-        await handleUserRequest({
-            action: "clearNotifications",
-            uid,
-        });
-        setNotifications([]);
-        setShowWarning(false);
-        setClearAll(false);
-    };
-
-    const performClearNotifications = async () => {
+    const clearNotifications = async () => {
         const handleUserRequest = httpsCallable(functions, "handleUserRequest");
         try {
             const response = await handleUserRequest({
-                action: "clearNotifications",
-                uid: uid,
+                action: "clearNotification",
+                uid,
             });
 
             if (response.data.success) {
-                setNotifications([]);
-                setDeleteWarning(false);
+                setNotifications([]); // 清空通知列表
             } else {
                 setErrorMessage("Failed to clear notifications.");
             }
         } catch (error) {
-            setErrorMessage("Error while clearing notifications.");
+            console.error("Error clearing notifications:", error);
+            setErrorMessage("Error clearing notifications.");
         }
     };
 
-    const toggleDeleteMode = () => {
-        setIsDeleteMode(!isDeleteMode);
-        setSelectedNotifications([]);
-    };
-
-    const toggleSelection = (index) => {
-        setSelectedNotifications((prevSelected) =>
-            prevSelected.includes(index)
-                ? prevSelected.filter((i) => i !== index)
-                : [...prevSelected, index]
-        );
+    const confirmClearOrDelete = () => {
+        if (clearAll) {
+            clearNotifications(); // 清除所有通知
+        } else {
+            deleteNotifications(); // 删除选中的通知
+        }
+        setShowWarning(false); // 关闭确认浮窗
+        setClearAll(false); // 清除标记
     };
 
     return (
@@ -402,7 +416,7 @@ const Notification = () => {
                                     </p>
                                     {notification.isNew && (
                                         <span className={styles.newDot}>
-                                            <FaBell/>
+                                            <FaBell />
                                         </span>
                                     )}
                                 </div>
@@ -470,6 +484,35 @@ const Notification = () => {
                             </button>
                         </div>
                     )}
+                </Modal>
+                <Modal
+                    isOpen={showWarning}
+                    onRequestClose={() => setShowWarning(false)} // 点击背景关闭浮窗
+                    className={styles.modal}
+                    overlayClassName={styles.overlay}
+                >
+                    <div className={styles.modalContent}>
+                        <h2>Warning</h2>
+                        <p>
+                            {clearAll
+                                ? "There are unread notifications. Are you sure you want to clear all of them?"
+                                : "There are unread notifications. Are you sure you want to delete them?"}
+                        </p>
+                        <div className={styles.modalActions}>
+                            <button
+                                className={styles.modalConfirmButton}
+                                onClick={confirmClearOrDelete} // 确认操作
+                            >
+                                Yes, Proceed
+                            </button>
+                            <button
+                                className={styles.modalCancelButton}
+                                onClick={() => setShowWarning(false)} // 取消操作
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
                 </Modal>
             </div>
         </div>

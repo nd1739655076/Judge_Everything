@@ -142,6 +142,50 @@
     z-index: 1000;
 }
 
+
+.modalActions {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.modalConfirmButton {
+    padding: 10px 20px;
+    background-color: #d9534f;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.modalConfirmButton:hover {
+    background-color: #c9302c;
+}
+
+.modalCancelButton {
+    padding: 10px 20px;
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.modalCancelButton:hover {
+    background-color: #5a6268;
+}
+
+.actions button {
+    margin-top: 15px; /* 增加按钮与通知卡片的距离 */
+}
+
+
+
 /* Modal Content (浮窗内容) */
 .modal {
     width: 400px;

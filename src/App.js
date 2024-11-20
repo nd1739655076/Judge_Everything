@@ -9,6 +9,7 @@ import History from './Components/HistoryPage/History';
 import ProductCreateHistory from './Components/HistoryPage/ProductCreateHistory';
 import ReviewHistory from './Components/HistoryPage/ReviewHistory';
 import BrowseHistory from './Components/HistoryPage/BrowseHistory';
+import MessagePage from './Components/MessagePage/MessagePage';
 // Account
 import LoginSignup from './Components/LoginSignup/LoginSignup';
 import PreferenceSurvey from './Components/PreferenceSurvey/PreferenceSurvey'
@@ -40,6 +41,7 @@ function App() {
         <Route path="/history/review" element={<ReviewHistory />} />
         <Route path="/history/browse" element={<BrowseHistory />} />
         <Route path="/notification/:uid" element={<Notification />} />
+        <Route path="/message" element={<MessagePage />} />
 
         {/* Account */}
         <Route path="/loginSignup" element={<LoginSignup />} />

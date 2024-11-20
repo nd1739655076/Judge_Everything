@@ -68,7 +68,7 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
           username: loginStatusResponse.username,
           uid: loginStatusResponse.uid,
           headAdmin: loginStatusResponse.headAdmin,
-          
+
         };
       } else {
         return { success: false, message: loginStatusResponse.message };
@@ -157,13 +157,14 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
     else if (action === 'handleNotification') {
       const { uid, notification } = data;
       const result = await Admin.handleNotification(uid, notification);
-  
+
       if (result.status === 'success') {
-          return { success: true, message: result.message };
+        return { success: true, message: result.message };
       } else {
-          return { success: false, message: result.message };
+        return { success: false, message: result.message };
       }
-  }
+    }  
+   
 
   } catch (error) {
     console.error("Error handeling admin request.");
@@ -264,7 +265,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);
       if (loginStatusResponse.status === 'success') {
-        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid, tagScores: loginStatusResponse.userTagScore, subtagScore: loginStatusResponse.userSubtagScore};
+        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid, tagScores: loginStatusResponse.userTagScore, subtagScore: loginStatusResponse.userSubtagScore };
       } else {
         return { success: false, message: loginStatusResponse.message };
       }
@@ -332,13 +333,66 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
     else if (action === 'handleNotification') {
       const { uid, notification } = data;
       const result = await User.handleNotification(uid, notification);
-  
+
       if (result.status === 'success') {
-          return { success: true, message: result.message };
+        return { success: true, message: result.message };
       } else {
-          return { success: false, message: result.message };
+        return { success: false, message: result.message };
       }
-  }
+    }
+
+    else if (action === 'markNotificationAsRead') {
+      const { uid, index } = data;
+      const result = await User.markNotificationAsRead(uid, index);
+    
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
+    }
+
+    else if (action === 'getNotifications') {
+      console.log("!!!get notifications start (index.js)");
+      const { uid } = data;
+    
+      try {
+        const result = await User.getNotifications(uid);
+    
+        if (result.status === 'success') {
+          return { success: true, notifications: result.notifications };
+        } else {
+          return { success: false, message: result.message };
+        }
+      } catch (error) {
+        console.error('Error handling getNotifications request:', error);
+        return {
+          success: false,
+          message: 'An unexpected error occurred while fetching notifications',
+        };
+      }
+    }
+
+    else if (action == 'deleteNotification') {
+      const { uid, index } = data;
+      const result = await User.deleteNotification(uid, index);
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
+    }
+
+    else if (action == 'clearNotification') {
+      const { uid } = data;
+      const result = await User.clearNotifications(uid);
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      } 
+    }
+    
 
   } catch (error) {
     console.error('Error handling User request:', error);
@@ -717,7 +771,7 @@ exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, con
 });
 
 exports.handleAdminTasksRequest = functions.https.onCall(async (data, context) => {
-  const { adminId, action, productId} = data;
+  const { adminId, action, productId } = data;
 
   try {
     if (action === 'getTodayTasks') {

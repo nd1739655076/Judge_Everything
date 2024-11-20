@@ -25,6 +25,7 @@ import HeadAdminHomePage from './AdminClient/Homepage/HeadAdminHomePage';
 // regular admin client
 import R_Admin from './AdminClient/Homepage/R_Admin';
 import AdminEdit from './AdminClient/Homepage/AdminEdit';
+import Notification from './Components/HomePage/Notification';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
         <Route path="/history/create" element={<ProductCreateHistory />} />
         <Route path="/history/review" element={<ReviewHistory />} />
         <Route path="/history/browse" element={<BrowseHistory />} />
+        <Route path="/notification/:uid" element={<Notification />} />
 
         {/* Account */}
         <Route path="/loginSignup" element={<LoginSignup />} />

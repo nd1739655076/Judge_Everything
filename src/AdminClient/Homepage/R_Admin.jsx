@@ -440,7 +440,7 @@ const R_Admin = () => {
               <p>
                 <strong>Report Flag Created At:</strong>{" "}
                 {selectedProduct.flaggedTime
-                  ? new Date(selectedProduct.flaggedTime.seconds * 1000).toLocaleString()
+                  ? new Date(selectedProduct.flaggedTime._seconds * 1000).toLocaleString()
                   : "N/A"}
               </p>
             </div>

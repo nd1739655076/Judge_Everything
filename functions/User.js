@@ -487,6 +487,59 @@ class User {
     }
   }
 
+  static async getNotifications(uid) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+  
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+  
+      const userData = userDoc.data();
+      console.log('User data fetched:', userData);
+      const notifications = userData.notifications || [];
+      console.log('Notifications fetched:', notifications);
+      
+      return {
+        status: 'success',
+        notifications,
+      };
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return {
+        status: 'error',
+        message: 'Failed to fetch notifications',
+      };
+    }
+  }
+
+  static async markNotificationAsRead(uid, index) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+      const userData = userDoc.data();
+      const notifications = userData.notifications || [];
+      if (index < 0 || index >= notifications.length) {
+        return { status: 'error', message: 'Invalid notification index' };
+      }
+      // Mark the notification as read
+      notifications[index].isNew = false;
+  
+      await userRef.update({
+        notifications: notifications,
+      });
+      return { status: 'success', message: 'Notification marked as read' };
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return { status: 'error', message: 'Failed to mark notification as read' };
+    }
+  }
+  
+
 
 
 

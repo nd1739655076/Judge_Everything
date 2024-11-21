@@ -210,7 +210,13 @@ const MessagePage = () => {
         <h2 className={styles.conversationListTitle}>Conversation List</h2>
         <hr className={styles.separator} />
         <div className={styles.conversationList}>
-          {conversations.map((conversation) => {
+        {[...conversations]
+          .sort((a, b) => {
+            const timeA = new Date(a.lastMessage).getTime();
+            const timeB = new Date(b.lastMessage).getTime();
+            return timeB - timeA;
+          })
+          .map((conversation) => {
             let unreadMessageCount = 0;
             if (conversation.user1 === userId) {
               unreadMessageCount = conversation.user1UnreadMessageCount || 0;

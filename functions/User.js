@@ -276,7 +276,6 @@ class User {
     return { status: 'success', message: 'User account deleted successfully' }
   }
 
-
   // action === 'recordBrowseHistory'
   static async recordBrowseHistory(data) {
     const { action, productId, uid } = data;

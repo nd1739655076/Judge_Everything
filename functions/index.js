@@ -300,7 +300,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: accountUpdateResponse.message };
       }
     }
-
+    
     else if (action === 'delete') {
       // uidNum
       const deleteResponse = await User.delete(uidNum);

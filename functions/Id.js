@@ -19,6 +19,9 @@ class Id {
       case 'comment':
         prefix = 'COM';
         break;
+      case 'admin':
+        prefix = 'ADM';
+        break;
       default:
         throw new Error("Invalid type provided for ID generation.");
     }

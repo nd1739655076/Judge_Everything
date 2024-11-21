@@ -405,7 +405,7 @@ exports.handleConversationRequest = functions.https.onCall(async (data, context)
   try {
     const { action, user1Id, user2Id, user1Name, user2Name, loginUserId,
       searchString, conversationId, senderId, content } = data;
-
+    console.log("call index.js, action:", action);
     if (action === 'generate') {
       await Conversation.generateConversation(user1Id, user2Id, user1Name, user2Name, senderId);
       return { success: true, message: 'Conversation generated successfully' };
@@ -428,6 +428,15 @@ exports.handleConversationRequest = functions.https.onCall(async (data, context)
     else if (action === 'setAllRead') {
       await Conversation.setAllRead(conversationId, senderId);
       return { success: true, message: 'Unread messages set to zero' };
+    }
+
+    else if (action === 'fetchFollowList') {
+      const response = await Conversation.fetchFollowList(loginUserId);
+      if (response.status === 'success') {
+        return { success: true, followList: response.followList};
+      } else {
+        return { success: false, message: response.message };
+      }
     }
 
   } catch (error) {

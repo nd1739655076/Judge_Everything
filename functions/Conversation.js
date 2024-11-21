@@ -132,6 +132,37 @@ class Conversation {
   
     await conversationDocRef.update(updateData);
   }
+
+  // action === 'fetchFollowList'
+  static async fetchFollowList(uid) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userSnap = await userRef.get();
+      if (!userSnap.exists) {
+        return { status: 'error', message: "User not found" };
+      }
+
+      const userData = userSnap.data();
+      const followListIds = userData.followingList || [];
+      const userPromises = followListIds.map(async (followId) => {
+        const followSnap = await db.collection('Id').doc(followId).get();
+        if (followSnap.exists) {
+          const followData = followSnap.data();
+          return { id: followId, username: followData.name };
+        } else {
+          return null;
+        }
+      });
+      // Resolve all promises
+      const followList = await Promise.all(userPromises);
+  
+      // Filter out null values (in case some users don't exist)
+      const filteredFollowList = followList.filter((user) => user !== null);
+      return { status: 'success', followList: filteredFollowList };
+    } catch (error) {
+      return { status: 'error', message: error };
+    }
+  }
 }
 
 

@@ -17,7 +17,60 @@ const MessagePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
 
-  const { openModal } = useFollowModal();
+  const [followList, setFollowList] = useState([]);
+  const [followListDisplayMessage, setFollowListDisplayMessage] = useState("");
+  // const { openModal } = useFollowModal();
+  const { openModal: openUserModal } = useFollowModal(); // Original useFollowModal for "followModal"
+  const [isFollowListOpen, setIsFollowListOpen] = useState(false); // Local state for "followList"
+
+  const handleOpenModal = (type, data) => {
+    if (type === 'followModal') {
+      // Open the original modal
+      openUserModal(data.userId, data.username);
+    } else if (type === 'followList') {
+      // Open the Follow List modal
+      fetchFollowList();
+      setIsFollowListOpen(true);
+    }
+  };
+
+  const handleCloseFollowList = () => {
+    setIsFollowListOpen(false);
+    setFollowList([]);
+    setFollowListDisplayMessage("");
+  };
+
+  const fetchFollowList = async () => {
+    setFollowListDisplayMessage("Loading...");
+    const handleConversationRequest = httpsCallable(functions, 'handleConversationRequest');
+    try {
+      const response = await handleConversationRequest({
+        action: 'fetchFollowList',
+        loginUserId: userId
+      });
+      console.log("response:", response.data);
+      if (response.data.success) {
+        const fetchedData = response.data.followList;
+        console.log("fetch success, followlist:", fetchedData);
+        await setFollowList(fetchedData);
+        if (fetchedData.length === 0) {
+          setFollowListDisplayMessage("You haven't followed anyone!");
+          console.log("fetchedData.length === 0");
+        } else {
+          setFollowListDisplayMessage("");
+          console.log("fetchedData.length>0");
+        }
+      } else {
+        console.error(`Could not fetch follow list: ${response.data.message}`);
+        setFollowListDisplayMessage(`Could not fetch follow list: ${response.data.message}`);
+      }
+    } catch(error) {
+      console.error("Error fetching follow list: ", error);
+      setFollowListDisplayMessage(`Error fetching follow list: ${error}`);
+    }
+    setFollowListDisplayMessage("");
+  }
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -193,16 +246,46 @@ const MessagePage = () => {
       setSearchResults(response.data.data);
     }
   };
-  const handleSearchResultClick = (userId, username) => {
-    openModal(userId, username);
-  };
+  // const handleSearchResultClick = (userId, username) => {
+  //   // useFollowModal(userId, username);
+  //   openModal(userId, username);
+  // };
 
   return (
     <div className={styles.messagePage}>
+
+      <button className={styles.followListBtn} onClick={() => handleOpenModal('followList')}>
+        Follow List
+      </button>
       {/* Back to HomePage Button */}
       <button className={styles.backToHomePageButton} onClick={() => navigate('/')}>
         Back to HomePage
       </button>
+      {/* Follow List Modal */}
+      {isFollowListOpen && (
+        <div className={styles.followListModal}>
+          <div className={styles.followListModalContent}>
+            <h3>Follow List</h3>
+            {followList.length === 0 ? (
+              <div>
+                <p>{followListDisplayMessage}</p>
+              </div>
+            ) : (
+              followList.map((user) => (
+                <div key={user.id} className={styles.userItem}>
+                  <div className={styles.info}>
+                    <span className={styles.userId}>{user.id}</span>
+                    <span className={styles.username}>{user.username}</span>
+                    <button>Unfollow</button>
+                  </div>
+                  
+                </div>
+              ))
+            )}
+            <button onClick={handleCloseFollowList}>Close</button>
+          </div>
+        </div>
+      )}
 
       {/* Left Side */}
       <div className={styles.leftPanel}>
@@ -269,7 +352,8 @@ const MessagePage = () => {
               <div
                 key={user.userId}
                 className={styles.searchResultItem}
-                onClick={() => handleSearchResultClick(user.userId, user.username)}
+                // onClick={() => handleSearchResultClick(user.userId, user.username)}
+                onClick={() => handleOpenModal('followModal', { userId: user.userId, username: user.username })}
               >
                 <p>{user.username}</p>
               </div>

@@ -65,6 +65,7 @@ function App() {
         <Route path="/admin/edit/:productId" element={<AdminEdit />} />
       </Routes>
     </Router>
+    </FollowModalProvider>
   );
 }
 

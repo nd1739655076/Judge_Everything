@@ -43,6 +43,8 @@ const AdminLogin = () => {
           username: username,
           password: password,
         });
+
+        
         setLoading(false);
         if (response.data.success) {
           localStorage.setItem('adminAuthToken', response.data.statusToken);
@@ -55,7 +57,7 @@ const AdminLogin = () => {
             }, 500);
           } else {
             setTimeout(() => {
-              navigate("/admin/home");
+              navigate("/admin/regularHome");
             }, 500);
           }
           

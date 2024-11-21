@@ -21,7 +21,8 @@ import {
     FaThumbsUp,
     FaThumbsDown,
     FaExclamationTriangle,
-    FaEdit
+    FaEdit,
+    FaHeart
 } from 'react-icons/fa';
 import Slider from "react-slick";
 import { getFirestore, doc, getDoc, arrayRemove, collection, query, where, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
@@ -893,7 +894,7 @@ useEffect(() => {
                             <p>No tags available for this product.</p>
                         )}
                         <h1>{productData.productName}
-                            <FaStar
+                            <FaHeart
                                 className={`favorite-icon ${isFavorite ? 'favorite-active' : ''}`}
                                 onClick={handleFavoriteClick}
                             />

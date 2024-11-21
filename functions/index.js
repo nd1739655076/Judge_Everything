@@ -22,22 +22,22 @@ const Comment = require('./Comment');
 exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) => {
   try {
     const { action } = data;
-    
+
     if (action === 'initializeTagLibrary') {
       // action
       const initializeResponse = await TagLibrary.initializeTagLibrary();
       if (initializeResponse.status === 'success') {
         return { success: true, message: initializeResponse.message };
       }
-    } 
-    
+    }
+
     else if (action === 'getTagLibrary') {
       // action
       const getTagLibraryResponse = await TagLibrary.getTagLibrary();
       if (getTagLibraryResponse.status === 'success') {
         return { success: true, tagList: getTagLibraryResponse.tagList };
       }
-    } 
+    }
 
   } catch (error) {
     console.error('Error handling TagLibrary request:', error);
@@ -47,13 +47,13 @@ exports.handleTagLibraryRequest = functions.https.onCall(async (data, context) =
 
 // Admin Handle
 exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
-  const { action, username, password,  statusToken, headAdmin, uid } = data;
+  const { action, username, password, statusToken, headAdmin, uid } = data;
   try {
     if (action === 'login') {
       // username, password
       const loginResponse = await Admin.login(username, password);
       if (loginResponse.status === 'success') {
-        return { success: true, statusToken: loginResponse.statusToken, headAdmin:loginResponse.headAdmin };
+        return { success: true, statusToken: loginResponse.statusToken, headAdmin: loginResponse.headAdmin };
       } else {
         return { success: false, message: loginResponse.message };
       }
@@ -63,10 +63,12 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
       console.log("start status check in index.js");
       const loginStatusResponse = await Admin.checkLoginStatus(statusToken);
       if (loginStatusResponse.status === 'success') {
-        return { success: true,
+        return {
+          success: true,
           username: loginStatusResponse.username,
           uid: loginStatusResponse.uid,
-          headAdmin: loginStatusResponse.headAdmin
+          headAdmin: loginStatusResponse.headAdmin,
+
         };
       } else {
         return { success: false, message: loginStatusResponse.message };
@@ -75,7 +77,8 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
     else if (action === 'fetchAdmin') {
       const fetchAdminResponse = await Admin.fetchAdmin();
       if (fetchAdminResponse.status === 'success') {
-        return { success: true,
+        return {
+          success: true,
           adminList: fetchAdminResponse.adminList
         };
       } else {
@@ -121,6 +124,48 @@ exports.handleAdminRequest = functions.https.onCall(async (data, context) => {
         return { success: false, message: deleteResponse.message };
       }
     }
+    else if (action === 'fetchCommentsAndReplies') {
+      // 新增逻辑：获取指定产品的评论和回复
+      if (!productId) {
+        return { success: false, message: 'Product ID is required.' };
+      }
+
+      const commentsRef = db.collection('Comments').where('productId', '==', productId);
+      const commentsSnapshot = await commentsRef.get();
+
+      if (commentsSnapshot.empty) {
+        return { success: true, comments: [] }; // 如果没有评论，返回空数组
+      }
+
+      const comments = commentsSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // 获取每条评论的子评论
+      for (const comment of comments) {
+        const repliesRef = db.collection('Comments').where('parentCommentId', '==', comment.id);
+        const repliesSnapshot = await repliesRef.get();
+        comment.replies = repliesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+      }
+
+      return { success: true, comments };
+    }
+    else if (action === 'handleNotification') {
+      const { uid, notification } = data;
+      const result = await Admin.handleNotification(uid, notification);
+
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
+    }  
+   
+
   } catch (error) {
     console.error("Error handeling admin request.");
     return { success: false, message: error.message }
@@ -220,7 +265,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);
       if (loginStatusResponse.status === 'success') {
-        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid };
+        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid, tagScores: loginStatusResponse.userTagScore, subtagScore: loginStatusResponse.userSubtagScore };
       } else {
         return { success: false, message: loginStatusResponse.message };
       }
@@ -273,8 +318,81 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
         return { success: true, message: recordHistoryResponse.message };
       } else {
         return { success: false, message: recordHistoryResponse.message };
-      }    
+      }
     }
+
+    else if (action === 'updateTags') {
+      const accountTagUpdate = await User.updateTagScores(uidNum);
+      if (accountTagUpdate.status === 'success') {
+        return { success: true, message: accountTagUpdate.message };
+      } else {
+        return { success: false, message: accountTagUpdate.message };
+      }
+    }
+
+    else if (action === 'handleNotification') {
+      const { uid, notification } = data;
+      const result = await User.handleNotification(uid, notification);
+
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
+    }
+
+    else if (action === 'markNotificationAsRead') {
+      const { uid, index } = data;
+      const result = await User.markNotificationAsRead(uid, index);
+    
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
+    }
+
+    else if (action === 'getNotifications') {
+      console.log("!!!get notifications start (index.js)");
+      const { uid } = data;
+    
+      try {
+        const result = await User.getNotifications(uid);
+    
+        if (result.status === 'success') {
+          return { success: true, notifications: result.notifications };
+        } else {
+          return { success: false, message: result.message };
+        }
+      } catch (error) {
+        console.error('Error handling getNotifications request:', error);
+        return {
+          success: false,
+          message: 'An unexpected error occurred while fetching notifications',
+        };
+      }
+    }
+
+    else if (action == 'deleteNotification') {
+      const { uid, index } = data;
+      const result = await User.deleteNotification(uid, index);
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      }
+    }
+
+    else if (action == 'clearNotification') {
+      const { uid } = data;
+      const result = await User.clearNotifications(uid);
+      if (result.status === 'success') {
+        return { success: true, message: result.message };
+      } else {
+        return { success: false, message: result.message };
+      } 
+    }
+    
 
   } catch (error) {
     console.error('Error handling User request:', error);
@@ -321,7 +439,7 @@ exports.handleConversationRequest = functions.https.onCall(async (data, context)
 // ProductEntry Handle
 exports.handleProductEntryRequest = functions.https.onCall(async (data, context) => {
   try {
-    const { action, productId } = data;
+    const { action, productId, parameterId, parameterName } = data;
 
     if (action === 'generate') {
       const productEntryResponse = await ProductEntry.saveProductEntry(data);
@@ -341,7 +459,66 @@ exports.handleProductEntryRequest = functions.https.onCall(async (data, context)
       const relatedProductsResponse = await ProductEntry.getRelatedProducts(productId);
       return relatedProductsResponse;
     }
-    
+
+    else if (action === "edit") {
+      const { productId, updates } = data;
+
+      if (!productId || !updates) {
+        throw new functions.https.HttpsError("invalid-argument", "Product ID and updates are required");
+      }
+
+      const result = await ProductEntry.updateProduct(productId, updates);
+      return result;
+    }
+
+    else if (action === "delete") {
+      const { productId, commentId } = data;
+
+      if (!productId || !commentId) {
+        throw new functions.https.HttpsError("invalid-argument", "Product ID and comment ID are required");
+      }
+
+      const result = await ProductEntry.deleteComment(productId, commentId);
+      return result;
+    }
+
+
+    else if (action === 'addParameter') {
+      if (!productId || !parameterName) {
+        throw new functions.https.HttpsError('invalid-argument', 'Product ID and parameter name are required');
+      }
+      const result = await ProductEntry.addParameter(productId, parameterName);
+      return result;
+    }
+
+    else if (action === 'deleteParameter') {
+      if (!productId || !parameterId) {
+        throw new functions.https.HttpsError('invalid-argument', 'Product ID and parameter ID are required');
+      }
+      const result = await ProductEntry.deleteParameter(productId, parameterId);
+      return result;
+    }
+
+    else if (action === "getReports") {
+      if (!productId) {
+        throw new functions.https.HttpsError("invalid-argument", "Product ID is required");
+      }
+      try {
+        const productDoc = await db.collection("ProductEntry").doc(productId).get();
+        if (!productDoc.exists) {
+          throw new functions.https.HttpsError("not-found", "Product not found");
+        }
+
+        const productData = productDoc.data();
+        const reportList = productData.reportList || []; // 确保 reportList 存在
+
+        return { success: true, reportList };
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+        throw new functions.https.HttpsError("internal", "Failed to fetch reports");
+      }
+    }
+
   } catch (error) {
     console.error('Error handling product entry request:', error);
     throw new functions.https.HttpsError('internal', 'Failed to handle product entry request');
@@ -415,10 +592,10 @@ exports.handleImageRequest = functions.https.onCall(async (data, context) => {
         imageUrl: imageUrl,
       };
     }
-    
+
   } catch (error) {
-      console.error('Error uploading image and deleting old image:', error);
-      throw new functions.https.HttpsError('internal', 'Failed to upload image and store metadata');
+    console.error('Error uploading image and deleting old image:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to upload image and store metadata');
   }
 });
 
@@ -460,7 +637,7 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
           commentList: admin.firestore.FieldValue.arrayUnion(commentId)
         });
         console.log("Comment added to ProductEntry's commentList.");
-            
+
         // Step 3: save history in user's info
         const userRef = db.collection('User').doc(user.uid);
         const userDoc = await userRef.get();
@@ -531,14 +708,36 @@ exports.handleCommentRequest = functions.https.onCall(async (data, context) => {
     else if (action === 'getTopReplies') {
       // 获取按时间排序的前几条回复
       const recentReplies = await Comment.getTopReplies({
-          commentId, 
-          limit: data.limit || 3, 
-          startAfter: data.startAfter || null // 添加分页参数
+        commentId,
+        limit: data.limit || 3,
+        startAfter: data.startAfter || null // 添加分页参数
       });
       return { success: true, replies: recentReplies };
-  } else {
+    } else if (action === 'getCommentsWithReplies') {
+      // 检查必需字段
+      if (!productId) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing productId for fetching comments');
+      }
+
+      // 调用 comment.js 中的静态方法
+      const comments = await Comment.getCommentsWithReplies(productId);
+      return comments; // 返回结果
+    } else if (action === 'deleteCommentWithReplies') {
+      // 检查必需字段
+      if (!productId || !commentId) {
+        throw new functions.https.HttpsError(
+          'invalid-argument',
+          'Missing productId or commentId for deleting comment'
+        );
+      }
+
+      // 调用 comment.js 中的静态方法
+      const result = await Comment.deleteCommentWithReplies(productId, commentId);
+      return result; // 返回删除结果
+    }
+    else {
       throw new Error("Invalid action specified");
-  }
+    }
 
   } catch (error) {
     console.error('Error handling comment request:', error);
@@ -568,5 +767,195 @@ exports.handleUpdateProductReportFlags = functions.https.onCall(async (data, con
   } catch (error) {
     console.error("Error updating product report flags:", error);
     return { success: false, message: error.message };
+  }
+});
+
+exports.handleAdminTasksRequest = functions.https.onCall(async (data, context) => {
+  const { adminId, action, productId } = data;
+
+  try {
+    if (action === 'getTodayTasks') {
+      const tasks = await Admin.getTodayTasks(adminId);
+      return tasks;
+    } else if (action === 'getReportQueue') {
+      const queue = await Admin.getReportQueue();
+      return queue;
+    }
+    else if (action === 'deleteProduct') {
+      if (!productId) {
+        throw new Error("Product ID is required for deletion.");
+      }
+
+      // Step 1: 删除产品相关的评论
+      const commentsSnapshot = await db
+        .collection("Comments")
+        .where("productId", "==", productId)
+        .get();
+
+      const deleteCommentPromises = commentsSnapshot.docs.map((doc) =>
+        doc.ref.delete()
+      );
+      await Promise.all(deleteCommentPromises);
+
+      console.log(`Deleted ${deleteCommentPromises.length} comments for product ${productId}`);
+
+      // Step 2: 删除产品的参数
+      const parametersSnapshot = await db
+        .collection("Parameters")
+        .where("productId", "==", productId)
+        .get();
+
+      const deleteParameterPromises = parametersSnapshot.docs.map((doc) =>
+        doc.ref.delete()
+      );
+      await Promise.all(deleteParameterPromises);
+
+      console.log(`Deleted ${deleteParameterPromises.length} parameters for product ${productId}`);
+
+      // Step 3: 删除产品文档
+      await db.collection("ProductEntry").doc(productId).delete();
+      console.log(`Deleted product ${productId}`);
+
+      return { success: true, message: "Product deleted successfully." };
+    } else {
+      throw new Error("Invalid action");
+    }
+  } catch (error) {
+    console.error("Error handling admin tasks request:", error);
+    return { success: false, message: error.message };
+  }
+});
+
+exports.handleParameterRequest = functions.https.onCall(async (data, context) => {
+  const { action, productId, paramId, updates } = data;
+
+  if (!action) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Action is required."
+    );
+  }
+
+  try {
+    if (action === "getParameterById") {
+      // 获取单个参数详细信息
+      if (!paramId) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Parameter ID is required."
+        );
+      }
+
+      const paramDoc = await db.collection("Parameters").doc(paramId).get();
+
+      if (!paramDoc.exists) {
+        return { success: false, message: "Parameter not found." };
+      }
+
+      return { success: true, parameter: { id: paramDoc.id, ...paramDoc.data() } };
+    } else if (action === "getParametersByProductId") {
+      // 根据 Product ID 获取其所有参数
+      if (!productId) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Product ID is required."
+        );
+      }
+
+      const parametersSnapshot = await db
+        .collection("Parameters")
+        .where("productId", "==", productId)
+        .get();
+
+      if (parametersSnapshot.empty) {
+        return { success: true, parameters: [] };
+      }
+
+      const parameters = parametersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      return { success: true, parameters };
+    } else if (action === "deleteParameter") {
+      // 删除指定的参数
+      if (!paramId) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Parameter ID is required for deletion."
+        );
+      }
+
+      await db.collection("Parameters").doc(paramId).delete();
+
+      return { success: true, message: "Parameter deleted successfully." };
+    } else if (action === "updateParameter") {
+      // 更新指定的参数
+      if (!paramId || !updates) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          "Parameter ID and updates are required for updating."
+        );
+      }
+
+      await db.collection("Parameters").doc(paramId).update(updates);
+
+      return { success: true, message: "Parameter updated successfully." };
+    } else {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        `Unsupported action: ${action}`
+      );
+    }
+  } catch (error) {
+    console.error("Error in handleParameterRequest:", error);
+    throw new functions.https.HttpsError(
+      "internal",
+      "Failed to handle parameter request."
+    );
+  }
+});
+
+
+exports.handleProductLock = functions.https.onCall(async (data, context) => {
+  const { action, productId, adminId } = data;
+
+  if (!productId || !adminId) {
+    return { success: false, message: "Missing productId or adminId." };
+  }
+
+  const productRef = db.collection("ProductEntry").doc(productId);
+
+  try {
+    if (action === "lock") {
+      const product = await productRef.get();
+      if (product.exists && product.data().isLocked) {
+        return {
+          success: false,
+          message: "This product is already locked by another admin.",
+          lockedBy: product.data().lockedBy,
+        };
+      }
+
+      // Lock the product
+      await productRef.update({
+        isLocked: true,
+        lockedBy: adminId,
+      });
+
+      return { success: true, message: "Product locked successfully." };
+    } else if (action === "unlock") {
+      await productRef.update({
+        isLocked: false,
+        lockedBy: "",
+      });
+
+      return { success: true, message: "Product unlocked successfully." };
+    } else {
+      return { success: false, message: "Invalid action." };
+    }
+  } catch (error) {
+    console.error("Error handling product lock:", error);
+    return { success: false, message: "Failed to handle product lock." };
   }
 });

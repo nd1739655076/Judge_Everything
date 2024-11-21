@@ -24,6 +24,8 @@ class User {
     this.searchHistory = [];
     this.browseHistory = [];
     this.rateCommentHistory = [];
+    this.tagScores = [];
+    this.subtagScores = [];
   }
 
   // helper
@@ -53,6 +55,8 @@ class User {
       searchHistory: null,
       browseHistory: null,
       rateCommentHistory: null,
+      tagScores: null,
+      subtagScores: null
     });
   }
 
@@ -186,7 +190,7 @@ class User {
     const userDoc = await db.collection('User').doc(uid).get();
     if (userDoc.exists) {
       const userDocData = userDoc.data();
-      return { status: 'success', username: userDocData.username, uid: userDocData.id };
+      return { status: 'success', username: userDocData.username, uid: userDocData.id, userTagScore: userDocData.tagScores, userSubtagScore: userDocData.subtagScores };
     } else {
       return { status: 'error', message: 'User not found' };
     }
@@ -274,7 +278,7 @@ class User {
 
   // action === 'recordBrowseHistory'
   static async recordBrowseHistory(data) {
-    const { productId, uid } = data;
+    const { action, productId, uid } = data;
     console.log("User.js recordBrowseHistory invoked");
     console.log("uid:", uid, "product id:", productId);
     const userRef = db.collection("User").doc(uid);
@@ -282,7 +286,7 @@ class User {
     if (!userDoc.exists) {
       console.log("User not found");
       return { status: 'error', message: 'User not found' };
-    }      
+    }
     const userData = userDoc.data();
     const currentBrowseHistory = userData.browseHistory || [];
     console.log("old hist:", currentBrowseHistory);
@@ -301,6 +305,244 @@ class User {
     });
     return { status: 'success', message: 'Browse history recorded successfully' }
   }
+
+
+  static async updateTagScores(uid) {
+    const userRef = db.collection('User').doc(uid);
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      throw new Error('User not found');
+    }
+
+    const userData = userSnap.data();
+    const browseHistory = userData.browseHistory || [];
+    const rateCommentHistory = userData.rateCommentHistory || [];
+    const preferences = userData.preferences || [];
+    const recentBrowseHistory = browseHistory.slice(0, 10);
+    const recentRateCommentHistory = rateCommentHistory.slice(0, 10);
+
+    const newTagScores = {};
+    const newSubtagScores = {}; // Initialize subtag scores
+
+    const updateTagScores = (tags, incrementValue, isSubtag = false) => {
+      tags.forEach(tag => {
+        if (isSubtag) {
+          if (!newSubtagScores[tag]) {
+            newSubtagScores[tag] = 0;
+          }
+          newSubtagScores[tag] += incrementValue;
+        } else {
+          if (!newTagScores[tag]) {
+            newTagScores[tag] = 0;
+          }
+          newTagScores[tag] += incrementValue;
+        }
+      });
+    };
+
+    // Process recent browse history
+    for (const productId of recentBrowseHistory) {
+      try {
+        const productRef = db.collection('ProductEntry').doc(productId);
+        const productSnap = await productRef.get();
+        if (productSnap.exists) {
+          const productData = productSnap.data();
+
+          // Update tag scores
+          const tags = productData.tagList ? [productData.tagList] : [];
+          updateTagScores(tags, 1);
+
+          // Update subtag scores
+          const subtags = Array.isArray(productData.subtagList) ? productData.subtagList : [];
+          updateTagScores(subtags, 1, true);
+        } else {
+          console.warn(`Product with ID ${productId} not found`);
+        }
+      } catch (error) {
+        console.error(`Error fetching product with ID ${productId}:`, error);
+      }
+    }
+
+    // Process recent rate comment history
+    for (const commentId of recentRateCommentHistory) {
+      try {
+        const commentRef = db.collection('Comments').doc(commentId);
+        const commentSnap = await commentRef.get();
+        if (commentSnap.exists) {
+          const commentData = commentSnap.data();
+          const productId = commentData.productId;
+          const productRef = db.collection('ProductEntry').doc(productId);
+          const productSnap = await productRef.get();
+          if (productSnap.exists) {
+            const productData = productSnap.data();
+
+            // Update tag scores
+            const tags = productData.tagList ? [productData.tagList] : [];
+            updateTagScores(tags, 1);
+
+            // Update subtag scores
+            const subtags = Array.isArray(productData.subtagList) ? productData.subtagList : [];
+            updateTagScores(subtags, 1, true);
+          } else {
+            console.warn(`Product with ID ${productId} from comment ${commentId} not found`);
+          }
+        } else {
+          console.warn(`Comment with ID ${commentId} not found`);
+        }
+      } catch (error) {
+        console.error(`Error fetching comment with ID ${commentId}:`, error);
+      }
+    }
+
+    // Update tag scores using user preferences
+    updateTagScores(preferences, 3);
+
+    // Update the user document with the new tag and subtag scores
+    try {
+      await userRef.update({
+        tagScores: newTagScores,
+        subtagScores: newSubtagScores // Add the subtag scores to the update
+      });
+      return { status: 'success', message: 'Tag and subtag scores updated successfully' };
+    } catch (error) {
+      console.error(`Error updating tag and subtag scores for user ${uid}:`, error);
+      throw new Error('Failed to update tag and subtag scores');
+    }
+  }
+
+  // action === 'handleNotification'
+  static async handleNotification(uid, notification) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+
+      const userData = userDoc.data();
+      const currentNotifications = userData.notifications || [];
+      const newNotification = {
+        sender: notification.sender, // Admin ID
+        time: admin.firestore.Timestamp.now(), // Current time
+        content: notification.content, // Message content
+        isNew: true, // 标记为新通知
+      };
+
+      currentNotifications.push(newNotification); // Add the new notification
+      await userRef.update({
+        notifications: currentNotifications,
+      });
+
+      return { status: 'success', message: 'Notification added successfully' };
+    } catch (error) {
+      console.error('Error handling user notification:', error);
+      return { status: 'error', message: 'Failed to handle notification' };
+    }
+  }
+
+  static async deleteNotification(uid, index) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+  
+      const userData = userDoc.data();
+      const currentNotifications = userData.notifications || [];
+  
+      if (index < 0 || index >= currentNotifications.length) {
+        return { status: 'error', message: 'Invalid notification index' };
+      }
+  
+      currentNotifications.splice(index, 1); // 删除指定索引的通知
+      await userRef.update({
+        notifications: currentNotifications,
+      });
+  
+      return { status: 'success', message: 'Notification deleted successfully' };
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return { status: 'error', message: 'Failed to delete notification' };
+    }
+  }
+
+  static async clearNotifications(uid) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+  
+      await userRef.update({
+        notifications: [], // 清空通知列表
+      });
+  
+      return { status: 'success', message: 'All notifications cleared successfully' };
+    } catch (error) {
+      console.error('Error clearing notifications:', error);
+      return { status: 'error', message: 'Failed to clear notifications' };
+    }
+  }
+
+  static async getNotifications(uid) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+  
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+  
+      const userData = userDoc.data();
+      console.log('User data fetched:', userData);
+      const notifications = userData.notifications || [];
+      console.log('Notifications fetched:', notifications);
+      
+      return {
+        status: 'success',
+        notifications,
+      };
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return {
+        status: 'error',
+        message: 'Failed to fetch notifications',
+      };
+    }
+  }
+
+  static async markNotificationAsRead(uid, index) {
+    try {
+      const userRef = db.collection('User').doc(uid);
+      const userDoc = await userRef.get();
+      if (!userDoc.exists) {
+        return { status: 'error', message: 'User not found' };
+      }
+      const userData = userDoc.data();
+      const notifications = userData.notifications || [];
+      if (index < 0 || index >= notifications.length) {
+        return { status: 'error', message: 'Invalid notification index' };
+      }
+      // Mark the notification as read
+      notifications[index].isNew = false;
+  
+      await userRef.update({
+        notifications: notifications,
+      });
+      return { status: 'success', message: 'Notification marked as read' };
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return { status: 'error', message: 'Failed to mark notification as read' };
+    }
+  }
+  
+
+
+
+
+
 }
 
 module.exports = User;

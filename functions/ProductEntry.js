@@ -278,6 +278,130 @@ class ProductEntry {
     }
 }
 
+static async getFlaggedProducts() {
+  try {
+    const flaggedProductsRef = db.collection('ProductEntry').where('flag', '==', 1);
+    const flaggedProductsSnapshot = await flaggedProductsRef.get();
+
+    if (flaggedProductsSnapshot.empty) {
+      return { success: true, data: [] }; // 如果没有产品被标记，返回空数组
+    }
+
+    const flaggedProducts = flaggedProductsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return { success: true, data: flaggedProducts };
+  } catch (error) {
+    console.error("Error fetching flagged products:", error);
+    return { success: false, message: "Failed to fetch flagged products" };
+  }
+}
+
+// 更新产品信息
+static async updateProduct(productId, updates) {
+  try {
+    const productRef = db.collection("ProductEntry").doc(productId);
+    const productSnap = await productRef.get();
+
+    if (!productSnap.exists) {
+      throw new Error("Product not found");
+    }
+
+    // 进行产品字段更新
+    await productRef.update({
+      ...updates,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(), // 记录更新时间
+    });
+
+    return { success: true, message: "Product updated successfully" };
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return { success: false, message: `Failed to update product: ${error.message}` };
+  }
+}
+
+// 删除评论
+static async deleteComment(productId, commentId) {
+  try {
+    // 删除评论文档
+    const commentRef = db.collection("Comments").doc(commentId);
+    const commentSnap = await commentRef.get();
+
+    if (!commentSnap.exists) {
+      throw new Error("Comment not found");
+    }
+
+    await commentRef.delete();
+
+    // 从产品的评论列表中移除该评论
+    const productRef = db.collection("ProductEntry").doc(productId);
+    await productRef.update({
+      commentList: admin.firestore.FieldValue.arrayRemove(commentId),
+    });
+
+    return { success: true, message: "Comment deleted successfully" };
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    return { success: false, message: `Failed to delete comment: ${error.message}` };
+  }
+}
+
+static async deleteParameter(productId, parameterId) {
+  try {
+    const productRef = db.collection('ProductEntry').doc(productId);
+    const productSnap = await productRef.get();
+
+    if (!productSnap.exists) {
+      throw new Error('Product not found');
+    }
+
+    const productData = productSnap.data();
+    const updatedParameterList = productData.parametorList.filter(id => id !== parameterId);
+
+    // Update the product entry in the database
+    await productRef.update({ parametorList: updatedParameterList });
+
+    return { success: true, message: 'Parameter deleted successfully' };
+  } catch (error) {
+    console.error('Error deleting parameter:', error);
+    throw new Error('Failed to delete parameter');
+  }
+}
+
+static async addParameter(productId, parameterName) {
+  try {
+    const generateId = new Id();
+    const paramIdResult = await generateId.generateId('parameter', parameterName);
+    const newParameterId = paramIdResult.idNum;
+
+    const productRef = db.collection('ProductEntry').doc(productId);
+    const productSnap = await productRef.get();
+
+    if (!productSnap.exists) {
+      throw new Error('Product not found');
+    }
+
+    const productData = productSnap.data();
+    const updatedParameterList = [...(productData.parametorList || []), newParameterId];
+
+    // Update the product entry in the database
+    await productRef.update({ parametorList: updatedParameterList });
+
+    // Optionally, create a new Parameter document in the database
+    const newParameter = new Parameter(newParameterId, productId, parameterName);
+    await newParameter.save();
+
+    return { success: true, message: 'Parameter added successfully', parameterId: newParameterId };
+  } catch (error) {
+    console.error('Error adding parameter:', error);
+    throw new Error('Failed to add parameter');
+  }
+}
+
+
+
   
 }
 

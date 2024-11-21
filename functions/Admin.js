@@ -7,6 +7,9 @@ const db = admin.firestore();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secure-secret-key';
 
+const ProductEntry = require('./ProductEntry');
+
+
 class Admin {
   constructor(uid, username, password, headAdmin) {
     this.uid = uid;
@@ -60,24 +63,24 @@ class Admin {
     return { status: 'success', statusToken: statusToken, headAdmin: userDocData.headAdmin };
   }
 
-//   // action == 'checkFirstLogin'
-//   static async checkFirstLogin(username) {
-//     const userDocRef = db.collection('User').where('username', '==', username);
-//     const userDocRefSnapshot = await userDocRef.get();
-//     if (userDocRefSnapshot.empty) {
-//       return { status: 'error', message: 'User not found' };
-//     }
-//     const userDoc = userDocRefSnapshot.docs[0];
-//     const userDocData = userDoc.data();
-//     let isFirstLogin = userDocData.firstLogin;
-//     if (isFirstLogin === undefined || isFirstLogin === true) {
-//       await userDoc.ref.update({ firstLogin: true });
-//       return { status: 'success', message: 'Hello, new user! It will help if you accomplish a preference survey first.' };
-//     }
-//     else {
-//       return { status: 'error', message: 'This user has already logged in before.' };
-//     }
-//   }
+  //   // action == 'checkFirstLogin'
+  //   static async checkFirstLogin(username) {
+  //     const userDocRef = db.collection('User').where('username', '==', username);
+  //     const userDocRefSnapshot = await userDocRef.get();
+  //     if (userDocRefSnapshot.empty) {
+  //       return { status: 'error', message: 'User not found' };
+  //     }
+  //     const userDoc = userDocRefSnapshot.docs[0];
+  //     const userDocData = userDoc.data();
+  //     let isFirstLogin = userDocData.firstLogin;
+  //     if (isFirstLogin === undefined || isFirstLogin === true) {
+  //       await userDoc.ref.update({ firstLogin: true });
+  //       return { status: 'success', message: 'Hello, new user! It will help if you accomplish a preference survey first.' };
+  //     }
+  //     else {
+  //       return { status: 'error', message: 'This user has already logged in before.' };
+  //     }
+  //   }
 
   // helper
   static verifyToken(token) {
@@ -102,10 +105,12 @@ class Admin {
     const userDoc = await db.collection('Admin').doc(uid).get();
     if (userDoc.exists) {
       const userDocData = userDoc.data();
-      return { status: 'success',
-                username: userDocData.username,
-                uid: userDocData.uid,
-                headAdmin: userDocData.headAdmin };
+      return {
+        status: 'success',
+        username: userDocData.username,
+        uid: userDocData.uid,
+        headAdmin: userDocData.headAdmin
+      };
     } else {
       return { status: 'error', message: 'User not found' };
     }
@@ -148,10 +153,10 @@ class Admin {
       console.log("fetch admin in Admin.js");
       const AdminDocRef = db.collection("Admin");
       const adminSnapshot = await AdminDocRef.get();
-      console.log("adminSnapshot:",adminSnapshot);
+      console.log("adminSnapshot:", adminSnapshot);
       const adminList = adminSnapshot.docs.map(doc => {
         const data = doc.data();
-        console.log("doc:",data.uid,",",data.username,",",data.headAdmin);
+        console.log("doc:", data.uid, ",", data.username, ",", data.headAdmin);
         return {
           id: data.uid,
           username: data.username,
@@ -168,6 +173,7 @@ class Admin {
 
   //action === 'edit'
   static async edit(uid, username, password, headAdmin) {
+    console.log("Edit admin ", uid, ",username:", username, ",password:", password, "headadmin: ", headAdmin);
     const adminDocRef = db.collection('Admin').doc(uid);
     if (adminDocRef.empty) {
       return { status: 'error', message: 'Admin not exist' };
@@ -187,11 +193,72 @@ class Admin {
     const IdDocRef = db.collection('Id').doc(uid);
     if (!IdDocRef.empty) {
       await IdDocRef.update({
-        name: username
+        username: username
       });
     }
     return { status: 'success', message: 'Successfully edited admin account.' };
-  }  
+  }
+
+  // 获取今天任务的完成情况
+  static async getTodayTasks(adminId) {
+    try {
+      const adminRef = db.collection('Admin').doc(adminId);
+      const adminDoc = await adminRef.get();
+      if (!adminDoc.exists) throw new Error("Admin not found");
+
+      const adminData = adminDoc.data();
+      const tasksCompleted = adminData.tasksCompleted || 0; // 获取今日已完成任务数
+      const dailyTasks = 20; // 每日任务目标
+
+      return { success: true, tasksCompleted, dailyTasks };
+    } catch (error) {
+      console.error("Error fetching today's tasks:", error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  // 获取待处理的报告队列
+  static async getReportQueue() {
+    try {
+      const flaggedProducts = await ProductEntry.getFlaggedProducts();
+      if (flaggedProducts.success) {
+        return { success: true, queue: flaggedProducts.data };
+      }
+      return { success: false, message: "Failed to fetch report queue" };
+    } catch (error) {
+      console.error("Error fetching report queue:", error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  // action === 'handleNotification'
+  static async handleNotification(uid, notification) {
+    try {
+      const adminRef = db.collection('Admin').doc(uid);
+      const adminDoc = await adminRef.get();
+      if (!adminDoc.exists) {
+        return { status: 'error', message: 'Admin not found' };
+      }
+
+      const adminData = adminDoc.data();
+      const currentNotifications = adminData.notifications || [];
+      const newNotification = {
+        receiver: notification.receiver, // User ID
+        time: admin.firestore.Timestamp.now(), // Current time
+        content: notification.content, // Message content
+      };
+
+      currentNotifications.push(newNotification); // Add the new notification
+      await adminRef.update({
+        notifications: currentNotifications,
+      });
+
+      return { status: 'success', message: 'Notification added successfully' };
+    } catch (error) {
+      console.error('Error handling admin notification:', error);
+      return { status: 'error', message: 'Failed to handle notification' };
+    }
+  }
 
 }
 

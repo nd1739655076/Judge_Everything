@@ -202,7 +202,7 @@ const Notification = () => {
         const handleUserRequest = httpsCallable(functions, "handleUserRequest");
         try {
             const response = await handleUserRequest({
-                action: "deleteNotifications",
+                action: "deleteNotification",
                 uid,
                 indices: selectedToDelete, // 传递选中需要删除的通知索引
             });

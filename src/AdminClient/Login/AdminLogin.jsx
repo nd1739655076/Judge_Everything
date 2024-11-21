@@ -57,7 +57,7 @@ const AdminLogin = () => {
             }, 500);
           } else {
             setTimeout(() => {
-              navigate("/admin/home");
+              navigate("/admin/regularHome");
             }, 500);
           }
           

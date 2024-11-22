@@ -3,6 +3,7 @@ import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import styles from './MessagePage.module.css';
+import { updateDoc } from 'firebase/firestore';
 
 import { useNavigate } from 'react-router-dom';
 import { useFollowModal } from '../FollowModal/FollowModal';
@@ -16,6 +17,7 @@ const MessagePage = () => {
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const [followList, setFollowList] = useState([]);
   const [followListDisplayMessage, setFollowListDisplayMessage] = useState("");
@@ -64,7 +66,7 @@ const MessagePage = () => {
         console.error(`Could not fetch follow list: ${response.data.message}`);
         setFollowListDisplayMessage(`Could not fetch follow list: ${response.data.message}`);
       }
-    } catch(error) {
+    } catch (error) {
       console.error("Error fetching follow list: ", error);
       setFollowListDisplayMessage(`Error fetching follow list: ${error}`);
     }
@@ -72,6 +74,19 @@ const MessagePage = () => {
   }
 
   const navigate = useNavigate();
+
+  const handleUnfollow = async (unfollowUserId) => {
+    try {
+      const updatedList = followList.filter((user) => user.id !== unfollowUserId);
+      setFollowList(updatedList); // Immediately update UI
+      const db = getFirestore();
+      const userRef = doc(db, 'User', userId);
+      await updateDoc(userRef, { followingList: updatedList.map((user) => user.id) });
+    } catch (error) {
+      console.error('Error while unfollowing:', error);
+      setFollowListDisplayMessage('Failed to unfollow. Please try again.');
+    }
+  };
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -276,9 +291,12 @@ const MessagePage = () => {
                   <div className={styles.info}>
                     <span className={styles.userId}>{user.id}</span>
                     <span className={styles.username}>{user.username}</span>
-                    <button>Unfollow</button>
+                    <button
+                      onClick={() => handleUnfollow(user.id)}>
+                      Unfollow
+                    </button>
                   </div>
-                  
+
                 </div>
               ))
             )}
@@ -315,9 +333,8 @@ const MessagePage = () => {
                 return (
                   <div
                     key={conversation.id}
-                    className={`${styles.conversationItem} ${
-                      selectedConversationId === conversation.id ? styles.active : ''
-                    }`}
+                    className={`${styles.conversationItem} ${selectedConversationId === conversation.id ? styles.active : ''
+                      }`}
                     onClick={() => setSelectedConversationId(conversation.id)}
                   >
                     <div className={styles.conversationInfo}>

@@ -63,21 +63,30 @@ const FollowModal = () => {
   };
 
   return (
-    <div className={`${styles.followModal} ${isOpen ? styles.visible : styles.hidden}`}>
-      <div className={styles.followModalContent}>
-        <h2>Username: <span>{followUserName}</span></h2>
-        <div className={styles.buttonContainer}>
-          {isFollowing ? (
-            <button onClick={handleUnfollow} className={styles.followModalButton}>Unfollow</button>
-          ) : (
-            <button onClick={handleFollow} className={styles.followModalButton}>Follow</button>
-          )}
-          <button onClick={closeModal} className={styles.followModalButton}>Close</button>
-        </div>
-      </div>
-</div>
-
+    <>
+      {isOpen && (
+        <>
+          {/* Overlay to dim the background */}
+          <div className={styles.modalOverlay} onClick={closeModal}></div>
+          {/* Modal content */}
+          <div className={`${styles.followModal} ${isOpen ? styles.visible : styles.hidden}`}>
+            <div className={styles.followModalContent}>
+              <h2>Username: <span>{followUserName}</span></h2>
+              <div className={styles.buttonContainer}>
+                {isFollowing ? (
+                  <button onClick={handleUnfollow} className={styles.followModalButton}>Unfollow</button>
+                ) : (
+                  <button onClick={handleFollow} className={styles.followModalButton}>Follow</button>
+                )}
+                <button onClick={closeModal} className={styles.followModalButton}>Close</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </>
   );
+
 };
 
 export const FollowModalProvider = ({ children }) => {

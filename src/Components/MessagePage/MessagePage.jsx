@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import { getFirestore, doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import styles from './MessagePage.module.css';
-import { updateDoc } from 'firebase/firestore';
 
 import { useNavigate } from 'react-router-dom';
 import { useFollowModal } from '../FollowModal/FollowModal';
@@ -17,76 +16,11 @@ const MessagePage = () => {
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowListOpen, setIsFollowListOpen] = useState(false);
+  const [followedUsersDetails, setFollowedUsersDetails] = useState([]);
 
-  const [followList, setFollowList] = useState([]);
-  const [followListDisplayMessage, setFollowListDisplayMessage] = useState("");
-  // const { openModal } = useFollowModal();
-  const { openModal: openUserModal } = useFollowModal(); // Original useFollowModal for "followModal"
-  const [isFollowListOpen, setIsFollowListOpen] = useState(false); // Local state for "followList"
-
-  const handleOpenModal = (type, data) => {
-    if (type === 'followModal') {
-      // Open the original modal
-      openUserModal(data.userId, data.username);
-    } else if (type === 'followList') {
-      // Open the Follow List modal
-      fetchFollowList();
-      setIsFollowListOpen(true);
-    }
-  };
-
-  const handleCloseFollowList = () => {
-    setIsFollowListOpen(false);
-    setFollowList([]);
-    setFollowListDisplayMessage("");
-  };
-
-  const fetchFollowList = async () => {
-    setFollowListDisplayMessage("Loading...");
-    const handleConversationRequest = httpsCallable(functions, 'handleConversationRequest');
-    try {
-      const response = await handleConversationRequest({
-        action: 'fetchFollowList',
-        loginUserId: userId
-      });
-      console.log("response:", response.data);
-      if (response.data.success) {
-        const fetchedData = response.data.followList;
-        console.log("fetch success, followlist:", fetchedData);
-        await setFollowList(fetchedData);
-        if (fetchedData.length === 0) {
-          setFollowListDisplayMessage("You haven't followed anyone!");
-          console.log("fetchedData.length === 0");
-        } else {
-          setFollowListDisplayMessage("");
-          console.log("fetchedData.length>0");
-        }
-      } else {
-        console.error(`Could not fetch follow list: ${response.data.message}`);
-        setFollowListDisplayMessage(`Could not fetch follow list: ${response.data.message}`);
-      }
-    } catch (error) {
-      console.error("Error fetching follow list: ", error);
-      setFollowListDisplayMessage(`Error fetching follow list: ${error}`);
-    }
-    setFollowListDisplayMessage("");
-  }
-
+  const { openModal, followingList } = useFollowModal();
   const navigate = useNavigate();
-
-  const handleUnfollow = async (unfollowUserId) => {
-    try {
-      const updatedList = followList.filter((user) => user.id !== unfollowUserId);
-      setFollowList(updatedList); // Immediately update UI
-      const db = getFirestore();
-      const userRef = doc(db, 'User', userId);
-      await updateDoc(userRef, { followingList: updatedList.map((user) => user.id) });
-    } catch (error) {
-      console.error('Error while unfollowing:', error);
-      setFollowListDisplayMessage('Failed to unfollow. Please try again.');
-    }
-  };
 
   useEffect(() => {
     const checkLoginStatus = async () => {
@@ -261,48 +195,59 @@ const MessagePage = () => {
       setSearchResults(response.data.data);
     }
   };
-  // const handleSearchResultClick = (userId, username) => {
-  //   // useFollowModal(userId, username);
-  //   openModal(userId, username);
-  // };
+  const handleSearchResultClick = (userId, username) => {
+    openModal(userId, username);
+  };
+  const toggleFollowList = async () => {
+    setIsFollowListOpen((prev) => !prev);
+    
+    if (!isFollowListOpen && followingList.length > 0) {
+      const db = getFirestore();
+      const userDetails = await Promise.all(
+        followingList.map(async (userId) => {
+          const userRef = doc(db, 'User', userId);
+          const userDoc = await getDoc(userRef);
+          if (userDoc.exists()) {
+            return { id: userId, ...userDoc.data() }; // Include the username
+          }
+          return { id: userId, username: 'Unknown User' };
+        })
+      );
+      setFollowedUsersDetails(userDetails);
+    }
+  };
 
   return (
     <div className={styles.messagePage}>
-
-      <button className={styles.followListBtn} onClick={() => handleOpenModal('followList')}>
-        Follow List
-      </button>
       {/* Back to HomePage Button */}
       <button className={styles.backToHomePageButton} onClick={() => navigate('/')}>
         Back to HomePage
       </button>
+
+      {/* FollowList Button */}
+      <button className={styles.followListBtn} onClick={toggleFollowList}>
+        {isFollowListOpen ? 'Close Follow List' : 'Follow List'}
+      </button>
       {/* Follow List Modal */}
       {isFollowListOpen && (
-        <div className={styles.followListModal}>
-          <div className={styles.followListModalContent}>
-            <h3>Follow List</h3>
-            {followList.length === 0 ? (
-              <div>
-                <p>{followListDisplayMessage}</p>
-              </div>
-            ) : (
-              followList.map((user) => (
-                <div key={user.id} className={styles.userItem}>
-                  <div className={styles.info}>
-                    <span className={styles.userId}>{user.id}</span>
-                    <span className={styles.username}>{user.username}</span>
-                    <button
-                      onClick={() => handleUnfollow(user.id)}>
-                      Unfollow
-                    </button>
-                  </div>
-
-                </div>
-              ))
-            )}
-            <button onClick={handleCloseFollowList}>Close</button>
+        <>
+          <div className={styles.modalOverlay} onClick={toggleFollowList}></div>
+          <div className={styles.followListModal}>
+            <h2>Followed Users</h2>
+            <ul className={styles.followList}>
+              {followedUsersDetails.length > 0 ? (
+                followedUsersDetails.map((user, index) => (
+                  <li key={index} className={styles.followListItem}>
+                    <p>Username: {user.username}</p>
+                    <button onClick={() => openModal(user.id, user.username)}>View</button>
+                  </li>
+                ))
+              ) : (
+                <p>No users followed yet.</p>
+              )}
+            </ul>
           </div>
-        </div>
+        </>
       )}
 
       {/* Left Side */}
@@ -333,8 +278,9 @@ const MessagePage = () => {
                 return (
                   <div
                     key={conversation.id}
-                    className={`${styles.conversationItem} ${selectedConversationId === conversation.id ? styles.active : ''
-                      }`}
+                    className={`${styles.conversationItem} ${
+                      selectedConversationId === conversation.id ? styles.active : ''
+                    }`}
                     onClick={() => setSelectedConversationId(conversation.id)}
                   >
                     <div className={styles.conversationInfo}>
@@ -369,8 +315,7 @@ const MessagePage = () => {
               <div
                 key={user.userId}
                 className={styles.searchResultItem}
-                // onClick={() => handleSearchResultClick(user.userId, user.username)}
-                onClick={() => handleOpenModal('followModal', { userId: user.userId, username: user.username })}
+                onClick={() => handleSearchResultClick(user.userId, user.username)}
               >
                 <p>{user.username}</p>
               </div>

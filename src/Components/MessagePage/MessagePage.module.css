@@ -27,6 +27,10 @@
   font-weight: bold;
   z-index: 10;
 }
+.backToHomePageButton:hover {
+  background-color: #0056b3;
+}
+
 .followListBtn {
   position: absolute;
   top: 30px;
@@ -40,85 +44,43 @@
   font-size: 14px;
   font-weight: bold;
 }
-.backToHomePageButton:hover {
-  background-color: #0056b3;
-}
 .followListBtn:hover {
   background-color: #0056b3;
 }
-
 .followListModal {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -20%);
+  width: 400px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5); /* Stronger shadow */
+  padding: 20px;
+  border-radius: 8px;
+  z-index: 1000; /* Below FollowModal */
+  border: 2px solid #0078d4; /* More prominent border */
+}
+.modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.followListModalContent {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  width: 400px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  max-width: 90%;
-  margin: auto;
-  font-family: Arial, sans-serif;
-}
-
-.followListModal h3 {
-  display: flex;
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: bold;
-}
-
-.followListModal .userItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 5px;
-  border: 1px solid #0056b3;
-  border-radius: 8px;
-  margin-bottom: 15px;
-}
-
-.followListModal .info {
-  display: flex;
-  align-items: center;
-  font-size: 18px;
-  padding: 10px;
   width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent dark background */
+  z-index: 999; /* Make sure this is below the modal but above other content */
+}
+.followList {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+}
+.followListItem {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+  display: flex;
   justify-content: space-between;
+  align-items: center;
 }
-
-.followListModal .userId {
-  font-weight: bold;
-}
-
-.followListModal button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  font-size: 15px;
-  font-weight: bold;
-  padding: 5px 5px;
-  border-radius: 5px;
-  margin-right: 10px;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.followListModal .unfollow {
-  margin-right: 0px;
-}
-
 
 .leftPanel {
   background-color: white;

@@ -13,7 +13,7 @@ import Joyride from "react-joyride";
 import Modal from 'react-modal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 // image import
-import logoImage from "../HomePageAssets/404.jpg";
+import logoImage from "../HomePageAssets/logo1.png";
 
 Modal.setAppElement('#root');
 

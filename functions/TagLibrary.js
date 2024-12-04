@@ -123,6 +123,16 @@ class TagLibrary {
           subTagId6: 'Calendars',
           subTagId7: 'Art Supplies',
         }
+      },
+      {
+        tagName: 'Entertainments',
+        subTag: {
+          subTagId1: 'Video Game',
+          subTagId2: 'Steaming Media',
+          subTagId3: 'TV Shows',
+          subTagId4: 'Meme',
+          subTagId5: 'Film',
+        }
       }
     ];
 

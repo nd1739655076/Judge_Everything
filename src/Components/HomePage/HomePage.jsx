@@ -304,28 +304,39 @@ const Homepage = () => {
     try {
       const productRef = doc(db, 'ProductEntry', productId);
       const productSnap = await getDoc(productRef);
-
+  
       if (productSnap.exists()) {
         const productData = productSnap.data();
         setSelectedProductData(productData);
-
-        // Assuming the rating distribution is stored in the product document (as an example)
+  
+        // Assuming the rating distribution is stored in the product document
         const distribution = productData.ratingDistribution || {
-          'fiveStars': 0,
-          'fourStars': 0,
-          'threeStars': 0,
-          'twoStars': 0,
-          'oneStars': 0,
+          fiveStars: 0,
+          fourStars: 0,
+          threeStars: 0,
+          twoStars: 0,
+          oneStars: 0,
         };
-
-        // Convert distribution object into an array format for the graph
-        const distributionArray = Object.entries(distribution).map(([rating, count]) => ({
+  
+        // Enforce static order for ratings
+        const ratingOrder = [
+          { rating: '5 Stars', key: 'fiveStars' },
+          { rating: '4 Stars', key: 'fourStars' },
+          { rating: '3 Stars', key: 'threeStars' },
+          { rating: '2 Stars', key: 'twoStars' },
+          { rating: '1 Star', key: 'oneStars' },
+        ];
+  
+        // Map the static order into an array
+        const distributionArray = ratingOrder.map(({ rating, key }) => ({
           rating,
-          count,
+          count: distribution[key] || 0, // Default to 0 if key is missing
         }));
-
+  
         setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
-        console.log('Rating distribution:', distributionArray);
+        //log('Rating distribution (ordered):', distributionArray);
+        //console.log('Raw distribution data:', distribution);
+        //console.log('Ordered Rating Distribution:', distributionArray);
         setModalIsOpen(true); // Open the modal
         console.log('Modal is open:', modalIsOpen);
       } else {
@@ -335,6 +346,9 @@ const Homepage = () => {
       console.error("Error fetching product rating distribution:", error);
     }
   };
+  
+  
+  
   const closeModal = () => {
     setModalIsOpen(false);
   };
@@ -583,26 +597,26 @@ const Homepage = () => {
       </section>
 
       <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        contentLabel="Rating Distribution Modal"
-        className="rating-distribution-modal"
-        overlayClassName="rating-distribution-overlay"
-      >
-        <h2>Rating Distribution for {selectedProductData?.productName}</h2>
-        <ResponsiveContainer width={500} height={300}>
-          <BarChart
-            data={ratingDistribution}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="rating" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="count" fill="#8884d8" />
-          </BarChart>
-        </ResponsiveContainer>
-        <button onClick={closeModal}>Close</button>
-      </Modal>
+  isOpen={modalIsOpen}
+  onRequestClose={closeModal}
+  contentLabel="Rating Distribution Modal"
+  className="rating-distribution-modal"
+  overlayClassName="rating-distribution-overlay"
+>
+  <h2>Rating Distribution for {selectedProductData?.productName}</h2>
+  <ResponsiveContainer width={500} height={300}>
+    <BarChart data={ratingDistribution}>
+      <CartesianGrid strokeDasharray="3 3" />
+      <XAxis dataKey="rating" /> {/* Use the 'rating' property for X-axis labels */}
+      <YAxis />
+      <Tooltip />
+      <Legend />
+      <Bar dataKey="count" fill="#8084d8" />
+    </BarChart>
+  </ResponsiveContainer>
+  <button onClick={closeModal}>Close</button>
+</Modal>
+
 
 
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useNavigate } from "react-router-dom";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './ProductListing.css';
 
 const ProductListing = () => {
@@ -390,6 +391,27 @@ const ProductListing = () => {
                         );
                       })}
                     </ul>
+                    <h3>Rating Distribution</h3>
+                    {/* Add distribution graph for the product */}
+                    {product.ratingDistribution ? (
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart
+                          data={['oneStars', 'twoStars', 'threeStars', 'fourStars', 'fiveStars'].map((key, index) => ({
+                            rating: index + 1, // Convert keys into numbers 1-5
+                            count: product.ratingDistribution[key] || 0, // Default to 0 if the key is missing
+                          }))}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="rating" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="count" fill="#8884d8" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p>No rating distribution available</p>
+                    )}
                   </div>
                 ))}
               </div>

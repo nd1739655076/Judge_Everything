@@ -273,15 +273,6 @@ const R_Admin = () => {
         <div className="r-admin-logoTitle">
           <h1>Judge Everything</h1>
         </div>
-        <div className="r-admin-navlinks">
-          <a href="/admin/regularHome">Home</a>
-          <a href="#">Todo List</a>
-          <a href="#">Finished Tasks</a>
-        </div>
-        <div className="r-admin-searchbar">
-          <FaSearch />
-          <input type="text" placeholder="Search" />
-        </div>
         {isLoggedIn ? (
           <div className="r-admin-currentUserStatus">
             <div className="r-admin-greeting">{greeting}!</div>
@@ -340,13 +331,6 @@ const R_Admin = () => {
 
       {/* Main Content */}
       <div className="r-admin-main-content">
-        <div className="r-admin-today-tasks">
-          <h2>Today's Tasks</h2>
-          <p>
-            {tasksCompleted}/{dailyTasks}
-          </p>
-        </div>
-
         <div className="r-admin-report-queue">
           <h2>Report Queue</h2>
           {reportQueue.length > 0 ? (

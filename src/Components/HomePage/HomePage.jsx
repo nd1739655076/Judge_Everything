@@ -93,7 +93,7 @@ const Homepage = () => {
     setTimeGreeting();
     //updatesUserTagScores();
     //fetchProducts();
-    
+
     const intervalId = setInterval(() => {
       checkLoginStatus();
       setTimeGreeting();
@@ -123,7 +123,7 @@ const Homepage = () => {
     if (isLoggedIn) {
       updatesUserTagScores();
     }
-  }, [isLoggedIn, userId, functions]);  
+  }, [isLoggedIn, userId, functions]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -131,12 +131,12 @@ const Homepage = () => {
         try {
           const handleProductEntryRequest = httpsCallable(functions, 'handleProductEntryRequest');
           const response = await handleProductEntryRequest({ action: 'fetchProducts' });
-    
+
           if (response.data.success) {
             const scoredProducts = response.data.data.map((product, index) => {
               console.log(`Processing product at index ${index}:`, product); // Log each product before processing
               let score = 0;
-    
+
               // Process tag scores
               if (product.tagList) {
                 console.log(`Product "${product.productName}" has tags:`, product.tagList);
@@ -152,7 +152,7 @@ const Homepage = () => {
               } else {
                 console.log(`Product "${product.productName}" has no tags.`); // Log if there are no tags
               }
-    
+
               // Process subtag scores
               if (product.subtagList && Array.isArray(product.subtagList)) {
                 console.log(`Product "${product.productName}" has subtags:`, product.subtagList);
@@ -166,11 +166,11 @@ const Homepage = () => {
               } else {
                 console.log(`Product "${product.productName}" has no subtags.`); // Log if there are no subtags
               }
-    
+
               console.log(`Final score for product "${product.productName}": ${score}`);
               return { ...product, score };
             });
-    
+
             // Sort products by score in descending order
             scoredProducts.sort((a, b) => b.score - a.score);
             setProducts(scoredProducts);
@@ -184,7 +184,7 @@ const Homepage = () => {
         }
       }
     };
-    
+
 
     fetchProducts();
   }, [isLoggedIn, userTagScore, functions]);
@@ -513,12 +513,21 @@ const Homepage = () => {
           <p>Will update every Thursday 11:59 p.m. EST</p>
         </div>
         <div className="mostPopularEntriesGrid">
-          <div className="mostPopularEntryCard">
-            <img src="???.jpg" alt="???" />
-            <h1>???</h1>
-            <p>???</p>
-            <a href="#">View</a>
-          </div>
+          {products
+            .slice()
+            .sort((a, b) => b.averageScore.totalRater - a.averageScore.totalRater)
+            .slice(0, 5) // Show top 5 most popular products
+            .map((product, index) => (
+              <div key={product.id} className="mostPopularEntryCard">
+                <img
+                  src={product.productImage || "placeholder.jpg"}
+                  alt={product.productName || "Product Image"}
+                />
+                <h1>{product.productName || "Unknown Product"}</h1>
+                <p>Total Ratings: {product.averageScore.totalRater || 0}</p>
+                <Link to={`/product/${product.id}`}>View</Link>
+              </div>
+            ))}
         </div>
         <div className="mostPopularLoadMore">
           <Link to="/ProductListing">

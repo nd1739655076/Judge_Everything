@@ -107,7 +107,7 @@ const ProductEntry = () => {
             return () => clearTimeout(timer);
         }
     }, [reportSuccessMessage]);
-    
+
     useEffect(() => {
         if (reportErrorMessage) {
             const timer = setTimeout(() => {
@@ -263,26 +263,26 @@ const ProductEntry = () => {
 
 
     // useEffect to fetch logged-in user
-useEffect(() => {
-    const fetchUserStatus = async () => {
-        const userData = await getCurrentLoggedInUser();
-        setLoggedInUser(userData); // This will set to null if no user is logged in
-    };
-    fetchUserStatus();
-}, []); // Run once on component mount
+    useEffect(() => {
+        const fetchUserStatus = async () => {
+            const userData = await getCurrentLoggedInUser();
+            setLoggedInUser(userData); // This will set to null if no user is logged in
+        };
+        fetchUserStatus();
+    }, []); // Run once on component mount
 
-// useEffect to fetch product data after loggedInUser is set
-useEffect(() => {
-    if (productId && loggedInUser !== undefined) {
-        fetchProductData();
-    }
-}, [productId, loggedInUser]); // Run when productId or loggedInUser changes
+    // useEffect to fetch product data after loggedInUser is set
+    useEffect(() => {
+        if (productId && loggedInUser !== undefined) {
+            fetchProductData();
+        }
+    }, [productId, loggedInUser]); // Run when productId or loggedInUser changes
 
-useEffect(() => {
-  if (productData) {
-      fetchRelatedProducts();
-  }
-}, [productData]);
+    useEffect(() => {
+        if (productData) {
+            fetchRelatedProducts();
+        }
+    }, [productData]);
 
     const fetchRelatedProducts = async () => {
         const functions = getFunctions();
@@ -780,17 +780,17 @@ useEffect(() => {
                 reporter: loggedInUser.uid
             });
 
-             if (response.data.success) {
+            if (response.data.success) {
                 setReportSuccessMessage('Product reported successfully.');
-               await updateDoc(productRef, {
-                     reportedBy: arrayUnion(loggedInUser.uid),
+                await updateDoc(productRef, {
+                    reportedBy: arrayUnion(loggedInUser.uid),
                     //reportCount: currentReportCount + 1 
                 });
 
-                 closeReportModal();
-             } else {
-                 setErrorMessage('Failed to report product.');
-             }
+                closeReportModal();
+            } else {
+                setErrorMessage('Failed to report product.');
+            }
         } catch (error) {
             console.error('Error reporting product:', error);
             setReportErrorMessage('An error occurred while reporting the product.');
@@ -854,7 +854,7 @@ useEffect(() => {
                                         </li>
                                         <li>
                                             <div className="historys">
-                                              <Link to="/history"><FaHistory /> History</Link>
+                                                <Link to="/history"><FaHistory /> History</Link>
                                             </div>
                                         </li>
                                         <li>

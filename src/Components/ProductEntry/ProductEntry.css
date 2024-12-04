@@ -8,7 +8,33 @@
     margin: 40px auto;
     padding: 20px;
     font-family: 'Arial', sans-serif;
+
+    align-items: stretch;
     gap: 30px;
+}
+
+.product-image {
+    flex: 0 0 auto;
+    /* Prevents the image container from shrinking */
+    max-width: 40%;
+    /* Optional: Controls the width of the image relative to the container */
+    display: flex;
+    /* Enables inner alignment for the image */
+    align-items: center;
+    /* Centers image vertically */
+    justify-content: center;
+    /* Centers image horizontally */
+}
+
+.product-image img {
+    height: 100%;
+    /* Sets the height of the image to match the container */
+    width: auto;
+    /* Maintains aspect ratio */
+    object-fit: contain;
+    /* Ensures the image fits within its container */
+    border-radius: 5px;
+    /* Optional: Adds rounded corners */
 }
 
 /* Product Info */
@@ -222,6 +248,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -274,8 +301,9 @@
     color: #888;
     transition: color 0.3s, transform 0.2s;
 }
+
 .disliked .thumbs-down-icon {
-    color:#d9534f;
+    color: #d9534f;
     transform: scale(1.2);
 }
 
@@ -310,7 +338,9 @@
     font-size: 1rem;
 }
 
-.reply-button, .show-replies-button, .close-button {
+.reply-button,
+.show-replies-button,
+.close-button {
     background-color: #007bff;
     color: white;
     padding: 8px 16px;
@@ -324,12 +354,15 @@
     margin-bottom: 10px;
 }
 
-.reply-button:hover, .show-replies-button:hover, .close-button:hover {
+.reply-button:hover,
+.show-replies-button:hover,
+.close-button:hover {
     background-color: #0056b3;
     transform: scale(1.05);
 }
 
-.show-replies-button, .close-button {
+.show-replies-button,
+.close-button {
     background-color: #f0f0f0;
     color: #333;
     border: 1px solid #ccc;
@@ -337,7 +370,8 @@
 }
 
 
-.show-replies-button:hover, .close-button:hover {
+.show-replies-button:hover,
+.close-button:hover {
     background-color: #e0e0e0;
     color: #007bff;
 }
@@ -417,23 +451,29 @@ button.reply-btn:hover {
 }
 
 .error-message {
-    color: #d9534f; /* 红色文字 */
-    font-size: 0.9rem; /* 调整字体大小 */
+    color: #d9534f;
+    /* 红色文字 */
+    font-size: 0.9rem;
+    /* 调整字体大小 */
     text-align: center;
     margin-top: 15px;
-    font-weight: normal; /* 取消加粗 */
+    font-weight: normal;
+    /* 取消加粗 */
 }
 
 .report-error-message {
-    color: #d9534f; /* 红色文字 */
-    font-size: 0.9rem; /* 调整字体大小 */
+    color: #d9534f;
+    /* 红色文字 */
+    font-size: 0.9rem;
+    /* 调整字体大小 */
     text-align: center;
     margin-top: 15px;
-    font-weight: normal; /* 取消加粗 */
+    font-weight: normal;
+    /* 取消加粗 */
 }
 
-.report-success-message{
-    color: green; 
+.report-success-message {
+    color: green;
     font-size: 0.9rem;
     text-align: center;
     margin-top: 15px;
@@ -447,9 +487,11 @@ button.reply-btn:hover {
     0% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.2);
     }
+
     100% {
         transform: scale(1);
     }
@@ -587,13 +629,15 @@ button[type="submit"]:hover {
 .currentUserStatus .greeting {
     font-size: 1.2rem;
     font-weight: bold;
-    color: #4CAF50; /* 使用绿色强调 admin 状态 */
+    color: #4CAF50;
+    /* 使用绿色强调 admin 状态 */
     margin-right: 10px;
 }
 
 /* Back to Admin Homepage 按钮 */
 .admin-home-button {
-    background-color: #007BFF; /* 蓝色按钮 */
+    background-color: #007BFF;
+    /* 蓝色按钮 */
     color: white;
     border: none;
     border-radius: 5px;
@@ -604,12 +648,14 @@ button[type="submit"]:hover {
 }
 
 .admin-home-button:hover {
-    background-color: #0056b3; /* 更深的蓝色 */
+    background-color: #0056b3;
+    /* 更深的蓝色 */
 }
 
 /* Admin Edit 按钮 */
 .admin-edit-button {
-    background-color: #FF9800; /* 橙色按钮 */
+    background-color: #FF9800;
+    /* 橙色按钮 */
     color: white;
     border: none;
     border-radius: 5px;
@@ -620,5 +666,6 @@ button[type="submit"]:hover {
 }
 
 .admin-edit-button:hover {
-    background-color: #e68900; /* 更深的橙色 */
+    background-color: #e68900;
+    /* 更深的橙色 */
 }

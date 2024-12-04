@@ -626,6 +626,33 @@ button[type="submit"]:hover {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
+.related-products-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px; /* Space between cards */
+    justify-content: center; /* Center the grid */
+  }
+  
+  .related-product-card {
+    width: 200px; /* Fixed card width for uniformity */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background-color: #f9f9f9; /* Optional: card background */
+    padding: 15px; /* Optional: padding inside the card */
+    border-radius: 8px; /* Optional: rounded corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: shadow for a card effect */
+  }
+  
+  .related-product-image {
+    width: 100%; /* Fill the width of the card */
+    height: 150px; /* Set a uniform height */
+    object-fit: cover; /* Ensures the image scales uniformly and covers the area */
+    border-radius: 5px; /* Optional: rounded image corners */
+  }
+  
+
 .currentUserStatus .greeting {
     font-size: 1.2rem;
     font-weight: bold;

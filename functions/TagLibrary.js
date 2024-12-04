@@ -87,6 +87,7 @@ class TagLibrary {
           subTagId5: 'Sports Equipment',
           subTagId6: 'Kayaks',
           subTagId7: 'Camping Gear',
+          subTagId8: 'accessories',
         }
       },
       {

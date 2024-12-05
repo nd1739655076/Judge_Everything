@@ -465,9 +465,10 @@ const Homepage = () => {
         )}
 
         <div className={`menuContainer ${userIfNewNotification ? "has-notifications" : ""}`}>
-        <div className="menuicon-wrapper">
+        
+        
           <FaBars className="menuicon step-1" onClick={toggleDropdown} />
-          </div>
+          
           {isDropdownVisible && (
             <div className="dropdownMenu">
               <ul>

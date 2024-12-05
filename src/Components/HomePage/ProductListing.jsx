@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { useNavigate } from "react-router-dom";
+import { functions } from '../../firebase';
+import { Link } from 'react-router-dom';
+// icon import
+import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaComments, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import './ProductListing.css';
 
@@ -20,6 +25,126 @@ const ProductListing = () => {
   const [parameterData, setParameterData] = useState({});
   const [searchHistory, setSearchHistory] = useState([]);
   const [showHistoryDropdown, setShowHistoryDropdown] = useState(false);
+  const [isDropdownVisible, setDropdownVisible] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [username, setUsername] = useState("");
+  const [greeting, setGreeting] = useState("");
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const localStatusToken = localStorage.getItem('authToken');
+      if (localStatusToken) {
+        const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+        try {
+          const response = await handleUserRequest({
+            action: 'checkLoginStatus',
+            statusToken: localStatusToken,
+          });
+          if (response.data.success) {
+            setIsLoggedIn(true);
+            setUserId(response.data.uid);
+            setUsername(response.data.username);
+            //setUserTagScore(response.data.tagScores);
+            //setUserSubtagScore(response.data.subtagScore);
+            console.log('userTagScore:', response.data.tagScores);
+          } else {
+            setIsLoggedIn(false);
+            localStorage.removeItem('authToken');
+          }
+        } catch (error) {
+          setIsLoggedIn(false);
+          localStorage.removeItem('authToken');
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+    };
+    const setTimeGreeting = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      let currentGreeting = "Good ";
+      if (hour >= 5 && hour < 12) {
+        currentGreeting += "morning";
+      } else if (hour >= 12 && hour < 17) {
+        currentGreeting += "afternoon";
+      } else if (hour >= 17 && hour < 21) {
+        currentGreeting += "evening";
+      } else {
+        currentGreeting += "night";
+      }
+      setGreeting(currentGreeting);
+    };
+    const initializeTagLibrary = async () => {
+      const handleTagLibraryRequest = httpsCallable(functions, 'handleTagLibraryRequest');
+      const response = await handleTagLibraryRequest({ action: 'initializeTagLibrary' });
+      if (response.data.success) {
+        console.log('TagLibrary initialized successfully:', response.data.message);
+      } else {
+        console.error('Failed to initialize TagLibrary:', response.data.message);
+      }
+      //checkLoginStatus();
+      //setTimeGreeting();
+    };
+    checkLoginStatus();
+    setTimeGreeting();
+    //updatesUserTagScores();
+    //fetchProducts();
+
+    const intervalId = setInterval(() => {
+      checkLoginStatus();
+      setTimeGreeting();
+    }, 60000);
+    return () => clearInterval(intervalId);
+  }, []);
+  const toggleDropdown = () => {
+    setDropdownVisible(!isDropdownVisible);
+  };
+  useEffect(() => {
+    const updatesUserTagScores = async () => {
+      if (userId) {
+        const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+        try {
+          const response = await handleUserRequest({ action: 'updateTags', uidNum: userId });
+          if (response.data.success) {
+            console.log('TagScore updated successfully:', response.data.message);
+          } else {
+            console.error('Failed to update TagScores:', response.data.message);
+          }
+        } catch (error) {
+          console.error('Error updating TagScores:', error);
+        }
+      }
+    };
+
+    if (isLoggedIn) {
+      updatesUserTagScores();
+    }
+  }, [isLoggedIn, userId, functions]);
+
+  // handle user's logout action
+  const handleLogout = async () => {
+    const localStatusToken = localStorage.getItem('authToken');
+    if (localStatusToken) {
+      const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+      try {
+        const response = await handleUserRequest({
+          action: 'logout',
+          statusToken: localStatusToken,
+        });
+        if (response.data.success) {
+          localStorage.removeItem('authToken');
+          setIsLoggedIn(false);
+          setUserId("");
+          setUsername("");
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error("Error logging out:", error);
+      }
+    }
+  };
+
 
   const navigate = useNavigate();
 
@@ -212,6 +337,96 @@ const ProductListing = () => {
 
   return (
     <div className="product-listing">
+    {/* Top Bar */}
+    <div className="topbar">
+        <div className="contactinfo">
+          <FaPhone /> (225) 555-0118 | <FaEnvelope /> song748@purdue.edu
+        </div>
+        <div className="subscribeinfo">
+          Subscribe with email to get newest product information! 🎉
+        </div>
+        <div className="socialicons">
+          <p>Follow Us :</p>
+          <a href="#"><FaInstagram /></a>
+          <a href="#"><FaYoutube /></a>
+          <a href="#"><FaTwitter /></a>
+        </div>
+      </div>
+
+      {/* Navigation Bar */}
+      <div className="navbar">
+        <div className="logoTitle">
+          <h1>Judge Everything</h1>
+        </div>
+        <div className="navlinks">
+          <a href="/">Home</a>
+          <a href="/contact" className="step-3">Support</a>
+        </div>
+        <div className="searchbar">
+          <FaSearch />
+          <input type="text" placeholder="Search" />
+        </div>
+        {isLoggedIn ? (
+          <div className="currentUserStatus">
+            <div className="greeting">
+              {greeting}!
+            </div>
+            <div className="currentUserStatusInfo">
+              <FaUser />
+              <span className="username">{username}</span>
+              <FaSignOutAlt
+                onClick={handleLogout}
+                title="Logout"
+                className="logout-icon"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="login-prompt">
+            <p>Please log in to access more feature</p>
+          </div>
+        )}
+
+        <div className="menuContainer">
+          <FaBars className="menuicon step-1" onClick={toggleDropdown} />
+          {isDropdownVisible && (
+            <div className="dropdownMenu">
+              <ul>
+                {!isLoggedIn ? (
+                  <li>
+                    <div className="userauth">
+                      <Link to="/loginSignup"><FaUser /> Login/Register</Link>
+                    </div>
+                  </li>
+                ) : (
+                  <>
+                    <li>
+                      <div className="Notifcations">
+                        <Link to={`/notification/${userId}`}><FaBell /> Notifications</Link>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="message">
+                        <Link to="/message"><FaComments /> Message</Link>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="historys">
+                        <Link to="/history"><FaHistory /> History</Link>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="settings">
+                        <Link to="/accountSettings"><FaUser /> Your Account</Link>
+                      </div>
+                    </li>
+                  </>
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
       <div className="product-listing-header">
         <h1>Product Listings</h1>
 

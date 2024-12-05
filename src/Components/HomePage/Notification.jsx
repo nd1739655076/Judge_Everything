@@ -320,7 +320,6 @@ const Notification = () => {
                 </div>
                 <div className={styles.navlinks}>
                     <a href="/">Home</a>
-                    <a href="#">About</a>
                     <a href="/contact">Support</a>
                 </div>
                 <div className={styles.currentUserStatus}>

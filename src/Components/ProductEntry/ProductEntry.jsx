@@ -11,9 +11,11 @@ import {
     FaTwitter,
     FaSearch,
     FaUser,
+    FaSignOutAlt,
     FaBars,
     FaBell,
     FaHistory,
+    FaComments,
     FaCog,
     FaStar,
     FaLightbulb,
@@ -63,6 +65,10 @@ const ProductEntry = () => {
     const [showReportModal, setShowReportModal] = useState(false);
     const [reportSuccessMessage, setReportSuccessMessage] = useState('');
     const [reportErrorMessage, setReportErrorMessage] = useState('');
+    const [setUserId, userId] = useState("");
+    const [username, setUsername] = useState("");
+    const [greeting, setGreeting] = useState("");
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const modalStyles = {
         content: {
@@ -149,7 +155,45 @@ const ProductEntry = () => {
             const firstCommentId = productData.comments[0].commentId;
             fetchReplies(firstCommentId);
         }
+        const setTimeGreeting = () => {
+            const now = new Date();
+            const hour = now.getHours();
+            let currentGreeting = "Good ";
+            if (hour >= 5 && hour < 12) {
+              currentGreeting += "morning";
+            } else if (hour >= 12 && hour < 17) {
+              currentGreeting += "afternoon";
+            } else if (hour >= 17 && hour < 21) {
+              currentGreeting += "evening";
+            } else {
+              currentGreeting += "night";
+            }
+            setGreeting(currentGreeting);
+          };
+          setTimeGreeting();
     }, [productData]);
+
+    const handleLogout = async () => {
+        const localStatusToken = localStorage.getItem('authToken');
+        if (localStatusToken) {
+          const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+          try {
+            const response = await handleUserRequest({
+              action: 'logout',
+              statusToken: localStatusToken,
+            });
+            if (response.data.success) {
+              localStorage.removeItem('authToken');
+              setIsLoggedIn(false);
+              setUserId("");
+              setUsername("");
+              window.location.reload();
+            }
+          } catch (error) {
+            console.error("Error logging out:", error);
+          }
+        }
+      };
 
     const fetchProductData = async () => {
         try {
@@ -317,18 +361,24 @@ const ProductEntry = () => {
                     statusToken: localStatusToken
                 });
                 if (response.data.success) {
+                    //setUserId(response.data.uid);
+                    //setUsername(response.data.username);
+                    setIsLoggedIn(true);
                     return {
                         uid: response.data.uid,
                         username: response.data.username
                     };
                 } else {
+                    setIsLoggedIn(false);
                     return null;
                 }
             } catch (error) {
+                setIsLoggedIn(false);
                 console.error("Error checking login status:", error);
                 return null;
             }
         } else {
+            setIsLoggedIn(false);
             return null;
         }
     };
@@ -798,77 +848,96 @@ const ProductEntry = () => {
     };
     return (
         <div className="product-entry-page">
-            <div className="topbar">
-                <div className="contactinfo">
-                    <FaPhone /> (225) 555-0118 | <FaEnvelope /> song748@purdue.edu
-                </div>
-                <div className="subscribeinfo">
-                    Subscribe with email to get newest product information! 🎉
-                </div>
-                <div className="socialicons">
-                    <p>Follow Us :</p>
-                    <a href="#"><FaInstagram /></a>
-                    <a href="#"><FaYoutube /></a>
-                    <a href="#"><FaTwitter /></a>
-                </div>
-                {loggedInUser && (
-                    <div className="currentUserStatus">
-                        <div className="greeting">
-                            Hello, {loggedInUser.username}!
-                        </div>
-                    </div>
-                )}
-            </div>
+           {/* Top Bar */}
+    <div className="topbar">
+    <div className="contactinfo">
+      <FaPhone /> (225) 555-0118 | <FaEnvelope /> song748@purdue.edu
+    </div>
+    <div className="subscribeinfo">
+      Subscribe with email to get newest product information! 🎉
+    </div>
+    <div className="socialicons">
+      <p>Follow Us :</p>
+      <a href="#"><FaInstagram /></a>
+      <a href="#"><FaYoutube /></a>
+      <a href="#"><FaTwitter /></a>
+    </div>
+  </div>
 
-            <div className="navbar">
-                <div className="logoTitle">
-                    <h1>Judge Everything</h1>
-                </div>
-                <div className="navlinks">
-                    <a href="/">Home</a>
-                    <a href="#">About</a>
-                    <a href="/contact">Support</a>
-                </div>
-                <div className="searchbar">
-                    <FaSearch />
-                    <input type="text" placeholder="Search" />
-                </div>
+  {/* Navigation Bar */}
+  <div className="navbar">
+    <div className="logoTitle">
+      <h1>Judge Everything</h1>
+    </div>
+    <div className="navlinks">
+      <a href="/">Home</a>
+      <a href="/contact" className="step-3">Support</a>
+    </div>
+    <div className="searchbar">
+      <FaSearch />
+      <input type="text" placeholder="Search" />
+    </div>
+    {isLoggedIn ? (
+      <div className="currentUserStatus">
+        <div className="greeting">
+          {greeting}!
+        </div>
+        <div className="currentUserStatusInfo">
+          <FaUser />
+          <span className="username">{loggedInUser.username}</span>
+          <FaSignOutAlt
+            onClick={handleLogout}
+            title="Logout"
+            className="logout-icon"
+          />
+        </div>
+      </div>
+    ) : (
+      <div className="login-prompt">
+        <p>Please log in to access more feature</p>
+      </div>
+    )}
 
-                <div className="menuContainer">
-                    <FaBars className="menuicon" onClick={toggleDropdown} />
-                    {isDropdownVisible && (
-                        <div className="dropdownMenu">
-                            <ul>
-                                {!loggedInUser ? (
-                                    <li>
-                                        <div className="userauth">
-                                            <Link to="/loginSignup"><FaUser /> Login/Register</Link>
-                                        </div>
-                                    </li>
-                                ) : (
-                                    <>
-                                        <li>
-                                            <div className="notifcations">
-                                                <a href="#"><FaBell /> Notification</a>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <div className="historys">
-                                                <Link to="/history"><FaHistory /> History</Link>
-                                            </div>
-                                        </li>
-                                        <li>
-                                            <div className="settings">
-                                                <Link to="/accountSettings"><FaCog /> Your Account</Link>
-                                            </div>
-                                        </li>
-                                    </>
-                                )}
-                            </ul>
-                        </div>
-                    )}
+    <div className="menuContainer">
+      <FaBars className="menuicon step-1" onClick={toggleDropdown} />
+      {isDropdownVisible && (
+        <div className="dropdownMenu">
+          <ul>
+            {!isLoggedIn ? (
+              <li>
+                <div className="userauth">
+                  <Link to="/loginSignup"><FaUser /> Login/Register</Link>
                 </div>
-            </div>
+              </li>
+            ) : (
+              <>
+                <li>
+                  <div className="Notifcations">
+                    <Link to={`/notification/${loggedInUser.uid}`}><FaBell /> Notifications</Link>
+                  </div>
+                </li>
+                <li>
+                  <div className="message">
+                    <Link to="/message"><FaComments /> Message</Link>
+                  </div>
+                </li>
+                <li>
+                  <div className="historys">
+                    <Link to="/history"><FaHistory /> History</Link>
+                  </div>
+                </li>
+                <li>
+                  <div className="settings">
+                    <Link to="/accountSettings"><FaUser /> Your Account</Link>
+                  </div>
+                </li>
+              </>
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+    </div>
 
             <div className="product-entry-container">
                 <div className="product-info">

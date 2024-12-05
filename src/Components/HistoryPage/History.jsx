@@ -5,13 +5,14 @@ import './History.css';
 
 import { Link } from 'react-router-dom';
 import { FaPhone, FaEnvelope, FaInstagram, FaYoutube, FaTwitter, } from 'react-icons/fa';
-import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaCog} from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaHistory, FaComments, FaCog} from 'react-icons/fa';
 
 const History = () => {
     const [isDropdownVisible, setDropdownVisible] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [username, setUsername] = useState("");
     const [greeting, setGreeting] = useState("");
+    const [userId, setUserId] = useState("");
     const [uid, setUid] = useState("");
 
     useEffect(() => {
@@ -28,6 +29,7 @@ const History = () => {
                 console.log("set logged in")
                 setIsLoggedIn(true);
                 setUsername(response.data.username);
+                setUserId(response.data.uid);
                 await setUid(response.data.uid);
               } else {
                 setIsLoggedIn(false);
@@ -94,7 +96,6 @@ const History = () => {
                 </div>
             <div className="navlinks">
                 <Link to="/">Home</Link>
-                <Link to="">About</Link>
                 <Link to="/contact">Support</Link>
             </div>
             <div className="searchbar">
@@ -126,8 +127,13 @@ const History = () => {
                     ) : (
                       <>
                         <li>
-                          <div className="notifcations">
-                            <a href="#"><FaBell /> Notifaction</a>
+                          <div className="notifications">
+                          <Link to={`/notification/${userId}`}> <FaBell /> Notifactions</Link>
+                          </div>
+                        </li>
+                        <li>
+                          <div className="message">
+                          <Link to="/message"><FaComments /> Message</Link>
                           </div>
                         </li>
                         <li>

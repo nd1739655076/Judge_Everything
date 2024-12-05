@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../firebase';
 import styles from './AccountSettings.module.css';
+import { Link } from 'react-router-dom';
 
 import { useNavigate } from 'react-router-dom';
 import { FaImage, FaUserAlt, FaLock, FaEnvelope, FaUserTag } from 'react-icons/fa';
+import { FaPhone, FaInstagram, FaYoutube, FaTwitter } from 'react-icons/fa';
+import { FaSearch, FaUser, FaBars, FaBell, FaComments, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
 import Logo from '../HomePageAssets/logo.jpg';
 
 const AccountSettings = () => {
@@ -36,6 +39,11 @@ const AccountSettings = () => {
   const [deleteInput, setDeleteInput] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [imageError, setImageError] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [greeting, setGreeting] = useState("");
+  const [username, setUsername] = useState("");
+  const [userId, setUserId] = useState("");
+  const [isDropdownVisible, setDropdownVisible] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,10 +54,48 @@ const AccountSettings = () => {
         setAvailableTags(response.data.tagList);
       }
     };
-
+    const setTimeGreeting = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      let currentGreeting = "Good ";
+      if (hour >= 5 && hour < 12) {
+        currentGreeting += "morning";
+      } else if (hour >= 12 && hour < 17) {
+        currentGreeting += "afternoon";
+      } else if (hour >= 17 && hour < 21) {
+        currentGreeting += "evening";
+      } else {
+        currentGreeting += "night";
+      }
+      setGreeting(currentGreeting);
+    };
     fetchTagLibrary();
+    setTimeGreeting();
     fetchUserData();
   }, []);
+  const toggleDropdown = () => {
+    setDropdownVisible(!isDropdownVisible);
+  };
+  useEffect(() => {
+    const updatesUserTagScores = async () => {
+      if (userId) {
+        const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+        try {
+          const response = await handleUserRequest({ action: 'updateTags', uidNum: userId });
+          if (response.data.success) {
+            console.log('TagScore updated successfully:', response.data.message);
+          } else {
+            console.error('Failed to update TagScores:', response.data.message);
+          }
+        } catch (error) {
+          console.error('Error updating TagScores:', error);
+        }
+      }
+    };
+    if (isLoggedIn) {
+      updatesUserTagScores();
+    }
+  }, [isLoggedIn, userId, functions]);
   const fetchUserData = async () => {
     setLoading(true);
     const localStatusToken = localStorage.getItem('authToken');
@@ -74,7 +120,10 @@ const AccountSettings = () => {
             const timestamp = new Date().getTime();
             const profileImageUrlWithTimestamp = profileImage ? `${profileImage}?t=${timestamp}` : Logo;
             setProfileImage(profileImageUrlWithTimestamp);
+            // used for navigation bar
             setAccount(username);
+            setUsername(username);
+            setUserId(uidNum);
             setPassword(password || '');
             setEmail(email || '');
             setNickName(nickname || '');
@@ -87,23 +136,51 @@ const AccountSettings = () => {
             setPreferencesInput('');
             setErrorMessage('');
             setSuccessMessage('');
+            setIsLoggedIn(true);
           } else {
             setErrorMessage(userDataResponse.data.message);
+            setIsLoggedIn(false);
           }
         } else {
           setErrorMessage(loginStatusResponse.data.message);
+          setIsLoggedIn(false);
         }
       } catch (error) {
         setLoading(false);
         setErrorMessage('An error occurred while fetching user data.');
+        setIsLoggedIn(false);
       } finally {
         setLoading(false);
       }
     } else {
       setLoading(false);
+      setIsLoggedIn(false);
       setErrorMessage('User not logged in.');
     }
   };
+
+  const handleLogout = async () => {
+    const localStatusToken = localStorage.getItem('authToken');
+    if (localStatusToken) {
+      const handleUserRequest = httpsCallable(functions, 'handleUserRequest');
+      try {
+        const response = await handleUserRequest({
+          action: 'logout',
+          statusToken: localStatusToken,
+        });
+        if (response.data.success) {
+          localStorage.removeItem('authToken');
+          setIsLoggedIn(false);
+          setUserId("");
+          setUsername("");
+          window.location.reload();
+        }
+      } catch (error) {
+        console.error("Error logging out:", error);
+      }
+    }
+  };
+
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
     setChangeField(null);
@@ -324,10 +401,99 @@ const AccountSettings = () => {
   };
 
   return (
+    <>
+    {/* Top Bar */}
+    <div className="topbar">
+    <div className="contactinfo">
+      <FaPhone /> (225) 555-0118 | <FaEnvelope /> song748@purdue.edu
+    </div>
+    <div className="subscribeinfo">
+      Subscribe with email to get newest product information! 🎉
+    </div>
+    <div className="socialicons">
+      <p>Follow Us :</p>
+      <a href="#"><FaInstagram /></a>
+      <a href="#"><FaYoutube /></a>
+      <a href="#"><FaTwitter /></a>
+    </div>
+  </div>
+
+  {/* Navigation Bar */}
+  <div className="navbar">
+    <div className="logoTitle">
+      <h1>Judge Everything</h1>
+    </div>
+    <div className="navlinks">
+      <a href="/">Home</a>
+      <a href="/contact" className="step-3">Support</a>
+    </div>
+    <div className="searchbar">
+      <FaSearch />
+      <input type="text" placeholder="Search" />
+    </div>
+    {isLoggedIn ? (
+      <div className="currentUserStatus">
+        <div className="greeting">
+          {greeting}!
+        </div>
+        <div className="currentUserStatusInfo">
+          <FaUser />
+          <span className="username">{username}</span>
+          <FaSignOutAlt
+            onClick={handleLogout}
+            title="Logout"
+            className="logout-icon"
+          />
+        </div>
+      </div>
+    ) : (
+      <div className="login-prompt">
+        <p>Please log in to access more feature</p>
+      </div>
+    )}
+
+    <div className="menuContainer">
+      <FaBars className="menuicon step-1" onClick={toggleDropdown} />
+      {isDropdownVisible && (
+        <div className="dropdownMenu">
+          <ul>
+            {!isLoggedIn ? (
+              <li>
+                <div className="userauth">
+                  <Link to="/loginSignup"><FaUser /> Login/Register</Link>
+                </div>
+              </li>
+            ) : (
+              <>
+                <li>
+                  <div className="Notifcations">
+                    <Link to={`/notification/${userId}`}><FaBell /> Notifications</Link>
+                  </div>
+                </li>
+                <li>
+                  <div className="message">
+                    <Link to="/message"><FaComments /> Message</Link>
+                  </div>
+                </li>
+                <li>
+                  <div className="historys">
+                    <Link to="/history"><FaHistory /> History</Link>
+                  </div>
+                </li>
+                <li>
+                  <div className="settings">
+                    <Link to="/accountSettings"><FaUser /> Your Account</Link>
+                  </div>
+                </li>
+              </>
+            )}
+          </ul>
+        </div>
+      )}
+    </div>
+    </div>
     <div className={styles.accountSettings}>
-
       <img src={Logo} alt="LogoPicture" className={styles.logoPicture} />
-
       <header className={styles.accountSettingsHeader}>
         <h1>Account Settings</h1>
         <p>Manage your account details below</p>
@@ -599,6 +765,7 @@ const AccountSettings = () => {
       )}
 
     </div>
+    </>
   );
   
 };

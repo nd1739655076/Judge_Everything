@@ -477,8 +477,8 @@ const Homepage = () => {
                 ) : (
                   <>
                     <li>
-                      <div className="notifcations">
-                        <Link to={`/notification/${userId}`}><FaBell /> notification</Link>
+                      <div className="Notifcations">
+                        <Link to={`/notification/${userId}`}><FaBell /> Notifications</Link>
                       </div>
                     </li>
                     <li>

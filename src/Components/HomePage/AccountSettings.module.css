@@ -17,6 +17,184 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+/* Top Bar */
+.topbar {
+  background-color: #212744;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 30px;
+  font-size: 0.9rem;
+}
+
+.contactinfo {
+  display: flex;
+  align-items: center;
+}
+.contactinfo svg {
+   /* Space between icon and text */
+  margin-right: 8px;
+  margin-left: 8px;
+}
+
+.subscribeinfo {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.socialicons {
+  display: flex;
+  align-items: center;
+}
+.socialicons a {
+  color: white;
+  margin-left: 10px;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+.socialicons a:hover {
+  color: #ccc;
+}
+/* Top Bar Done */
+
+/* Navigation Bar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  padding: 20px 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.logoTitle h1 {
+  font-size: 1.8rem;
+  color: #212744;
+  font-weight: bold;
+  margin: 0;
+}
+
+.navlinks {
+  display: flex;
+  align-items: center;
+}
+.navlinks a {
+  margin: 0 15px;
+  text-decoration: none;
+  color: #333;
+  font-weight: bold;
+  font-size: 1rem;
+}
+.navlinks a:hover {
+  color: #007bff;
+}
+
+.searchbar {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 5px;
+}
+.searchbar input {
+  border: none;
+  outline: none;
+  margin-left: 10px;
+}
+
+.currentUserStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-left: 15px;
+}
+.currentUserStatus .greeting {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333333;
+  margin-bottom: 2px;
+}
+.currentUserStatus .currentUserStatusInfo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 1rem;
+  color: #007bff;
+}
+.currentUserStatus .currentUserStatusInfo .username {
+  font-weight: bold;
+}
+.currentUserStatus .currentUserStatusInfo svg {
+  font-size: 1.2rem;
+  color: #007bff;
+}
+.currentUserStatus .currentUserStatusInfo .logout-icon:hover {
+  color: #0056b3;
+}
+
+.menuContainer {
+  position: relative;
+}
+.menuicon {
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #007bff;
+}
+.dropdownMenu {
+  position: absolute;
+  top: 50px;
+  right: 0px;
+  width: 180px;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  z-index: 100;
+  padding: 10px 0;
+}
+.dropdownMenu ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+.dropdownMenu li {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.dropdownMenu li:hover {
+  background-color: #f5f5f5;
+}
+.dropdownMenu li svg {
+  font-size: 1.2rem;
+  color: #007bff;
+}
+.dropdownMenu a, .dropdownMenu Link {
+  text-decoration: none;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: normal;
+}
+.dropdownMenu a:hover, .dropdownMenu Link:hover {
+  color: #007bff;
+}
+.dropdownMenu a.active, .dropdownMenu Link.active {
+  font-weight: bold;
+  color: #007bff;
+}
+/* Navigation Bar Done */
+
 /* logoPicture */
 .logoPicture {
   display: block;

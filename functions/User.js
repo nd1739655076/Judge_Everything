@@ -190,7 +190,9 @@ class User {
     const userDoc = await db.collection('User').doc(uid).get();
     if (userDoc.exists) {
       const userDocData = userDoc.data();
-      return { status: 'success', username: userDocData.username, uid: userDocData.id, userTagScore: userDocData.tagScores, userSubtagScore: userDocData.subtagScores };
+      const notifications = userDocData.notifications || []; // Default to an empty array if notifications are missing
+      const ifNewNotification = notifications.some(notification => notification.isNew === true);
+      return { status: 'success', username: userDocData.username, uid: userDocData.id, userTagScore: userDocData.tagScores, userSubtagScore: userDocData.subtagScores, ifNewNotification, };
     } else {
       return { status: 'error', message: 'User not found' };
     }

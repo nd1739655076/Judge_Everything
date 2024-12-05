@@ -128,14 +128,7 @@ body {
   color: #0056b3;
 }
 
-.menuContainer {
-  position: relative;
-}
-.menuicon {
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #007bff;
-}
+
 .dropdownMenu {
   position: absolute;
   top: 50px;
@@ -477,4 +470,56 @@ body {
   to {
     opacity: 1;
   }
+}
+
+.menuContainer.has-notifications .menuicon {
+  position: relative; /* Add position relative to enable proper placement of ::after */
+}
+
+.menuContainer.has-notifications .menuicon::after {
+  content: "";
+  position: absolute;
+  top: -5px; /* Adjust to make it visible above the menuicon */
+  right: -5px; /* Adjust to move it to the right corner */
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+  z-index: 100; /* Ensure it appears above other elements */
+}
+
+.Notifications.has-notifications a::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background-color: red;
+  border-radius: 50%;
+  z-index: 10;
+}
+.menuContainer {
+  position: relative;
+}
+.menuicon {
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #007bff;
+}
+
+.menuicon-wrapper {
+  position: relative;
+}
+
+.menuicon-wrapper::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+  z-index: 100;
 }

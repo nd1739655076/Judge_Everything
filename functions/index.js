@@ -265,7 +265,7 @@ exports.handleUserRequest = functions.https.onCall(async (data, context) => {
       // statusToken
       const loginStatusResponse = await User.checkLoginStatus(statusToken);
       if (loginStatusResponse.status === 'success') {
-        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid, tagScores: loginStatusResponse.userTagScore, subtagScore: loginStatusResponse.userSubtagScore };
+        return { success: true, username: loginStatusResponse.username, uid: loginStatusResponse.uid, tagScores: loginStatusResponse.userTagScore, subtagScore: loginStatusResponse.userSubtagScore,ifNewNotification: loginStatusResponse.ifNewNotification };
       } else {
         return { success: false, message: loginStatusResponse.message };
       }

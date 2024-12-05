@@ -8,16 +8,10 @@
     padding: '20px';
     overflow: visible;
     padding-bottom: 50px;
+    align-items: center;
 }
 
-.product-history-container {
-    max-width: 1900px;
-    margin: 40px auto;
-    padding: 20px;
-    font-family: 'Arial', sans-serif;
-    gap: 30px;
-    background-color: white;
-}
+
 
 .review-history-container {
     position: relative;
@@ -38,13 +32,27 @@
     background-color: white;
 }
 
+.product-history-container {
+    max-width: 1200px; /* Adjust max width for a centered layout */
+    margin: 40px auto; /* Center horizontally */
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+    background-color: white;
+}
+
 .product-history-content {
     margin-bottom: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center content */
 }
 
 .product-cards {
-    display:grid;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive columns */
+    gap: 20px; /* Space between cards */
+    justify-items: center; /* Center cards horizontally */
+    width: 100%; /* Take full container width */
 }
 
 .product-card {
@@ -52,19 +60,63 @@
     padding: 20px;
     border-radius: 8px;
     display: flex;
-    align-items: center;
+    flex-direction: column; /* Stack content vertically */
+    align-items: center; /* Center content inside the card */
+    max-width: 300px; /* Optional: Set max width for cards */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
 }
 
 .product-img {
-    width: 80px;
-    height: 80px;
+    width: 100%; /* Adjust width to fit card */
+    max-width: 250px; /* Optional: Set max width for images */
+    height: auto; /* Maintain aspect ratio */
     background-color: #eee;
-    margin-right: 20px;
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    border-radius: 8px; /* Optional: Rounded corners for images */
 }
+
+.product-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensure image scales properly */
+}
+
+.paging {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center; /* Center pagination */
+    gap: 5px;
+}
+
+.paging span {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    transition: background-color 0.2s;
+}
+
+.paging span.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.paging span:hover {
+    background-color: #ddd;
+}
+
+.history-button {
+    display: block;
+    margin: 20px auto;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
 .image-placeholder {
     width: 0;
     height: 0;
@@ -162,15 +214,16 @@
     justify-content: center;
     width: 400px;
     height: 300px; /* Fixed height */
+    
+    margin:auto;
     margin-top: 100px;
-    margin-left: 425px;
-    margin-right: 425px;
     gap: 20%;
     padding: 7%;
     background: linear-gradient(to bottom, #f0f4f8, #d9e2ec);
     border-radius: 12px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     background-color: rgba(255, 255, 255, 0.9); /* Slightly transparent */
+    
 }
 
   .history-button {

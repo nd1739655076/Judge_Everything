@@ -24,6 +24,7 @@ const Homepage = () => {
   const [username, setUsername] = useState("");
   const [userTagScore, setUserTagScore] = useState("");
   const [userSubtagScore, setUserSubtagScore] = useState("");
+  const [userIfNewNotification, setUserIfNewNotification] = useState("");
   const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
@@ -42,7 +43,7 @@ const Homepage = () => {
             setUsername(response.data.username);
             setUserTagScore(response.data.tagScores);
             setUserSubtagScore(response.data.subtagScore);
-            console.log('userTagScore:', response.data.tagScores);
+            setUserIfNewNotification(response.data.ifNewNotification);
           } else {
             setIsLoggedIn(false);
             localStorage.removeItem('authToken');
@@ -304,11 +305,11 @@ const Homepage = () => {
     try {
       const productRef = doc(db, 'ProductEntry', productId);
       const productSnap = await getDoc(productRef);
-  
+
       if (productSnap.exists()) {
         const productData = productSnap.data();
         setSelectedProductData(productData);
-  
+
         // Assuming the rating distribution is stored in the product document
         const distribution = productData.ratingDistribution || {
           fiveStars: 0,
@@ -317,7 +318,7 @@ const Homepage = () => {
           twoStars: 0,
           oneStars: 0,
         };
-  
+
         // Enforce static order for ratings
         const ratingOrder = [
           { rating: '5 Stars', key: 'fiveStars' },
@@ -326,13 +327,13 @@ const Homepage = () => {
           { rating: '2 Stars', key: 'twoStars' },
           { rating: '1 Star', key: 'oneStars' },
         ];
-  
+
         // Map the static order into an array
         const distributionArray = ratingOrder.map(({ rating, key }) => ({
           rating,
           count: distribution[key] || 0, // Default to 0 if key is missing
         }));
-  
+
         setRatingDistribution(distributionArray); // Set the rating distribution data for the graph
         //log('Rating distribution (ordered):', distributionArray);
         //console.log('Raw distribution data:', distribution);
@@ -346,9 +347,9 @@ const Homepage = () => {
       console.error("Error fetching product rating distribution:", error);
     }
   };
-  
-  
-  
+
+
+
   const closeModal = () => {
     setModalIsOpen(false);
   };
@@ -463,8 +464,10 @@ const Homepage = () => {
           </div>
         )}
 
-        <div className="menuContainer">
+        <div className={`menuContainer ${userIfNewNotification ? "has-notifications" : ""}`}>
+        <div className="menuicon-wrapper">
           <FaBars className="menuicon step-1" onClick={toggleDropdown} />
+          </div>
           {isDropdownVisible && (
             <div className="dropdownMenu">
               <ul>
@@ -477,8 +480,10 @@ const Homepage = () => {
                 ) : (
                   <>
                     <li>
-                      <div className="Notifcations">
-                        <Link to={`/notification/${userId}`}><FaBell /> Notifications</Link>
+                      <div className={`Notifications ${userIfNewNotification ? "has-notifications" : ""}`}>
+                        <Link to={`/notification/${userId}`}>
+                          <FaBell /> Notifications
+                        </Link>
                       </div>
                     </li>
                     <li>
@@ -502,6 +507,7 @@ const Homepage = () => {
             </div>
           )}
         </div>
+
       </div>
 
       {/* Create New Entry Section */}
@@ -597,25 +603,25 @@ const Homepage = () => {
       </section>
 
       <Modal
-  isOpen={modalIsOpen}
-  onRequestClose={closeModal}
-  contentLabel="Rating Distribution Modal"
-  className="rating-distribution-modal"
-  overlayClassName="rating-distribution-overlay"
->
-  <h2>Rating Distribution for {selectedProductData?.productName}</h2>
-  <ResponsiveContainer width={500} height={300}>
-    <BarChart data={ratingDistribution}>
-      <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="rating" /> {/* Use the 'rating' property for X-axis labels */}
-      <YAxis />
-      <Tooltip />
-      <Legend />
-      <Bar dataKey="count" fill="#8084d8" />
-    </BarChart>
-  </ResponsiveContainer>
-  <button onClick={closeModal}>Close</button>
-</Modal>
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        contentLabel="Rating Distribution Modal"
+        className="rating-distribution-modal"
+        overlayClassName="rating-distribution-overlay"
+      >
+        <h2>Rating Distribution for {selectedProductData?.productName}</h2>
+        <ResponsiveContainer width={500} height={300}>
+          <BarChart data={ratingDistribution}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="rating" /> {/* Use the 'rating' property for X-axis labels */}
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="count" fill="#8084d8" />
+          </BarChart>
+        </ResponsiveContainer>
+        <button onClick={closeModal}>Close</button>
+      </Modal>
 
 
 

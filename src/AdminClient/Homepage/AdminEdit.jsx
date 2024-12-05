@@ -415,7 +415,7 @@ const AdminEdit = () => {
                         onClick={() => deleteComment(comment.commentId)}
                         className={`${styles.button} ${styles.deleteButton}`}
                     >
-                        Delete
+                        Hide the Comment
                     </button>
                 </div>
                 {comment.replies && (
